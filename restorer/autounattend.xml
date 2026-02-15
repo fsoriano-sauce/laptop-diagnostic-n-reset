@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  autounattend.xml — Windows 10 Pro Unattended Install
+  =====================================================
+  Place this file in the ROOT of a Windows 10 installation USB.
+  The installer will auto-detect it and skip manual steps.
+
+  Behavior:
+    1. Wipes Disk 0 entirely
+    2. Creates EFI + MSR + Primary partitions (GPT / UEFI)
+    3. Installs Windows 10 Pro silently
+    4. Reboots and STOPS at the OOBE "Hi there" screen
+       so the new owner can create their own account.
+
+  Target: Windows 10 Pro  (IMAGE/NAME must match the ISO edition)
+  Timezone: Eastern Standard Time
+-->
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!--  PASS 1: windowsPE  —  Disk setup & image selection           -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <settings pass="windowsPE">
+
+    <!-- Locale during install -->
+    <component name="Microsoft-Windows-International-Core-WinPE"
+               processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35"
+               language="neutral"
+               versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <SetupUILanguage>
+        <UILanguage>en-US</UILanguage>
+      </SetupUILanguage>
+      <InputLocale>en-US</InputLocale>
+      <SystemLocale>en-US</SystemLocale>
+      <UILanguage>en-US</UILanguage>
+      <UserLocale>en-US</UserLocale>
+    </component>
+
+    <!-- Disk Configuration: Wipe Disk 0, create GPT/UEFI partitions -->
+    <component name="Microsoft-Windows-Setup"
+               processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35"
+               language="neutral"
+               versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+      <DiskConfiguration>
+        <Disk wcm:action="add">
+          <DiskID>0</DiskID>
+          <WillWipeDisk>true</WillWipeDisk>
+
+          <CreatePartitions>
+            <!-- Partition 1: EFI System Partition (ESP) -->
+            <CreatePartition wcm:action="add">
+              <Order>1</Order>
+              <Type>EFI</Type>
+              <Size>100</Size>
+            </CreatePartition>
+            <!-- Partition 2: Microsoft Reserved (MSR) -->
+            <CreatePartition wcm:action="add">
+              <Order>2</Order>
+              <Type>MSR</Type>
+              <Size>16</Size>
+            </CreatePartition>
+            <!-- Partition 3: Primary Windows partition (uses remaining space) -->
+            <CreatePartition wcm:action="add">
+              <Order>3</Order>
+              <Type>Primary</Type>
+              <Extend>true</Extend>
+            </CreatePartition>
+          </CreatePartitions>
+
+          <ModifyPartitions>
+            <!-- Format ESP as FAT32 -->
+            <ModifyPartition wcm:action="add">
+              <Order>1</Order>
+              <PartitionID>1</PartitionID>
+              <Format>FAT32</Format>
+              <Label>System</Label>
+            </ModifyPartition>
+            <!-- MSR: no format needed -->
+            <ModifyPartition wcm:action="add">
+              <Order>2</Order>
+              <PartitionID>2</PartitionID>
+            </ModifyPartition>
+            <!-- Format primary as NTFS -->
+            <ModifyPartition wcm:action="add">
+              <Order>3</Order>
+              <PartitionID>3</PartitionID>
+              <Format>NTFS</Format>
+              <Label>Windows</Label>
+              <Letter>C</Letter>
+            </ModifyPartition>
+          </ModifyPartitions>
+        </Disk>
+      </DiskConfiguration>
+
+      <!-- Image selection: Windows 10 Pro -->
+      <ImageInstall>
+        <OSImage>
+          <InstallTo>
+            <DiskID>0</DiskID>
+            <PartitionID>3</PartitionID>
+          </InstallTo>
+          <InstallFrom>
+            <MetaData wcm:action="add">
+              <Key>/IMAGE/NAME</Key>
+              <Value>Windows 10 Pro</Value>
+            </MetaData>
+          </InstallFrom>
+        </OSImage>
+      </ImageInstall>
+
+      <!-- Accept EULA -->
+      <UserData>
+        <AcceptEula>true</AcceptEula>
+        <FullName></FullName>
+        <Organization></Organization>
+      </UserData>
+
+    </component>
+  </settings>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!--  PASS 4: specialize  —  Timezone & activation                 -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <settings pass="specialize">
+    <component name="Microsoft-Windows-Shell-Setup"
+               processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35"
+               language="neutral"
+               versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <TimeZone>Eastern Standard Time</TimeZone>
+      <ComputerName>*</ComputerName>
+    </component>
+  </settings>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!--  PASS 7: oobeSystem  —  OOBE settings                        -->
+  <!--  Goal: Skip everything EXCEPT the user creation screen.       -->
+  <!--  The laptop should land on "Hi there, let's get started."     -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-Shell-Setup"
+               processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35"
+               language="neutral"
+               versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <OOBE>
+        <!-- Skip the EULA page -->
+        <HideEULAPage>true</HideEULAPage>
+        <!-- Skip machine-level OOBE (network, updates) -->
+        <SkipMachineOOBE>true</SkipMachineOOBE>
+        <!-- DO NOT skip User OOBE — this is where the buyer sets up their account -->
+        <SkipUserOOBE>false</SkipUserOOBE>
+        <!-- Disable privacy questions (Cortana, telemetry, etc.) -->
+        <ProtectYourPC>3</ProtectYourPC>
+        <!-- Hide wireless setup to prevent forced Microsoft account login -->
+        <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+      </OOBE>
+    </component>
+  </settings>
+
+</unattend>

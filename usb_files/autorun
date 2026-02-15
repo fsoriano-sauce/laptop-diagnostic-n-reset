@@ -1,0 +1,4 @@
+#!/bin/bash
+# Auto-launch the laptop auditor on boot
+sleep 5
+python3 /run/archiso/bootmnt/audit.py

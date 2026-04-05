@@ -442,31 +442,40 @@ def run_hardware_scan() -> dict:
 
 def display_test():
     """Cycle full-screen colors for dead-pixel / backlight bleed inspection."""
-    print("  DISPLAY TEST — Press any key to cycle through colors.\n")
-    time.sleep(1)
+    print("  DISPLAY TEST — Press ENTER to cycle through colors.\n")
+    input("  Press ENTER to start...")
 
     try:
         term_lines = os.get_terminal_size().lines
+        term_cols = os.get_terminal_size().columns
     except OSError:
-        term_lines = 40  # sensible default for most laptops
+        term_lines = 50
+        term_cols = 200
 
     try:
         for name, code in COLORS_ANSI.items():
-            # Fill entire terminal with the color
+            # Clear screen, set background color, fill uniformly
+            sys.stdout.write("\033[2J\033[H")  # clear screen, cursor to top
             sys.stdout.write(code)
+            # Fill screen with spaces in the background color
+            line = " " * term_cols
             for _ in range(term_lines):
-                sys.stdout.write(" " * 200 + "\n")
-            # Show label in contrasting text
+                sys.stdout.write(line)
+            # Show label centered
             label_color = "\033[30m" if name == "White" else "\033[97m"
-            sys.stdout.write(f"\033[{term_lines // 2};5H{label_color}  [ {name} — press any key ]  ")
+            row = term_lines // 2
+            col = (term_cols - len(name) - 20) // 2
+            sys.stdout.write(f"\033[{row};{col}H{label_color}  [ {name} — press ENTER ]  ")
             sys.stdout.flush()
-            getch()
+            input()
         # Reset
         sys.stdout.write(RESET_ANSI)
-        clear_screen()
+        sys.stdout.write("\033[2J\033[H")  # clear screen
+        sys.stdout.flush()
     except (OSError, EOFError):
-        # Reset terminal if color test fails
         sys.stdout.write(RESET_ANSI)
+        sys.stdout.write("\033[2J\033[H")
+        sys.stdout.flush()
         print("\n  [!] Display test skipped (no interactive terminal)")
 
 
@@ -655,7 +664,8 @@ def print_summary(data: dict):
     print(f"║  RAM:           {str(data['ram_gb']) + ' GB ' + data['ram_type']:<40}║")
     storage_str = f"{data['storage_type']} {data['storage_gb']} GB (SMART: {data['smart_status']})"
     print(f"║  Storage:       {storage_str:<40}║")
-    print(f"║  Battery:       {data['battery_pct'] + '%':<40}║")
+    batt_str = f"Health: {data.get('battery_health_pct', 'N/A')}% | Cycles: {data.get('battery_cycles', 'N/A')}"
+    print(f"║  Battery:       {batt_str:<40}║")
     print(f"║  GPU:           {data['gpu'][:38]:<40}║")
     res_str = f"{data['resolution']} ({data['resolution_class']})"
     print(f"║  Display:       {res_str:<40}║")
@@ -687,27 +697,50 @@ def main():
     # Phase 0 — Mount USB R/W
     save_dir = mount_usb_rw()
 
-    # Phase 1 — Hardware Scan
-    data = run_hardware_scan()
+    try:
+        # Phase 1 — Hardware Scan
+        data = run_hardware_scan()
 
-    # Phase 2 — Interactive Grading
-    grades = run_interactive_grading()
-    data.update(grades)
+        # Phase 2 — Interactive Grading
+        grades = run_interactive_grading()
+        data.update(grades)
 
-    # Phase 3 — Recommendation
-    data["recommendation"] = compute_recommendation(data)
+        # Phase 3 — Recommendation
+        data["recommendation"] = compute_recommendation(data)
 
-    # Summary
-    print_summary(data)
+        # Summary
+        print_summary(data)
 
-    # Phase 4 — Export
-    export_to_csv(data, save_dir)
+        # Phase 4 — Export
+        export_to_csv(data, save_dir)
 
-    # Sync writes
-    sync_and_unmount()
+        # Sync writes
+        sync_and_unmount()
 
-    print("\n  Audit complete. Swap to Restorer USB for Windows install.\n")
-    pause("  Press ENTER to exit...")
+        print("\n  ✓ Audit complete. Shutting down in 5 seconds...")
+        print("    (Swap to Restorer USB for Windows install)\n")
+        time.sleep(5)
+        os.system("poweroff")
+
+    except Exception as e:
+        # Save error log to USB for later review
+        import traceback
+        error_log = traceback.format_exc()
+        print(f"\n  [!!] ERROR: {e}")
+        print(f"  Saving error log to {save_dir}/audit_error.log\n")
+        try:
+            log_path = os.path.join(save_dir, "audit_error.log")
+            with open(log_path, "a") as f:
+                f.write(f"\n{'='*60}\n")
+                f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(error_log)
+            sync_and_unmount()
+            print(f"  Error log saved. Retrieve USB to review.")
+        except Exception:
+            print(f"  Could not save log. Error was:\n{error_log}")
+        print("\n  Shutting down in 10 seconds...")
+        time.sleep(10)
+        os.system("poweroff")
 
 
 if __name__ == "__main__":

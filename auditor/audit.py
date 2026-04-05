@@ -7,7 +7,7 @@ collects an interactive quality grade, and exports results to
 audit_master.csv on the physical USB stick.
 
 Requires: Python 3.6+  (stdlib only — no pip installs)
-Must run as root (for dmidecode, smartctl, blkdiscard, nwipe).
+Must run as root (for dmidecode, smartctl).
 """
 
 import csv
@@ -533,48 +533,7 @@ def export_to_csv(data: dict, save_dir: str):
     print(f"\n  [✓] Results saved to {csv_path}")
 
 
-def offer_wipe(data: dict):
-    """
-    Offer to wipe the internal drive.
-    Double confirmation required: type Y, then type CONFIRM.
-    """
-    disk = data.get("_disk", "")
-    stor_type = data.get("storage_type", "")
-    if not disk:
-        print("\n  [!] No internal disk detected — skipping wipe option.")
-        return
 
-    print()
-    print("=" * 60)
-    print("  ⚠  DRIVE WIPE")
-    print("=" * 60)
-    print(f"  Target: {disk} ({stor_type} — {data.get('storage_gb', '?')} GB)")
-    print()
-
-    answer1 = input("  WIPE DRIVE NOW?  (Warning: Irreversible)  [Y/N] > ").strip().upper()
-    if answer1 != "Y":
-        print("  Wipe cancelled.")
-        return
-
-    print()
-    print("  ╔══════════════════════════════════════════╗")
-    print("  ║  THIS WILL DESTROY ALL DATA ON THE DISK  ║")
-    print("  ╚══════════════════════════════════════════╝")
-    answer2 = input("  Type CONFIRM to proceed > ").strip().upper()
-    if answer2 != "CONFIRM":
-        print("  Wipe cancelled.")
-        return
-
-    print(f"\n  Wiping {disk}...")
-    if "nvme" in disk:
-        ret = os.system(f"blkdiscard -f {disk}")
-    else:
-        ret = os.system(f"nwipe --autonuke --method=zero {disk}")
-
-    if ret == 0:
-        print("  [✓] Drive wipe complete.")
-    else:
-        print("  [!] Wipe command returned a non-zero exit code. Check manually.")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -645,10 +604,7 @@ def main():
     # Sync writes
     sync_and_unmount()
 
-    # Optional Wipe
-    offer_wipe(data)
-
-    print("\n  Audit complete. You may now power off or audit the next laptop.\n")
+    print("\n  Audit complete. Swap to Restorer USB for Windows install.\n")
     pause("  Press ENTER to exit...")
 
 

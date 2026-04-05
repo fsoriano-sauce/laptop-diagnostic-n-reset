@@ -6,7 +6,7 @@ Two USB tools to **audit, grade, and factory-reset** a batch of Dell laptops for
 | USB Stick | Purpose | OS |
 |-----------|---------|-----|
 | **Auditor** | Scan hardware, grade condition, export CSV | SystemRescue (Linux) |
-| **Restorer** | Clean Windows 10 install → stops at OOBE | Windows 10 Pro |
+| **Restorer** | Wipe disk + clean Windows 10 install → stops at OOBE | Windows 10 Pro |
 
 ---
 
@@ -16,9 +16,10 @@ Two USB tools to **audit, grade, and factory-reset** a batch of Dell laptops for
 For each laptop:
   1. Boot from Auditor USB  →  auto-runs audit.py
   2. Review scan results  →  grade screen & chassis
-  3. (Optional) Wipe drive from the audit script
+  3. Results saved to audit_master.csv on the USB
   4. Swap to Restorer USB  →  boots & installs Windows automatically
-  5. Pull USB when install starts  →  laptop lands at "Hi there" screen
+     (disk is wiped and repartitioned by autounattend.xml)
+  5. Laptop reboots to "Hi there" OOBE screen  →  take resale photo
   6. Move to next laptop
 ```
 
@@ -33,8 +34,16 @@ Your audit results accumulate in `audit_master.csv` on the Auditor USB.
 │   └── audit.py               # Python auditor (stdlib only, runs on SystemRescue)
 ├── restorer/
 │   └── autounattend.xml       # Windows 10 Pro unattended answer file
+├── usb_files/
+│   └── autorun                # SystemRescue autorun script (copy to Auditor USB root)
 └── README.md                  # ← You are here
 ```
+
+| Directory | Purpose |
+|-----------|---------|
+| `auditor/` | Source of truth for the audit script |
+| `restorer/` | Source of truth for the Windows answer file |
+| `usb_files/` | Ready-to-copy files for the Auditor USB (autorun script with correct SystemRescue v12 paths) |
 
 ---
 
@@ -56,33 +65,25 @@ Your audit results accumulate in `audit_master.csv` on the Auditor USB.
    - Partition scheme: **GPT**
    - Target system: **UEFI**
    - Click **START**, choose **Write in ISO image mode**
+   - ⚠️ **Skip Rufus's "Windows User Experience" customization** — it doesn't apply to Linux ISOs
    - Wait for completion
 
-3. **Copy `audit.py` to the USB**
+3. **Copy files to the USB**
    - Open the USB drive in File Explorer
-   - Copy `auditor/audit.py` from this repo to the **root** of the USB
-   - The file should be at `X:\audit.py` (where X is your USB drive letter)
+   - Copy `auditor/audit.py` to the **root** of the USB → `X:\audit.py`
+   - Copy `usb_files/autorun` to the **root** of the USB → `X:\autorun`
+   - Make sure `autorun` has no `.txt` extension — it must be named exactly `autorun`
 
-4. **Set up autorun (SystemRescue auto-launch)**
-   - Create a file on the USB at `X:\autorun` with this content:
-     ```bash
-     #!/bin/bash
-     # Auto-launch the laptop auditor on boot
-     sleep 3
-     python3 /livemnt/boot/audit.py
-     ```
-   - Make sure the file has no `.txt` extension — it must be named exactly `autorun`
-
-5. **Test it**
+4. **Test it**
    - Plug into a laptop → enter BIOS (F12 on Dell) → boot from USB
    - The audit script should launch automatically after boot
 
 ### SystemRescue autorun notes
-> SystemRescue looks for `/livemnt/boot/autorun` on boot. The USB filesystem
-> is typically mounted at `/livemnt/boot/`. If the script doesn't auto-launch,
-> you can always run it manually:
+> SystemRescue v12+ mounts the USB at `/run/archiso/bootmnt/`. The `autorun`
+> script in `usb_files/` is configured for this path. If the script doesn't
+> auto-launch, you can always run it manually:
 > ```bash
-> sudo python3 /livemnt/boot/audit.py
+> sudo python3 /run/archiso/bootmnt/audit.py
 > ```
 
 ---
@@ -106,6 +107,7 @@ Your audit results accumulate in `audit_master.csv` on the Auditor USB.
    - Partition scheme: **GPT**
    - Target system: **UEFI**
    - File system: **NTFS**
+   - ⚠️ **When Rufus shows "Windows User Experience" options**: click **Skip** or uncheck all customizations — our `autounattend.xml` handles everything. Rufus's built-in customizations create a separate `unattend.xml` that can conflict.
    - Click **START** and wait
 
 3. **Copy `autounattend.xml` to the USB root**
@@ -114,13 +116,25 @@ Your audit results accumulate in `audit_master.csv` on the Auditor USB.
    - The file should be at `X:\autounattend.xml`
    - ⚠️ The filename must be exactly `autounattend.xml` (the Windows installer auto-detects it)
 
-4. **Test it**
+4. **(Optional) Inject drivers for Dell hardware**
+   - If the Windows installer can't see NVMe drives, you may need to inject Dell WinPE drivers
+   - Download [Dell Command | Deploy WinPE Driver Pack](https://www.dell.com/support/home/en-us/drivers/driversdetails?driverid=2V5TD)
+   - Use DISM to inject into `boot.wim` (both indexes) and `install.wim`
+   - See the driver injection walkthrough in the project history for step-by-step
+
+5. **Test it**
    - Plug into a laptop → boot from USB (F12 on Dell)
    - Windows should install silently:
      - Disk gets wiped and partitioned automatically
      - OS installs without any prompts
+     - BitLocker auto-encryption is prevented
      - Laptop reboots and lands on the **"Hi there, let's get started"** region selection screen
    - **Done** — the new owner takes it from here
+
+### What the `autounattend.xml` does
+> - **windowsPE pass**: Wipes Disk 0, creates GPT partitions (EFI + MSR + Primary), selects Windows 10 Pro, accepts EULA
+> - **specialize pass**: Sets timezone to Eastern, prevents BitLocker auto-encryption, disables TPM auto-activation
+> - **oobeSystem pass**: Skips EULA and machine OOBE, hides Wi-Fi setup (prevents forced Microsoft account), stops at user creation screen
 
 ---
 

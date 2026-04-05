@@ -550,9 +550,8 @@ def compute_recommendation(data: dict) -> str:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def export_to_csv(data: dict, save_dir: str):
-    """Append one row to audit_master.csv in the given directory."""
+    """Append one row to audit_master.csv, with duplicate detection and header migration."""
     csv_path = os.path.join(save_dir, CSV_FILENAME)
-    file_exists = os.path.isfile(csv_path)
 
     row = {
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -577,13 +576,53 @@ def export_to_csv(data: dict, save_dir: str):
         "recommendation": data.get("recommendation", ""),
     }
 
-    with open(csv_path, "a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=CSV_HEADERS)
-        if not file_exists:
-            writer.writeheader()
-        writer.writerow(row)
+    # Read existing rows (if any) and migrate to current headers
+    existing_rows = []
+    if os.path.isfile(csv_path):
+        try:
+            with open(csv_path, "r", newline="") as f:
+                reader = csv.DictReader(f)
+                for r in reader:
+                    # Migrate old 'battery_pct' field to new names
+                    if "battery_pct" in r and "battery_health_pct" not in r:
+                        r["battery_health_pct"] = r.pop("battery_pct", "N/A")
+                        r.setdefault("battery_charge_pct", "N/A")
+                        r.setdefault("battery_cycles", "N/A")
+                    existing_rows.append(r)
+        except Exception:
+            pass  # corrupted CSV — start fresh
 
-    print(f"\n  [✓] Results saved to {csv_path}")
+    # Check for duplicate service tag
+    service_tag = row["service_tag"]
+    duplicate_idx = None
+    for i, existing in enumerate(existing_rows):
+        if existing.get("service_tag") == service_tag:
+            duplicate_idx = i
+            break
+
+    if duplicate_idx is not None:
+        prev = existing_rows[duplicate_idx]
+        prev_time = prev.get("timestamp", "unknown time")
+        print(f"\n  ⚠  DUPLICATE: {service_tag} was already audited on {prev_time}")
+        answer = input("  Update existing record? [Y/N] > ").strip().upper()
+        if answer == "Y":
+            existing_rows[duplicate_idx] = row
+            print("  [✓] Record updated.")
+        else:
+            print("  [–] Skipped — keeping original record.")
+            return
+    else:
+        existing_rows.append(row)
+
+    # Write all rows with current headers
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=CSV_HEADERS, extrasaction="ignore")
+        writer.writeheader()
+        for r in existing_rows:
+            writer.writerow(r)
+
+    count = len(existing_rows)
+    print(f"\n  [✓] Results saved to {csv_path} ({count} laptop{'s' if count != 1 else ''} total)")
 
 
 

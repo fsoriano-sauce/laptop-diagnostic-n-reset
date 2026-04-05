@@ -1,0 +1,3 @@
+# Force Linux line endings for scripts that run on SystemRescue
+auditor/autorun eol=lf
+auditor/audit.py eol=lf

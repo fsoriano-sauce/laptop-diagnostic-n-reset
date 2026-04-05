@@ -403,11 +403,11 @@ def get_screen_size_inches() -> str:
 
 def get_fingerprint_reader() -> str:
     """
-    Detect fingerprint reader hardware via lsusb.
-    Common fingerprint sensor vendors/keywords in Dell laptops.
-    CAUTION: Elan and Synaptics also make touchpads, so we must check
-    the device description carefully, not just the vendor name.
-    Returns 'Yes' or 'No'.
+    Detect fingerprint reader hardware.
+    Many Dell laptops use SPI-connected fingerprint readers that do NOT
+    appear in lsusb. Auto-detection is attempted first, but for reliability
+    this falls back to an interactive prompt during grading.
+    Returns 'Yes', 'No', or 'Check' (to be resolved during grading).
     """
     out = run("lsusb")
 
@@ -417,9 +417,6 @@ def get_fingerprint_reader() -> str:
     ]
 
     # Vendor:Product ID prefixes known to be fingerprint readers
-    # Goodix fingerprint readers
-    # Elan fingerprint readers (04f3:0c** range)
-    # Validity/Synaptics fingerprint (138a:)
     fingerprint_usb_ids = [
         "27c6:",    # Goodix
         "04f3:0c",  # Elan fingerprint (0c** range, not touchpad range)
@@ -432,21 +429,21 @@ def get_fingerprint_reader() -> str:
 
     for line in out.splitlines():
         lower = line.lower()
-        # Check exact keywords in the device description
         for kw in exact_keywords:
             if kw in lower:
                 return "Yes"
-        # Check known fingerprint USB vendor:product IDs
         for usb_id in fingerprint_usb_ids:
             if usb_id in lower:
                 return "Yes"
 
-    # Also check udev for fingerprint class devices
+    # Check udev for fingerprint class devices
     udev_out = run("udevadm info --export-db 2>/dev/null | grep -i fingerprint")
     if "fingerprint" in udev_out.lower():
         return "Yes"
 
-    return "No"
+    # Not auto-detected — many Dell models use SPI-based readers
+    # that are invisible to lsusb. Mark for interactive confirmation.
+    return "Check"
 
 
 def get_touchscreen() -> str:
@@ -786,8 +783,10 @@ def prompt_choice(question: str, options: dict) -> str:
         print(f"  Invalid. Please enter one of: {', '.join(options.keys())}")
 
 
-def run_interactive_grading() -> dict:
+def run_interactive_grading(hw_data: dict = None) -> dict:
     """Run the interactive grading phase and return grade data."""
+    if hw_data is None:
+        hw_data = {}
     print()
     print("=" * 60)
     print("  INTERACTIVE GRADING")
@@ -810,6 +809,15 @@ def run_interactive_grading() -> dict:
         {"Y": "Yes", "N": "No"},
     )
 
+    # Fingerprint: resolve if auto-detection was inconclusive (SPI-based readers)
+    fingerprint = hw_data.get("fingerprint_reader", "Check")
+    if fingerprint == "Check":
+        fp_answer = prompt_choice(
+            "Fingerprint Reader? (look for biometric sticker/sensor)",
+            {"Y": "Yes", "N": "No"},
+        )
+        fingerprint = "Yes" if fp_answer == "Y" else "No"
+
     color = prompt_choice(
         "Laptop Color?",
         {"1": "Black", "2": "Silver", "3": "Gray",
@@ -823,6 +831,7 @@ def run_interactive_grading() -> dict:
     return {
         "screen_grade": screen_grade,
         "chassis_grade": chassis_grade,
+        "fingerprint_reader": fingerprint,
         "color": color,
         "charger": charger,
     }
@@ -1036,7 +1045,7 @@ def main():
         data = run_hardware_scan()
 
         # Phase 2 — Interactive Grading
-        grades = run_interactive_grading()
+        grades = run_interactive_grading(data)
         data.update(grades)
 
         # Phase 3 — Recommendation

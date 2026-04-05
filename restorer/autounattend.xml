@@ -185,14 +185,13 @@
       <OOBE>
         <!-- Skip the EULA page -->
         <HideEULAPage>true</HideEULAPage>
-        <!-- Skip machine-level OOBE (network, updates) -->
-        <SkipMachineOOBE>true</SkipMachineOOBE>
-        <!-- DO NOT skip User OOBE — this is where the buyer sets up their account -->
-        <SkipUserOOBE>false</SkipUserOOBE>
         <!-- Disable privacy questions (Cortana, telemetry, etc.) -->
         <ProtectYourPC>3</ProtectYourPC>
         <!-- Hide wireless setup to prevent forced Microsoft account login -->
         <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+        <!-- DO NOT add SkipMachineOOBE or SkipUserOOBE — they skip -->
+        <!-- the entire OOBE and create a broken "Other user" login. -->
+        <!-- Without them, OOBE lands on the "Hi there" screen. -->
       </OOBE>
     </component>
   </settings>

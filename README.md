@@ -46,30 +46,40 @@ Your audit results accumulate in `audit_master.csv` on the Auditor USB.
 ## USB #1 — Building the Auditor
 
 ### Requirements
-- **USB drive**: 2 GB+ (SystemRescue is ~800 MB)
-- **Software**: [Rufus](https://rufus.ie) (Windows) or `dd` (Linux/Mac)
+- **USB drive**: 2 GB+ (SystemRescue is ~1.2 GB)
+- **Software**: [Rufus 4.x](https://rufus.ie) (Windows)
 
 ### Steps
 
 1. **Download SystemRescue ISO**
    - Go to [https://www.system-rescue.org/Download/](https://www.system-rescue.org/Download/)
-   - Download the latest `.iso` (e.g., `systemrescue-11.xx-amd64.iso`)
+   - Download the latest `.iso` (e.g., `systemrescue-13.00-amd64.iso`)
 
 2. **Flash the ISO to USB with Rufus**
-   - Open Rufus → select your USB drive
-   - Click **SELECT** → pick the SystemRescue ISO
-   - Partition scheme: **GPT**
-   - Target system: **UEFI**
-   - Click **START**, choose **Write in ISO image mode**
-   - ⚠️ **Skip Rufus's "Windows User Experience" customization** — it doesn't apply to Linux ISOs
-   - Wait for completion
+
+   Open Rufus and set each field:
+
+   | Rufus Field | Set To |
+   |-------------|--------|
+   | **Device** | Select your Auditor USB drive (e.g., `ESD-USB (F:) [32 GB]`) |
+   | **Boot selection** | `Disk or ISO image` → click **SELECT** → pick the SystemRescue `.iso` |
+   | **Partition scheme** | **MBR** |
+   | **Target system** | **BIOS (or UEFI-CSM)** ← Rufus auto-sets this when you pick MBR |
+   | **Volume label** | `RESCUE` (or leave default) |
+   | **File system** | **FAT32** (default) |
+   | **Cluster size** | Leave default |
+
+   Click **START**:
+   - When prompted, choose **Write in ISO image mode (Recommended)**
+   - Click **OK** to confirm the drive will be wiped
+   - Wait for completion (~2 min)
 
 3. **Copy the `auditor/` folder contents to the USB root**
    - Open the USB drive in File Explorer
    - Copy **both files** from `auditor/` to the **root** of the USB:
      - `audit.py` → `X:\audit.py`
      - `autorun` → `X:\autorun`
-   - Make sure `autorun` has no `.txt` extension — it must be named exactly `autorun`
+   - ⚠️ Make sure `autorun` has no `.txt` extension — it must be named exactly `autorun`
 
 4. **Test it**
    - Plug into a laptop → enter BIOS (F12 on Dell) → boot from USB
@@ -89,7 +99,7 @@ Your audit results accumulate in `audit_master.csv` on the Auditor USB.
 
 ### Requirements
 - **USB drive**: 8 GB+ (Windows ISO is ~5–6 GB)
-- **Software**: [Rufus](https://rufus.ie)
+- **Software**: [Rufus 4.x](https://rufus.ie)
 - **ISO**: Windows 10 (download from [Microsoft](https://www.microsoft.com/en-us/software-download/windows10ISO))
 
 ### Steps
@@ -99,13 +109,23 @@ Your audit results accumulate in `audit_master.csv` on the Auditor USB.
    - Select **Windows 10** → language **English** → **64-bit Download**
 
 2. **Flash the ISO to USB with Rufus**
-   - Open Rufus → select your USB drive
-   - Click **SELECT** → pick the Windows 10 ISO
-   - Partition scheme: **GPT**
-   - Target system: **UEFI**
-   - File system: **NTFS**
-   - ⚠️ **When Rufus shows "Windows User Experience" options**: click **Skip** or uncheck all customizations — our `autounattend.xml` handles everything. Rufus's built-in customizations create a separate `unattend.xml` that can conflict.
-   - Click **START** and wait
+
+   Open Rufus and set each field:
+
+   | Rufus Field | Set To |
+   |-------------|--------|
+   | **Device** | Select your Restorer USB drive (e.g., `ASolid USB (D:) [64 GB]`) |
+   | **Boot selection** | `Disk or ISO image` → click **SELECT** → pick the Windows 10 `.iso` |
+   | **Partition scheme** | **GPT** |
+   | **Target system** | **UEFI (non CSM)** ← Rufus auto-sets this when you pick GPT |
+   | **Volume label** | `WIN10-RESTORE` (or leave default) |
+   | **File system** | **NTFS** |
+   | **Cluster size** | Leave default |
+
+   Click **START**:
+   - ⚠️ **When the "Windows User Experience" dialog appears**: uncheck **all** options and click **OK**. Our `autounattend.xml` handles everything — Rufus's customizations create a conflicting `unattend.xml`.
+   - Click **OK** to confirm the drive will be wiped
+   - Wait for completion (~5 min)
 
 3. **Copy `autounattend.xml` to the USB root**
    - Open the USB drive in File Explorer

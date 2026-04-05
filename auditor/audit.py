@@ -26,7 +26,8 @@ USB_MOUNT_POINT = "/mnt/usb_data"
 CSV_HEADERS = [
     "timestamp", "service_tag", "model", "cpu", "cores",
     "ram_gb", "ram_type", "storage_type", "storage_gb",
-    "smart_status", "battery_pct", "gpu", "resolution",
+    "smart_status", "battery_health_pct", "battery_charge_pct",
+    "battery_cycles", "gpu", "resolution",
     "resolution_class", "screen_grade", "chassis_grade",
     "charger", "recommendation",
 ]
@@ -249,9 +250,21 @@ def get_storage_info(disk: str) -> tuple:
     return stor_type, capacity_gb, smart
 
 
-def get_battery_health() -> str:
-    """Return battery health percentage, or 'N/A'."""
+def get_battery_info() -> dict:
+    """
+    Return battery health data:
+      - health_pct: current max capacity vs design capacity (wear level)
+      - charge_pct: current charge level
+      - cycles: charge cycle count
+    """
+    result = {"health_pct": "N/A", "charge_pct": "N/A", "cycles": "N/A"}
+
+    # Try upower first
     out = run("upower -i /org/freedesktop/UPower/devices/battery_BAT0")
+    if not out:
+        # Try BAT1 (some Dells use BAT1)
+        out = run("upower -i /org/freedesktop/UPower/devices/battery_BAT1")
+
     full = None
     design = None
     for line in out.splitlines():
@@ -264,9 +277,31 @@ def get_battery_health() -> str:
             nums = re.findall(r"[\d.]+", line_s)
             if nums:
                 design = float(nums[0])
+        if "percentage:" in line_s:
+            nums = re.findall(r"[\d.]+", line_s)
+            if nums:
+                result["charge_pct"] = str(round(float(nums[0])))
+
     if full and design and design > 0:
-        return str(round((full / design) * 100))
-    return "N/A"
+        result["health_pct"] = str(round((full / design) * 100))
+
+    # Cycle count — try /sys first (most reliable on Dell)
+    for bat in ["BAT0", "BAT1"]:
+        cycle_path = f"/sys/class/power_supply/{bat}/cycle_count"
+        cycles = read_file(cycle_path).strip()
+        if cycles and cycles != "0" and cycles != "":
+            result["cycles"] = cycles
+            break
+
+    # Fallback: upower sometimes has cycle_count
+    if result["cycles"] == "N/A":
+        for line in out.splitlines():
+            if "cycle" in line.lower() and "count" in line.lower():
+                nums = re.findall(r"\d+", line)
+                if nums:
+                    result["cycles"] = nums[0]
+
+    return result
 
 
 def get_discrete_gpu() -> str:
@@ -370,8 +405,11 @@ def run_hardware_scan() -> dict:
     print(f" {data['storage_type']} {data['storage_gb']} GB — SMART: {data['smart_status']}")
 
     print("  [5/8] Checking battery...", end="", flush=True)
-    data["battery_pct"] = get_battery_health()
-    print(f" {data['battery_pct']}%")
+    batt = get_battery_info()
+    data["battery_health_pct"] = batt["health_pct"]
+    data["battery_charge_pct"] = batt["charge_pct"]
+    data["battery_cycles"] = batt["cycles"]
+    print(f" Health: {batt['health_pct']}% | Charge: {batt['charge_pct']}% | Cycles: {batt['cycles']}")
 
     print("  [6/8] Detecting GPU...", end="", flush=True)
     data["gpu"] = get_discrete_gpu()
@@ -478,18 +516,18 @@ def compute_recommendation(data: dict) -> str:
     cpu_gen = data.get("_cpu_gen", 0)
 
     try:
-        batt = int(data.get("battery_pct", "0"))
+        batt_health = int(data.get("battery_health_pct", "0"))
     except ValueError:
-        batt = 0
+        batt_health = 0
 
     # Decision tree (order matters)
     if smart == "FAILED" or screen == "C" or chassis == "C":
         return "PARTS/REPAIR"
     if gpu != "None":
         return "HIGH VALUE (Gaming/Creator)"
-    if cpu_gen >= 8 and batt > 65:
+    if cpu_gen >= 8 and batt_health > 65:
         return "Standard Resale"
-    if batt < 60:
+    if batt_health < 60:
         return "Bad Battery (Discount)"
     return "Standard Resale"
 
@@ -514,7 +552,9 @@ def export_to_csv(data: dict, save_dir: str):
         "storage_type": data.get("storage_type", "N/A"),
         "storage_gb": data.get("storage_gb", 0),
         "smart_status": data.get("smart_status", "N/A"),
-        "battery_pct": data.get("battery_pct", "N/A"),
+        "battery_health_pct": data.get("battery_health_pct", "N/A"),
+        "battery_charge_pct": data.get("battery_charge_pct", "N/A"),
+        "battery_cycles": data.get("battery_cycles", "N/A"),
         "gpu": data.get("gpu", "None"),
         "resolution": data.get("resolution", "N/A"),
         "resolution_class": data.get("resolution_class", "N/A"),

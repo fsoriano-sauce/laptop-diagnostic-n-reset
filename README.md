@@ -74,11 +74,10 @@ Your audit results accumulate in `audit_master.csv` on the Auditor USB.
    - Click **OK** to confirm the drive will be wiped
    - Wait for completion (~2 min)
 
-3. **Copy the `auditor/` folder contents to the USB root**
-   - Open the USB drive in File Explorer
-   - Copy **both files** from `auditor/` to the **root** of the USB:
-     - `audit.py` → `X:\audit.py`
-     - `autorun` → `X:\autorun`
+3. **Copy files from `auditor/` to the USB**
+   - Open the USB drive in File Explorer (Rufus creates an `autorun/` folder automatically)
+   - Copy `audit.py` → USB **root** (`X:\audit.py`)
+   - Copy `autorun` → **inside** the existing `X:\autorun\` folder (`X:\autorun\autorun`)
    - ⚠️ Make sure `autorun` has no `.txt` extension — it must be named exactly `autorun`
 
 4. **Test it**

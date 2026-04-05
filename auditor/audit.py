@@ -75,16 +75,20 @@ def pause(prompt: str = "Press ENTER to continue..."):
 
 def getch() -> str:
     """Read a single keypress (no echo, no ENTER needed)."""
-    import tty
-    import termios
-    fd = sys.stdin.fileno()
-    old = termios.tcgetattr(fd)
     try:
-        tty.setraw(fd)
-        ch = sys.stdin.read(1)
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old)
-    return ch
+        import tty
+        import termios
+        fd = sys.stdin.fileno()
+        old = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old)
+        return ch
+    except (ImportError, termios.error, OSError):
+        # Fallback when no TTY (e.g., launched via autorun pipe)
+        return input()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -440,20 +444,29 @@ def display_test():
     print("  DISPLAY TEST — Press any key to cycle through colors.\n")
     time.sleep(1)
 
-    term_lines = os.get_terminal_size().lines
-    for name, code in COLORS_ANSI.items():
-        # Fill entire terminal with the color
-        sys.stdout.write(code)
-        for _ in range(term_lines):
-            sys.stdout.write(" " * 200 + "\n")
-        # Show label in contrasting text
-        label_color = "\033[30m" if name == "White" else "\033[97m"
-        sys.stdout.write(f"\033[{term_lines // 2};5H{label_color}  [ {name} — press any key ]  ")
-        sys.stdout.flush()
-        getch()
-    # Reset
-    sys.stdout.write(RESET_ANSI)
-    clear_screen()
+    try:
+        term_lines = os.get_terminal_size().lines
+    except OSError:
+        term_lines = 40  # sensible default for most laptops
+
+    try:
+        for name, code in COLORS_ANSI.items():
+            # Fill entire terminal with the color
+            sys.stdout.write(code)
+            for _ in range(term_lines):
+                sys.stdout.write(" " * 200 + "\n")
+            # Show label in contrasting text
+            label_color = "\033[30m" if name == "White" else "\033[97m"
+            sys.stdout.write(f"\033[{term_lines // 2};5H{label_color}  [ {name} — press any key ]  ")
+            sys.stdout.flush()
+            getch()
+        # Reset
+        sys.stdout.write(RESET_ANSI)
+        clear_screen()
+    except (OSError, EOFError):
+        # Reset terminal if color test fails
+        sys.stdout.write(RESET_ANSI)
+        print("\n  [!] Display test skipped (no interactive terminal)")
 
 
 def prompt_choice(question: str, options: dict) -> str:

@@ -2,9 +2,13 @@
 """
 audit.py — The "20-Laptop Factory Line" Auditor
 =================================================
-Boots on a SystemRescue Live USB, scans Dell laptop hardware,
+Boots on a SystemRescue Live USB, scans laptop hardware,
 collects an interactive quality grade, and exports results to
 audit_master.csv on the physical USB stick.
+
+v2.0 — Added eBay listing-optimized fields: screen size (inches),
+       color, touchscreen, fingerprint reader, backlit keyboard,
+       WiFi standard, Bluetooth, and webcam detection.
 
 Requires: Python 3.6+  (stdlib only — no pip installs)
 Must run as root (for dmidecode, smartctl).
@@ -28,7 +32,10 @@ CSV_HEADERS = [
     "ram_gb", "ram_type", "storage_type", "storage_gb",
     "smart_status", "battery_health_pct", "battery_charge_pct",
     "battery_cycles", "gpu", "resolution",
-    "resolution_class", "screen_grade", "chassis_grade",
+    "resolution_class", "screen_size_in",
+    "touchscreen", "fingerprint_reader",
+    "backlit_keyboard", "wifi_standard", "bluetooth", "webcam",
+    "screen_grade", "chassis_grade", "color",
     "charger", "recommendation",
     "status", "sale_price", "sale_date", "notes",
 ]
@@ -354,6 +361,262 @@ def get_screen_resolution() -> tuple:
     return res_str, res_class
 
 
+def get_screen_size_inches() -> str:
+    """
+    Calculate physical screen diagonal in inches from EDID data via xrandr.
+    xrandr reports physical dimensions in mm for connected displays.
+    Returns a string like '15.6' or 'N/A' if not detected.
+    """
+    out = run("xrandr 2>/dev/null")
+    for line in out.splitlines():
+        if " connected" not in line:
+            continue
+        # Match pattern like "309mm x 174mm"
+        match = re.search(r'(\d+)mm\s+x\s+(\d+)mm', line)
+        if match:
+            w_mm = int(match.group(1))
+            h_mm = int(match.group(2))
+            if w_mm > 0 and h_mm > 0:
+                diagonal_mm = (w_mm**2 + h_mm**2) ** 0.5
+                diagonal_in = round(diagonal_mm / 25.4, 1)
+                return str(diagonal_in)
+
+    # Fallback: parse EDID binary from /sys/class/drm for physical size
+    drm_path = Path("/sys/class/drm")
+    if drm_path.exists():
+        for edid_file in drm_path.glob("*/edid"):
+            try:
+                raw = edid_file.read_bytes()
+                if len(raw) >= 68:
+                    # EDID bytes 21-22 contain physical size in cm
+                    w_cm = raw[21]
+                    h_cm = raw[22]
+                    if w_cm > 0 and h_cm > 0:
+                        diagonal_cm = (w_cm**2 + h_cm**2) ** 0.5
+                        diagonal_in = round(diagonal_cm / 2.54, 1)
+                        return str(diagonal_in)
+            except Exception:
+                continue
+
+    return "N/A"
+
+
+def get_fingerprint_reader() -> str:
+    """
+    Detect fingerprint reader hardware via lsusb.
+    Common fingerprint sensor vendors/keywords in Dell laptops.
+    CAUTION: Elan and Synaptics also make touchpads, so we must check
+    the device description carefully, not just the vendor name.
+    Returns 'Yes' or 'No'.
+    """
+    out = run("lsusb")
+
+    # Keywords that are ONLY used for fingerprint devices
+    exact_keywords = [
+        "fingerprint", "biometric", "fprint", "finger print",
+    ]
+
+    # Vendor:Product ID prefixes known to be fingerprint readers
+    # Goodix fingerprint readers
+    # Elan fingerprint readers (04f3:0c** range)
+    # Validity/Synaptics fingerprint (138a:)
+    fingerprint_usb_ids = [
+        "27c6:",    # Goodix
+        "04f3:0c",  # Elan fingerprint (0c** range, not touchpad range)
+        "138a:",    # Validity Sensors (now Synaptics fingerprint)
+        "06cb:00b", # Synaptics fingerprint (specific range)
+        "06cb:00f", # Synaptics fingerprint
+        "1c7a:",    # LighTuning (fingerprint)
+        "2808:",    # AuthenTec / Upek
+    ]
+
+    for line in out.splitlines():
+        lower = line.lower()
+        # Check exact keywords in the device description
+        for kw in exact_keywords:
+            if kw in lower:
+                return "Yes"
+        # Check known fingerprint USB vendor:product IDs
+        for usb_id in fingerprint_usb_ids:
+            if usb_id in lower:
+                return "Yes"
+
+    # Also check udev for fingerprint class devices
+    udev_out = run("udevadm info --export-db 2>/dev/null | grep -i fingerprint")
+    if "fingerprint" in udev_out.lower():
+        return "Yes"
+
+    return "No"
+
+
+def get_touchscreen() -> str:
+    """
+    Detect touchscreen input device.
+    IMPORTANT: Must distinguish 'touchscreen' from 'touchpad' — every laptop
+    has a touchpad, but few have a touchscreen.
+    Returns 'Yes' or 'No'.
+    """
+    # Method 1: xinput (if X is running)
+    # Look specifically for 'touchscreen', exclude 'touchpad'
+    out = run("xinput list 2>/dev/null")
+    for line in out.lower().splitlines():
+        if "touchscreen" in line and "touchpad" not in line:
+            return "Yes"
+
+    # Method 2: libinput — look for devices with 'touch' capability
+    # that are NOT touchpads
+    out = run("libinput list-devices 2>/dev/null")
+    if out:
+        # Split into device blocks and check each
+        blocks = out.split("\n\n")
+        for block in blocks:
+            lower = block.lower()
+            # A touchscreen will have 'touch' in capabilities but NOT 'touchpad'
+            if "touchscreen" in lower:
+                return "Yes"
+
+    # Method 3: kernel input devices
+    input_devs = read_file("/proc/bus/input/devices")
+    blocks = input_devs.split("\n\n")
+    for block in blocks:
+        lower = block.lower()
+        # Look for 'touchscreen' specifically, skip touchpad blocks
+        if "touchscreen" in lower and "touchpad" not in lower:
+            return "Yes"
+
+    # Method 4: check udev for touchscreen tag (most reliable)
+    udev_out = run("udevadm info --export-db 2>/dev/null | grep ID_INPUT_TOUCHSCREEN=1")
+    if "TOUCHSCREEN=1" in udev_out:
+        return "Yes"
+
+    return "No"
+
+
+def get_backlit_keyboard() -> str:
+    """
+    Detect backlit keyboard via /sys/class/leds.
+    Dell and most laptops expose keyboard backlight LEDs here.
+    Returns 'Yes' or 'No'.
+    """
+    leds_path = Path("/sys/class/leds")
+    if leds_path.exists():
+        for led_dir in leds_path.iterdir():
+            if "kbd" in led_dir.name.lower() or "backlight" in led_dir.name.lower():
+                # Check if it's a keyboard LED (not screen backlight)
+                if "kbd" in led_dir.name.lower():
+                    return "Yes"
+
+    # Fallback: check for dell-specific backlight
+    out = run("ls /sys/class/leds/ 2>/dev/null")
+    if "kbd" in out.lower():
+        return "Yes"
+
+    return "No"
+
+
+def get_wifi_standard() -> str:
+    """
+    Detect WiFi adapter and determine the wireless standard.
+    Parses 'iw list' for supported bands/protocols or falls back to lspci.
+    Returns a string like 'Wi-Fi 6 (802.11ax)' or 'Wi-Fi 5 (802.11ac)'.
+    """
+    # Method 1: iw list — check for supported standards
+    out = run("iw list 2>/dev/null")
+    if out:
+        out_lower = out.lower()
+        # Wi-Fi 7 (802.11be)
+        if "eht" in out_lower or "11be" in out_lower:
+            return "Wi-Fi 7 (802.11be)"
+        # Wi-Fi 6E/6 (802.11ax)
+        if "he" in out_lower and ("ht" in out_lower or "vht" in out_lower):
+            # Check for 6GHz band → Wi-Fi 6E
+            if "6 ghz" in out_lower or "6ghz" in out_lower:
+                return "Wi-Fi 6E (802.11ax)"
+            return "Wi-Fi 6 (802.11ax)"
+        # Wi-Fi 5 (802.11ac)
+        if "vht" in out_lower:
+            return "Wi-Fi 5 (802.11ac)"
+        # Wi-Fi 4 (802.11n)
+        if "ht" in out_lower:
+            return "Wi-Fi 4 (802.11n)"
+
+    # Method 2: lspci — identify the card name for known models
+    out = run("lspci")
+    for line in out.splitlines():
+        lower = line.lower()
+        if "network" in lower or "wireless" in lower or "wifi" in lower or "wi-fi" in lower:
+            if "ax" in lower or "wifi 6" in lower or "wi-fi 6" in lower:
+                if "6e" in lower:
+                    return "Wi-Fi 6E (802.11ax)"
+                return "Wi-Fi 6 (802.11ax)"
+            if "ac" in lower or "wifi 5" in lower or "wi-fi 5" in lower:
+                return "Wi-Fi 5 (802.11ac)"
+            if "wireless-n" in lower or "wifi 4" in lower:
+                return "Wi-Fi 4 (802.11n)"
+            # Generic — has WiFi but unknown standard
+            return "Wi-Fi"
+
+    return "N/A"
+
+
+def get_bluetooth() -> str:
+    """
+    Detect Bluetooth adapter presence and version.
+    Returns 'Yes' or 'No'. (Version detection is unreliable in live env.)
+    """
+    # Method 1: hciconfig
+    out = run("hciconfig 2>/dev/null")
+    if "hci" in out.lower() and ("up" in out.lower() or "down" in out.lower()):
+        return "Yes"
+
+    # Method 2: bluetoothctl
+    out = run("bluetoothctl show 2>/dev/null")
+    if "controller" in out.lower():
+        return "Yes"
+
+    # Method 3: check for Bluetooth in lsusb or lspci
+    for cmd in ["lsusb", "lspci"]:
+        out = run(cmd)
+        if "bluetooth" in out.lower():
+            return "Yes"
+
+    # Method 4: /sys/class/bluetooth
+    bt_path = Path("/sys/class/bluetooth")
+    if bt_path.exists() and any(bt_path.iterdir()):
+        return "Yes"
+
+    return "No"
+
+
+def get_webcam() -> str:
+    """
+    Detect built-in webcam.
+    Checks /dev/video* devices and lsusb for camera hardware.
+    Returns 'Yes' or 'No'.
+    """
+    # Method 1: check for video devices
+    import glob
+    video_devs = glob.glob("/dev/video*")
+    if video_devs:
+        return "Yes"
+
+    # Method 2: lsusb for camera keywords
+    out = run("lsusb")
+    camera_keywords = ["camera", "webcam", "video", "imaging", "cam"]
+    for line in out.splitlines():
+        lower = line.lower()
+        for kw in camera_keywords:
+            if kw in lower:
+                return "Yes"
+
+    # Method 3: check /sys/class/video4linux
+    v4l_path = Path("/sys/class/video4linux")
+    if v4l_path.exists() and any(v4l_path.iterdir()):
+        return "Yes"
+
+    return "No"
+
+
 def parse_cpu_generation(cpu_model: str) -> int:
     """
     Extract Intel CPU generation from model string.
@@ -383,48 +646,76 @@ def parse_cpu_generation(cpu_model: str) -> int:
 def run_hardware_scan() -> dict:
     """Execute the full silent hardware scan and return a data dict."""
     print("=" * 60)
-    print("  LAPTOP AUDITOR — Hardware Scan")
+    print("  LAPTOP AUDITOR v2.0 — Hardware Scan")
     print("=" * 60)
     print()
 
     data = {}
 
-    print("  [1/8] Reading system identity...", end="", flush=True)
+    print("  [ 1/15] Reading system identity...", end="", flush=True)
     data["service_tag"] = get_service_tag()
     data["model"] = get_model_name()
     print(f" {data['service_tag']} / {data['model']}")
 
-    print("  [2/8] Scanning CPU...", end="", flush=True)
+    print("  [ 2/15] Scanning CPU...", end="", flush=True)
     data["cpu"], data["cores"] = get_cpu_info()
     print(f" {data['cpu']} ({data['cores']} threads)")
 
-    print("  [3/8] Scanning RAM...", end="", flush=True)
+    print("  [ 3/15] Scanning RAM...", end="", flush=True)
     data["ram_gb"] = get_ram_total_gb()
     data["ram_type"] = get_ram_type()
     print(f" {data['ram_gb']} GB {data['ram_type']}")
 
-    print("  [4/8] Scanning storage...", end="", flush=True)
+    print("  [ 4/15] Scanning storage...", end="", flush=True)
     disk = get_primary_disk()
     data["storage_type"], data["storage_gb"], data["smart_status"] = get_storage_info(disk)
     data["_disk"] = disk  # internal use for wipe
     print(f" {data['storage_type']} {data['storage_gb']} GB — SMART: {data['smart_status']}")
 
-    print("  [5/8] Checking battery...", end="", flush=True)
+    print("  [ 5/15] Checking battery...", end="", flush=True)
     batt = get_battery_info()
     data["battery_health_pct"] = batt["health_pct"]
     data["battery_charge_pct"] = batt["charge_pct"]
     data["battery_cycles"] = batt["cycles"]
     print(f" Health: {batt['health_pct']}% | Charge: {batt['charge_pct']}% | Cycles: {batt['cycles']}")
 
-    print("  [6/8] Detecting GPU...", end="", flush=True)
+    print("  [ 6/15] Detecting GPU...", end="", flush=True)
     data["gpu"] = get_discrete_gpu()
     print(f" {data['gpu']}")
 
-    print("  [7/8] Detecting display...", end="", flush=True)
+    print("  [ 7/15] Detecting display resolution...", end="", flush=True)
     data["resolution"], data["resolution_class"] = get_screen_resolution()
     print(f" {data['resolution']} ({data['resolution_class']})")
 
-    print("  [8/8] Parsing CPU generation...", end="", flush=True)
+    print("  [ 8/15] Measuring screen size...", end="", flush=True)
+    data["screen_size_in"] = get_screen_size_inches()
+    print(f" {data['screen_size_in']}\"" if data["screen_size_in"] != "N/A" else " N/A")
+
+    print("  [ 9/15] Checking for touchscreen...", end="", flush=True)
+    data["touchscreen"] = get_touchscreen()
+    print(f" {data['touchscreen']}")
+
+    print("  [10/15] Checking fingerprint reader...", end="", flush=True)
+    data["fingerprint_reader"] = get_fingerprint_reader()
+    print(f" {data['fingerprint_reader']}")
+
+    print("  [11/15] Checking backlit keyboard...", end="", flush=True)
+    data["backlit_keyboard"] = get_backlit_keyboard()
+    print(f" {data['backlit_keyboard']}")
+
+    print("  [12/15] Detecting WiFi standard...", end="", flush=True)
+    data["wifi_standard"] = get_wifi_standard()
+    print(f" {data['wifi_standard']}")
+
+    print("  [13/15] Checking Bluetooth...", end="", flush=True)
+    data["bluetooth"] = get_bluetooth()
+    print(f" {data['bluetooth']}")
+
+    print("  [14/15] Checking webcam...", end="", flush=True)
+    data["webcam"] = get_webcam()
+    print(f" {data['webcam']}")
+
+    print("  [15/15] Parsing CPU generation...", end="", flush=True)
     data["_cpu_gen"] = parse_cpu_generation(data["cpu"])
     print(f" Gen {data['_cpu_gen']}" if data["_cpu_gen"] else " Unknown")
 
@@ -519,9 +810,20 @@ def run_interactive_grading() -> dict:
         {"Y": "Yes", "N": "No"},
     )
 
+    color = prompt_choice(
+        "Laptop Color?",
+        {"1": "Black", "2": "Silver", "3": "Gray",
+         "4": "White", "5": "Blue", "6": "Other"},
+    )
+    # Map number keys to actual color names
+    color_map = {"1": "Black", "2": "Silver", "3": "Gray",
+                 "4": "White", "5": "Blue", "6": "Other"}
+    color = color_map.get(color, color)
+
     return {
         "screen_grade": screen_grade,
         "chassis_grade": chassis_grade,
+        "color": color,
         "charger": charger,
     }
 
@@ -580,8 +882,16 @@ def export_to_csv(data: dict, save_dir: str):
         "gpu": data.get("gpu", "None"),
         "resolution": data.get("resolution", "N/A"),
         "resolution_class": data.get("resolution_class", "N/A"),
+        "screen_size_in": data.get("screen_size_in", "N/A"),
+        "touchscreen": data.get("touchscreen", "No"),
+        "fingerprint_reader": data.get("fingerprint_reader", "No"),
+        "backlit_keyboard": data.get("backlit_keyboard", "No"),
+        "wifi_standard": data.get("wifi_standard", "N/A"),
+        "bluetooth": data.get("bluetooth", "No"),
+        "webcam": data.get("webcam", "No"),
         "screen_grade": data.get("screen_grade", ""),
         "chassis_grade": data.get("chassis_grade", ""),
+        "color": data.get("color", ""),
         "charger": data.get("charger", ""),
         "recommendation": data.get("recommendation", ""),
         "status": "audited",
@@ -602,6 +912,15 @@ def export_to_csv(data: dict, save_dir: str):
                         r["battery_health_pct"] = r.pop("battery_pct", "N/A")
                         r.setdefault("battery_charge_pct", "N/A")
                         r.setdefault("battery_cycles", "N/A")
+                    # Migrate v1 → v2: add defaults for new eBay fields
+                    r.setdefault("screen_size_in", "N/A")
+                    r.setdefault("touchscreen", "N/A")
+                    r.setdefault("fingerprint_reader", "N/A")
+                    r.setdefault("backlit_keyboard", "N/A")
+                    r.setdefault("wifi_standard", "N/A")
+                    r.setdefault("bluetooth", "N/A")
+                    r.setdefault("webcam", "N/A")
+                    r.setdefault("color", "")
                     existing_rows.append(r)
         except Exception:
             pass  # corrupted CSV — start fresh
@@ -653,10 +972,11 @@ def export_to_csv(data: dict, save_dir: str):
 
 def print_summary(data: dict):
     """Print a human-readable summary of the audit."""
+    W = 58  # inner width
     print()
-    print("╔" + "═" * 58 + "╗")
-    print("║" + "  AUDIT SUMMARY".center(58) + "║")
-    print("╠" + "═" * 58 + "╣")
+    print("╔" + "═" * W + "╗")
+    print("║" + "  AUDIT SUMMARY v2.0".center(W) + "║")
+    print("╠" + "═" * W + "╣")
     print(f"║  Service Tag:   {data['service_tag']:<40}║")
     print(f"║  Model:         {data['model']:<40}║")
     print(f"║  CPU:           {data['cpu'][:38]:<40}║")
@@ -667,16 +987,29 @@ def print_summary(data: dict):
     batt_str = f"Health: {data.get('battery_health_pct', 'N/A')}% | Cycles: {data.get('battery_cycles', 'N/A')}"
     print(f"║  Battery:       {batt_str:<40}║")
     print(f"║  GPU:           {data['gpu'][:38]:<40}║")
-    res_str = f"{data['resolution']} ({data['resolution_class']})"
+    screen_in = data.get('screen_size_in', 'N/A')
+    res_str = f"{screen_in}\" {data['resolution']} ({data['resolution_class']})"
     print(f"║  Display:       {res_str:<40}║")
-    print("╠" + "═" * 58 + "╣")
+    print("╠" + "═" * W + "╣")
+    print("║" + "  FEATURES".center(W) + "║")
+    print("╠" + "═" * W + "╣")
+    print(f"║  Touchscreen:   {data.get('touchscreen', 'N/A'):<40}║")
+    print(f"║  Fingerprint:   {data.get('fingerprint_reader', 'N/A'):<40}║")
+    print(f"║  Backlit KB:    {data.get('backlit_keyboard', 'N/A'):<40}║")
+    print(f"║  WiFi:          {data.get('wifi_standard', 'N/A'):<40}║")
+    print(f"║  Bluetooth:     {data.get('bluetooth', 'N/A'):<40}║")
+    print(f"║  Webcam:        {data.get('webcam', 'N/A'):<40}║")
+    print("╠" + "═" * W + "╣")
+    print("║" + "  GRADING".center(W) + "║")
+    print("╠" + "═" * W + "╣")
     print(f"║  Screen Grade:  {data['screen_grade']:<40}║")
     print(f"║  Chassis Grade: {data['chassis_grade']:<40}║")
+    print(f"║  Color:         {data.get('color', ''):<40}║")
     print(f"║  Charger:       {data['charger']:<40}║")
-    print("╠" + "═" * 58 + "╣")
+    print("╠" + "═" * W + "╣")
     rec = data["recommendation"]
     print(f"║  >> {rec:<54}║")
-    print("╚" + "═" * 58 + "╝")
+    print("╚" + "═" * W + "╝")
     print()
 
 
@@ -689,8 +1022,9 @@ def main():
     clear_screen()
     print()
     print("  ╔═══════════════════════════════════════════════════╗")
-    print("  ║       LAPTOP AUDITOR  v1.0                       ║")
+    print("  ║       LAPTOP AUDITOR  v2.0                       ║")
     print("  ║       20-Laptop Factory Line Toolkit              ║")
+    print("  ║       + eBay Listing Optimization                 ║")
     print("  ╚═══════════════════════════════════════════════════╝")
     print()
 

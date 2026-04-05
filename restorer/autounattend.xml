@@ -120,6 +120,9 @@
         <AcceptEula>true</AcceptEula>
         <FullName></FullName>
         <Organization></Organization>
+        <ProductKey>
+          <WillShowUI>OnError</WillShowUI>
+        </ProductKey>
       </UserData>
 
     </component>

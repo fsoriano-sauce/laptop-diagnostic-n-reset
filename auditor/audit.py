@@ -30,6 +30,7 @@ CSV_HEADERS = [
     "battery_cycles", "gpu", "resolution",
     "resolution_class", "screen_grade", "chassis_grade",
     "charger", "recommendation",
+    "status", "sale_price", "sale_date", "notes",
 ]
 
 COLORS_ANSI = {
@@ -574,6 +575,10 @@ def export_to_csv(data: dict, save_dir: str):
         "chassis_grade": data.get("chassis_grade", ""),
         "charger": data.get("charger", ""),
         "recommendation": data.get("recommendation", ""),
+        "status": "audited",
+        "sale_price": "",
+        "sale_date": "",
+        "notes": "",
     }
 
     # Read existing rows (if any) and migrate to current headers
@@ -606,8 +611,13 @@ def export_to_csv(data: dict, save_dir: str):
         print(f"\n  ⚠  DUPLICATE: {service_tag} was already audited on {prev_time}")
         answer = input("  Update existing record? [Y/N] > ").strip().upper()
         if answer == "Y":
+            # Preserve manually-entered inventory fields from old record
+            row["status"] = prev.get("status", "audited")
+            row["sale_price"] = prev.get("sale_price", "")
+            row["sale_date"] = prev.get("sale_date", "")
+            row["notes"] = prev.get("notes", "")
             existing_rows[duplicate_idx] = row
-            print("  [✓] Record updated.")
+            print("  [✓] Record updated (inventory fields preserved).")
         else:
             print("  [–] Skipped — keeping original record.")
             return

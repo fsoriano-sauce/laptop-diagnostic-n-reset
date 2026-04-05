@@ -30,20 +30,16 @@ Your audit results accumulate in `audit_master.csv` on the Auditor USB.
 ## What's In This Repo
 
 ```
-├── auditor/
-│   └── audit.py               # Python auditor (stdlib only, runs on SystemRescue)
-├── restorer/
+├── auditor/                   # → Copy contents to Auditor USB root
+│   ├── audit.py               # Python auditor (stdlib only, runs on SystemRescue)
+│   └── autorun                # SystemRescue autorun script (auto-launches audit.py)
+├── restorer/                  # → Copy contents to Restorer USB root
 │   └── autounattend.xml       # Windows 10 Pro unattended answer file
-├── usb_files/
-│   └── autorun                # SystemRescue autorun script (copy to Auditor USB root)
 └── README.md                  # ← You are here
 ```
 
-| Directory | Purpose |
-|-----------|---------|
-| `auditor/` | Source of truth for the audit script |
-| `restorer/` | Source of truth for the Windows answer file |
-| `usb_files/` | Ready-to-copy files for the Auditor USB (autorun script with correct SystemRescue v12 paths) |
+> **Each folder = one USB.** Copy everything inside `auditor/` to the Auditor USB root.
+> Copy everything inside `restorer/` to the Restorer USB root.
 
 ---
 
@@ -68,10 +64,11 @@ Your audit results accumulate in `audit_master.csv` on the Auditor USB.
    - ⚠️ **Skip Rufus's "Windows User Experience" customization** — it doesn't apply to Linux ISOs
    - Wait for completion
 
-3. **Copy files to the USB**
+3. **Copy the `auditor/` folder contents to the USB root**
    - Open the USB drive in File Explorer
-   - Copy `auditor/audit.py` to the **root** of the USB → `X:\audit.py`
-   - Copy `usb_files/autorun` to the **root** of the USB → `X:\autorun`
+   - Copy **both files** from `auditor/` to the **root** of the USB:
+     - `audit.py` → `X:\audit.py`
+     - `autorun` → `X:\autorun`
    - Make sure `autorun` has no `.txt` extension — it must be named exactly `autorun`
 
 4. **Test it**
@@ -80,8 +77,8 @@ Your audit results accumulate in `audit_master.csv` on the Auditor USB.
 
 ### SystemRescue autorun notes
 > SystemRescue v12+ mounts the USB at `/run/archiso/bootmnt/`. The `autorun`
-> script in `usb_files/` is configured for this path. If the script doesn't
-> auto-launch, you can always run it manually:
+> script is configured for this path. If the script doesn't auto-launch,
+> you can always run it manually:
 > ```bash
 > sudo python3 /run/archiso/bootmnt/audit.py
 > ```

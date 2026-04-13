@@ -32,13 +32,22 @@ Your audit results accumulate in `audit_master.csv` on the Auditor USB.
 ## What's In This Repo
 
 ```
-├── auditor/                   # → Copy contents to Auditor USB root
-│   ├── audit.py               # Python auditor v2.0 (stdlib only, runs on SystemRescue)
-│   └── autorun                # SystemRescue autorun script (auto-launches audit.py)
-├── restorer/                  # → Copy contents to Restorer USB root
-│   └── autounattend.xml       # Windows 10 Pro unattended answer file
-├── .gitattributes             # Forces LF line endings for Linux scripts
-└── README.md                  # ← You are here
+├── auditor/                       # → Copy contents to Auditor USB root
+│   ├── audit.py                   # Python auditor v2.0 (stdlib only, runs on SystemRescue)
+│   ├── autorun                    # SystemRescue autorun script (auto-launches audit.py)
+│   ├── audit_master_local.csv     # Local copy of audit data (source of truth for listings)
+│   ├── generate_ebay_drafts.py    # v1 eBay generator (HTML description builder, helpers)
+│   ├── generate_ebay_drafts_v2.py # v2 eBay full listing CSV generator ← PRIMARY SCRIPT
+│   └── verify_listings.py         # Cross-reference audit data against generated CSV
+├── listing-photos/                # Laptop photos organized by service tag
+│   ├── JW3X9S3/                   # 12 photos
+│   ├── 9P81KL3/                   # 13 photos
+│   └── ...                        # (one folder per laptop)
+├── restorer/                      # → Copy contents to Restorer USB root
+│   └── autounattend.xml           # Windows 10 Pro unattended answer file
+├── ebay_listings_upload.csv       # Latest generated eBay upload CSV
+├── .gitattributes                 # Forces LF line endings for Linux scripts
+└── README.md                      # ← You are here
 ```
 
 > **Each folder = one USB.** Copy everything inside `auditor/` to the Auditor USB root.
@@ -249,6 +258,89 @@ Each audited laptop adds one row. Duplicate service tags are detected and prompt
 ### Inventory Tracking
 The `status`, `sale_price`, `sale_date`, and `notes` columns are for manual tracking in Excel/Sheets:
 - `audited` → `listed` → `sold`
+
+---
+
+## eBay Listing Pipeline
+
+After auditing, the listing pipeline generates a fully populated eBay CSV for bulk upload via **Seller Hub → Reports → Upload**.
+
+### Pipeline Overview
+
+```
+audit_master_local.csv → generate_ebay_drafts_v2.py → ebay_listings_upload.csv → eBay Seller Hub Upload
+  (audit data)             (listing generator)          (ready-to-upload CSV)       (bulk upload)
+```
+
+### How to Generate Listings
+
+```bash
+# From the repo root:
+python auditor/generate_ebay_drafts_v2.py auditor/audit_master_local.csv
+```
+
+This produces `ebay_listings_upload.csv` with:
+
+| Feature | Details |
+|---------|--------|
+| **Template** | eBay "Create or Schedule new listings" (full `fx_category_template`) |
+| **Item Specifics** | All `C:` columns auto-populated (Brand, CPU, RAM, GPU, Screen, etc.) |
+| **Photos** | Auto-built from `listing-photos/{service_tag}/` via GitHub raw URLs |
+| **Pricing** | Battery-based tiering with Best Offer (90% auto-accept, 80% minimum) |
+| **Shipping** | USPS Ground Advantage ($14.99) + UPS Ground ($18.99), buyer pays |
+| **Returns** | Not accepted |
+| **Location** | Boca Raton, FL |
+| **Handling** | 3 business days |
+| **Condition** | Seller Refurbished (3000) — mapped from screen/chassis grades |
+
+### Pricing Logic
+
+| Criteria | Base Price | Notes |
+|----------|-----------|-------|
+| Vostro 7620 (12th Gen, RTX 3050 Ti) | $420.99 | Base tier |
+| ... + Battery ≥ 85% | $445.99 | +$25 premium |
+| ... + Battery = 100% | $455.99 | +$35 premium |
+| Vostro 7510 (11th Gen, RTX 3050) | $420.99 | Older gen, no Ti |
+
+### Adding Photos for New Laptops
+
+1. Take 12-15 photos of the laptop (open, closed, ports, keyboard, stickers, bottom)
+2. Upload to iCloud Shared Album named with the service tag
+3. Copy to `listing-photos/{SERVICE_TAG}/`
+4. Commit and push to GitHub (`git add listing-photos/ && git commit && git push`)
+5. Re-run the generator — photo URLs will auto-populate
+
+> **Note:** The first photo in alphabetical filename order becomes the eBay gallery/main image. After uploading, reorder photos in the eBay listing editor by drag-and-drop.
+
+### Upload Steps
+
+1. Go to **Seller Hub → Reports → Upload**
+2. Click **Upload template**
+3. Select `ebay_listings_upload.csv`
+4. Listings go live immediately (`Action=Add`) — photos, specs, and shipping all pre-filled
+5. Reorder photos in each listing as desired
+
+### Verification
+
+```bash
+# Run the verification script to cross-check audit data vs. CSV:
+python auditor/verify_listings.py
+```
+
+This performs 150+ automated checks per batch: field accuracy, photo count matching, iCloud sync verification, and pricing logic validation.
+
+### Architecture Notes
+
+- **`generate_ebay_drafts.py`** (v1) — Contains the HTML description builder (`build_html_description()`), helper functions for CPU/GPU cleaning, and title builder. Still imported by v2.
+- **`generate_ebay_drafts_v2.py`** (v2) — The primary generator. Uses the full eBay template with 67+ columns. Maps audit data to all item specifics, handles pricing tiers, and builds photo URLs from the repo.
+- **Photo hosting** — Photos are served via `raw.githubusercontent.com` from this repo. No external hosting needed.
+- **Template format** — Uses eBay's `fx_category_template_EBAY_US` (the "Create or Schedule new listings" template). The simpler "Create new drafts" template does NOT support item specifics or the `Draft` action in the full template.
+
+### Known Limitations
+
+- **Draft mode** — The full listing template only supports `Action=Add` (live immediately). There is no `Draft` action. Post-upload edits have no negative impact on search ranking or listing date.
+- **Photo ordering** — Photos are included in alphabetical filename order. Manual drag-and-drop reordering in the eBay editor is required for hero shot selection.
+- **API access** — Currently uses CSV bulk upload. Future improvement: eBay Trading API for programmatic listing management.
 
 ---
 

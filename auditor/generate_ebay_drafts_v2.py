@@ -348,7 +348,7 @@ def generate_ebay_csv(input_path: str, output_path: str):
             min_offer = ""
 
         ebay_rows.append({
-            ACTION_HEADER: "Draft",
+            ACTION_HEADER: "Add",
             "CustomLabel": row.get("service_tag", ""),
             "*Category": CATEGORY_ID,
             "StoreCategory": "",

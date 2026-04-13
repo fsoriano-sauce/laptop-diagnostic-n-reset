@@ -28,7 +28,8 @@ from pathlib import Path
 CSV_FILENAME = "audit_master.csv"
 USB_MOUNT_POINT = "/mnt/usb_data"
 CSV_HEADERS = [
-    "timestamp", "service_tag", "model", "cpu", "cores",
+    "timestamp", "service_tag", "express_service_code",
+    "model", "manufacture_year", "cpu", "cores",
     "ram_gb", "ram_type", "storage_type", "storage_gb",
     "smart_status", "battery_health_pct", "battery_charge_pct",
     "battery_cycles", "gpu", "resolution",
@@ -174,6 +175,45 @@ def sync_and_unmount():
 
 def get_service_tag() -> str:
     return run("dmidecode -s system-serial-number") or "N/A"
+
+
+def compute_express_service_code(service_tag: str) -> str:
+    """Convert Dell service tag (base-36) to Express Service Code (base-10)."""
+    if not service_tag or service_tag == "N/A":
+        return "N/A"
+    try:
+        express = 0
+        for c in service_tag.upper():
+            if c.isdigit():
+                val = int(c)
+            elif c.isalpha():
+                val = ord(c) - ord('A') + 10
+            else:
+                return "N/A"
+            express = express * 36 + val
+        return str(express)
+    except Exception:
+        return "N/A"
+
+
+def get_manufacture_year() -> str:
+    """Get manufacture/ship year from BIOS release date via dmidecode."""
+    # Try the BIOS release date first
+    bios_date = run("dmidecode -s bios-release-date")
+    if bios_date:
+        # Format is typically MM/DD/YYYY or YYYY-MM-DD
+        import re
+        m = re.search(r'(20\d{2})', bios_date)
+        if m:
+            return m.group(1)
+    # Fallback: chassis manufacture date
+    chassis_info = run("dmidecode -t chassis")
+    if chassis_info:
+        import re
+        m = re.search(r'(20\d{2})', chassis_info)
+        if m:
+            return m.group(1)
+    return "N/A"
 
 
 def get_model_name() -> str:
@@ -651,8 +691,10 @@ def run_hardware_scan() -> dict:
 
     print("  [ 1/15] Reading system identity...", end="", flush=True)
     data["service_tag"] = get_service_tag()
+    data["express_service_code"] = compute_express_service_code(data["service_tag"])
     data["model"] = get_model_name()
-    print(f" {data['service_tag']} / {data['model']}")
+    data["manufacture_year"] = get_manufacture_year()
+    print(f" {data['service_tag']} / {data['model']} ({data['manufacture_year']})")
 
     print("  [ 2/15] Scanning CPU...", end="", flush=True)
     data["cpu"], data["cores"] = get_cpu_info()
@@ -877,7 +919,9 @@ def export_to_csv(data: dict, save_dir: str):
     row = {
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "service_tag": data.get("service_tag", "N/A"),
+        "express_service_code": data.get("express_service_code", "N/A"),
         "model": data.get("model", "N/A"),
+        "manufacture_year": data.get("manufacture_year", "N/A"),
         "cpu": data.get("cpu", "N/A"),
         "cores": data.get("cores", 0),
         "ram_gb": data.get("ram_gb", 0),
@@ -930,6 +974,9 @@ def export_to_csv(data: dict, save_dir: str):
                     r.setdefault("bluetooth", "N/A")
                     r.setdefault("webcam", "N/A")
                     r.setdefault("color", "")
+                    # Migrate v2 → v3: add express code and manufacture year
+                    r.setdefault("express_service_code", "N/A")
+                    r.setdefault("manufacture_year", "N/A")
                     existing_rows.append(r)
         except Exception:
             pass  # corrupted CSV — start fresh
@@ -987,7 +1034,9 @@ def print_summary(data: dict):
     print("║" + "  AUDIT SUMMARY v2.0".center(W) + "║")
     print("╠" + "═" * W + "╣")
     print(f"║  Service Tag:   {data['service_tag']:<40}║")
+    print(f"║  Express Code:  {data.get('express_service_code', 'N/A'):<40}║")
     print(f"║  Model:         {data['model']:<40}║")
+    print(f"║  Mfg Year:      {data.get('manufacture_year', 'N/A'):<40}║")
     print(f"║  CPU:           {data['cpu'][:38]:<40}║")
     print(f"║  Cores/Threads: {str(data['cores']):<40}║")
     print(f"║  RAM:           {str(data['ram_gb']) + ' GB ' + data['ram_type']:<40}║")

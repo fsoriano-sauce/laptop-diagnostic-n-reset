@@ -218,7 +218,7 @@ def build_html_description(row: dict) -> str:
 </ul>
 </div>
 <div style="margin-top:15px;padding:12px;background:#1a1a2e;color:#a0a0c0;border-radius:0 0 8px 8px;text-align:center;font-size:12px;">
-Professionally audited, securely wiped, and restored. Ships within 1 business day.
+Professionally audited, securely wiped, and restored. Ships within 3 business days.
 </div>
 </div>"""
 
@@ -227,93 +227,112 @@ Professionally audited, securely wiped, and restored. Ships within 1 business da
 
 def estimate_price(row: dict) -> str:
     """
-    Estimate listing price based on specs and condition.
-    This is a starting point — adjust based on Browse API comps when available.
+    Estimate listing price based on eBay sold comps (researched April 2026).
+
+    Market data anchors (median sold, last 90 days):
+      - Vostro 7620, i7-12700H, 16GB DDR5, 512GB, RTX 3050 Ti: $415 median
+        Range: $415 (median) to $479 (excellent+charger) to $549 (eBay Refurb)
+      - Vostro 7510, i7-11800H, 16GB DDR4, 512GB, RTX 3050:    $405 median
+        Range: $350 (poor/no SSD) to $424 (no charger) to $540 (32GB)
+
+    Strategy: Start from model median, adjust for battery, storage, condition.
     """
-    base = 250  # baseline for a business laptop
-
-    # CPU generation premium
+    # ── Model-specific base prices (from eBay sold comps) ──
+    model = row.get("model", "")
     cpu = row.get("cpu", "")
-    if "12th Gen" in cpu or "13th Gen" in cpu or "14th Gen" in cpu:
-        base += 80
-    elif "11th Gen" in cpu:
-        base += 50
-    elif "10th Gen" in cpu:
-        base += 20
-
-    # i7 vs i5
-    if "i7" in cpu:
-        base += 40
-    elif "i5" in cpu:
-        base += 10
-
-    # RAM
-    try:
-        ram = int(row.get("ram_gb", "8"))
-        if ram >= 32:
-            base += 60
-        elif ram >= 16:
-            base += 30
-    except ValueError:
-        pass
-
-    # Storage
-    try:
-        storage = int(row.get("storage_gb", "256"))
-        if storage >= 1000:
-            base += 50
-        elif storage >= 512:
-            base += 20
-    except ValueError:
-        pass
-
-    # GPU premium
     gpu = row.get("gpu", "None")
-    if gpu != "None":
-        if "3050 Ti" in gpu:
-            base += 70
-        elif "3050" in gpu:
-            base += 50
-        elif "3060" in gpu:
-            base += 100
-        elif "3070" in gpu or "3080" in gpu:
-            base += 150
 
-    # DDR5 premium
-    if row.get("ram_type", "") == "DDR5":
-        base += 20
+    if "7620" in model:
+        base = 435  # Slightly above median ($415) for our fresh Windows + charger advantage
+    elif "7510" in model:
+        base = 400  # Slightly below 7620; 11th gen + DDR4
+    elif "7530" in model or "7540" in model:
+        base = 450  # 13th gen Vostros
+    elif "latitude" in model.lower():
+        base = 320  # Business Latitudes sell lower
+    elif "inspiron" in model.lower():
+        base = 300  # Consumer line
+    else:
+        # Fallback: rule-based for unknown models
+        base = 300
+        if "12th Gen" in cpu or "13th Gen" in cpu:
+            base += 60
+        elif "11th Gen" in cpu:
+            base += 40
+        if "i7" in cpu:
+            base += 30
+        elif "i5" in cpu:
+            base += 10
 
-    # Condition penalties
+    # ── GPU adjustment (if not already in model base) ──
+    if gpu == "None" or gpu == "":
+        base -= 50  # No discrete GPU = significant discount
+    elif "3060" in gpu:
+        base += 40  # Above 3050 tier
+    elif "3070" in gpu or "3080" in gpu:
+        base += 80
+
+    # ── Storage premium ──
+    try:
+        storage = int(row.get("storage_gb", "512"))
+        if storage >= 1000:
+            base += 40  # 1TB SSD = +$40 (comps confirm $479-489 for 1TB vs $415 for 512GB)
+        elif storage <= 256:
+            base -= 30
+    except ValueError:
+        pass
+
+    # ── RAM premium (above 16GB) ──
+    try:
+        ram = int(row.get("ram_gb", "16"))
+        if ram >= 32:
+            base += 50  # 32GB comps sell ~$540 vs $415 median
+        elif ram >= 64:
+            base += 80
+        elif ram <= 8:
+            base -= 40
+    except ValueError:
+        pass
+
+    # ── Battery health adjustment (key differentiator for identical models) ──
+    try:
+        batt = int(row.get("battery_health_pct", "85"))
+        if batt >= 95:
+            base += 20  # Premium for near-new battery
+        elif batt >= 85:
+            base += 10  # Above average
+        elif batt >= 75:
+            pass  # Average, no adjustment
+        elif batt >= 65:
+            base -= 15  # Below average
+        elif batt >= 50:
+            base -= 30  # Noticeable degradation
+        else:
+            base -= 50  # Poor battery
+    except ValueError:
+        pass
+
+    # ── Condition grade adjustment ──
     screen = row.get("screen_grade", "A")
     chassis = row.get("chassis_grade", "A")
-    if screen == "B":
-        base -= 20
-    elif screen == "C":
-        base -= 50
-    if chassis == "B":
-        base -= 10
-    elif chassis == "C":
-        base -= 40
+    if screen == "A" and chassis == "A":
+        base += 15  # Mint condition premium
+    elif screen == "B" or chassis == "B":
+        pass  # Minor wear, standard pricing
+    elif screen == "C" or chassis == "C":
+        base -= 25  # Visible damage discount
 
-    # Battery penalty
-    try:
-        batt = int(row.get("battery_health_pct", "100"))
-        if batt < 60:
-            base -= 40
-        elif batt < 70:
-            base -= 20
-        elif batt < 80:
-            base -= 10
-    except ValueError:
-        pass
-
-    # No charger penalty
+    # ── Charger included ──
     if row.get("charger", "Y") != "Y":
-        base -= 15
+        base -= 20  # No charger penalty (comps confirm $20-25 difference)
+
+    # ── Fresh Windows advantage ──
+    # Already baked into base (most comps are as-is or need setup)
 
     # Round to .99
-    price = max(base, 99)
+    price = max(base, 149)
     return f"{price}.99"
+
 
 
 # ─── Main ────────────────────────────────────────────────────────────────────

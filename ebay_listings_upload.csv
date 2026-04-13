@@ -1,0 +1,212 @@
+Info,Version=1.0.0,Template=fx_category_template_EBAY_US
+*Action(SiteID=US|Country=US|Currency=USD|Version=1193|CC=UTF-8),CustomLabel,*Category,StoreCategory,*Title,Subtitle,Relationship,RelationshipDetails,ScheduleTime,*ConditionID,*C:Brand,*C:Screen Size,*C:Processor,C:Model,C:Operating System,C:SSD Capacity,C:Hard Drive Capacity,C:Features,C:Type,C:GPU,C:Storage Type,C:Release Year,C:Color,C:Maximum Resolution,C:Processor Speed,C:MPN,C:Unit Quantity,C:Unit Type,C:Series,C:RAM Size,C:Most Suitable For,C:Graphics Processing Type,C:Connectivity,C:Country of Origin,C:Manufacturer Warranty,C:California Prop 65 Warning,C:Item Height,C:Item Length,C:Item Weight,C:Item Width,PicURL,GalleryType,VideoID,*Description,*Format,*Duration,*StartPrice,BuyItNowPrice,BestOfferEnabled,BestOfferAutoAcceptPrice,MinimumBestOfferPrice,*Quantity,ImmediatePayRequired,*Location,ShippingType,ShippingService-1:Option,ShippingService-1:Cost,ShippingService-2:Option,ShippingService-2:Cost,*DispatchTimeMax,PromotionalShippingDiscount,ShippingDiscountProfileID,*ReturnsAcceptedOption,ReturnsWithinOption,RefundOption,ShippingCostPaidByOption,AdditionalDetails
+Draft,JW3X9S3,177,,"Dell Vostro 7620 15.9"" i7-12700H 15GB RAM 512GB SSD RTX 3050 Ti",,,,,3000,Dell,16 in,Intel Core i7 12th Gen.,Dell Vostro 7620,Windows 11 Pro,512 GB,512 GB,Backlit Keyboard|Bluetooth|Built-in Webcam|Wi-Fi,Notebook/Laptop,NVIDIA GeForce RTX 3050 Ti,SSD (Solid State Drive),2022,Gray,1920 x 1200,2.30 GHz,,,,Vostro,15 GB,Casual Computing,Dedicated Graphics,USB-C|USB 3.0|HDMI|SD Card Slot,,,,,,,,https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/JW3X9S3/010c2f6061e2e3e2374c4fbed81266b85913d2b491.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/JW3X9S3/01118c4937c2defce7f8bd0754855e842b6a604288.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/JW3X9S3/012f9b303d5442a3a6f8051f17916e9f0439218bd4.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/JW3X9S3/014ccf9256129cb36124e449a41d18c8a37d31f1c0.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/JW3X9S3/017c017419ab481a877904b9e614adb2dc455f1b71.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/JW3X9S3/018a8e27c5210e95e5302ec4b8fb29c4688a480079.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/JW3X9S3/018c17cd649599f680c6713fe4963c63052e230a51.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/JW3X9S3/0195f28d1f42a7482e281ae74b2cfef5bef338dabd.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/JW3X9S3/01aca4bd6e102e5c49a224eccb7426e11e5c88faea.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/JW3X9S3/01bb5a0cb447998f3b949fba5fe518813313c052fe.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/JW3X9S3/01ed15794ec5e21163fe30e37b4f6d129ace4f26d9.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/JW3X9S3/01edd06c4bb84b732fc8d1d0eb156f1848dce90f30.jpg,,,"<div style=""max-width:800px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#333;"">
+<div style=""background:#1a1a2e;color:white;padding:20px;border-radius:8px 8px 0 0;text-align:center;"">
+<h1 style=""margin:0;font-size:22px;"">Dell Vostro 7620</h1>
+<p style=""margin:5px 0 0;color:#a0a0c0;font-size:14px;"">Professionally Audited &amp; Restored</p>
+</div>
+<table style=""width:100%;border-collapse:collapse;margin:0;"">
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;width:40%;"">Processor</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">12th Gen Intel(R) Core(TM) i7-12700H</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">RAM</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">15 GB DDR5</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Storage</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">512 GB NVMe</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Graphics</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">NVIDIA Corporation GA107M [GeForce RTX 3050 Ti Mobile] (rev a1)</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Display</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">15.9"" 1920x1200</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Operating System</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">Windows 11 Pro (Fresh Install)</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Connectivity</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">Wi-Fi 6 (802.11ax) &bull; Bluetooth &bull; Webcam &bull; Fingerprint Reader &bull; Backlit Keyboard</td></tr>
+</table>
+<div style=""margin-top:20px;padding:15px;background:#f0fdf4;border-left:4px solid #22c55e;border-radius:0 4px 4px 0;"">
+<h2 style=""margin:0 0 10px;font-size:16px;color:#16a34a;"">&check; Condition Report</h2>
+<table style=""width:100%;font-size:14px;"">
+<tr><td style=""padding:4px 0;""><strong>Screen:</strong></td><td>Excellent</td></tr>
+<tr><td style=""padding:4px 0;""><strong>Chassis:</strong></td><td>Good — minor wear</td></tr>
+<tr><td style=""padding:4px 0;""><strong>Battery Health:</strong></td><td>65%</td></tr>
+<tr><td style=""padding:4px 0;""><strong>SMART Status:</strong></td><td>PASSED</td></tr>
+</table>
+</div>
+<div style=""margin-top:15px;padding:15px;background:#f8f8fc;border-radius:4px;"">
+<h2 style=""margin:0 0 8px;font-size:16px;"">&boxbox; What's Included</h2>
+<ul style=""margin:0;padding-left:20px;font-size:14px;"">
+<li>Dell Vostro 7620 Laptop</li>
+<li>Charger: Yes — OEM charger included</li>
+<li>Fresh Windows 11 Pro installation (no bloatware)</li>
+</ul>
+</div>
+<div style=""margin-top:15px;padding:12px;background:#1a1a2e;color:#a0a0c0;border-radius:0 0 8px 8px;text-align:center;font-size:12px;"">
+Professionally audited, securely wiped, and restored. Ships within 3 business days.
+</div>
+</div>",FixedPrice,GTC,420.99,,1,378.89,336.79,1,true,"Boca Raton, FL",Flat,USPSParcel,14.99,UPSGround,18.99,3,,,ReturnsNotAccepted,,,,
+Draft,9P81KL3,177,,"Dell Vostro 15 7510 15.3"" i7-11800H 15GB RAM 512GB SSD RTX 3050",,,,,3000,Dell,15.3 in,Intel Core i7 11th Gen.,Dell Vostro 15 7510,Windows 11 Pro,512 GB,512 GB,Backlit Keyboard|Bluetooth|Built-in Webcam|Wi-Fi,Notebook/Laptop,NVIDIA GeForce RTX 3050,SSD (Solid State Drive),2021,Gray,1920 x 1080,2.30 GHz,,,,Vostro,15 GB,Casual Computing,Dedicated Graphics,USB-C|USB 3.0|HDMI|SD Card Slot,,,,,,,,https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/9P81KL3/010a9d4e75b657162c5d80ef5ce2e0afd96324609c.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/9P81KL3/010d67092d5fcafc1f5adb12cca51ecb5ce68eb4a5.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/9P81KL3/01123e406b653afdd2e6b8f79f7cb1bd484f1c4202.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/9P81KL3/012f8204af32aa17ca0e5959ca296311fd6cd01961.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/9P81KL3/013c0c7c3879cdd558569c665152788fa194baf972.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/9P81KL3/013cc7d922659a562ff86da294a711ccf6daf31bc8.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/9P81KL3/0149c7c915021be27d1b18554532031798c154b562.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/9P81KL3/0149f622d9261837961b2a90039e02edf797a259ed.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/9P81KL3/014b89c98a3386217a82f5d15e241cf25af7bcfada.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/9P81KL3/0162a5e1cf8977dc7e0dff569a91248bb4147e2b47.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/9P81KL3/017d38964af637494f296fe765c88a369d2c314c23.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/9P81KL3/01a0aa683f6eb9a55f276ad36b0faba4a6a4939e5c.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/9P81KL3/01f3da8bb8d9382eaa0e9b6f7089f9adf6ea710f2d.jpg,,,"<div style=""max-width:800px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#333;"">
+<div style=""background:#1a1a2e;color:white;padding:20px;border-radius:8px 8px 0 0;text-align:center;"">
+<h1 style=""margin:0;font-size:22px;"">Dell Vostro 15 7510</h1>
+<p style=""margin:5px 0 0;color:#a0a0c0;font-size:14px;"">Professionally Audited &amp; Restored</p>
+</div>
+<table style=""width:100%;border-collapse:collapse;margin:0;"">
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;width:40%;"">Processor</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">RAM</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">15 GB DDR4</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Storage</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">512 GB NVMe</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Graphics</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">NVIDIA Corporation GA107M [GeForce RTX 3050 Mobile] (rev a1)</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Display</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">15.3"" 1920x1080</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Operating System</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">Windows 11 Pro (Fresh Install)</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Connectivity</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">Wi-Fi 6 (802.11ax) &bull; Bluetooth &bull; Webcam &bull; Fingerprint Reader &bull; Backlit Keyboard</td></tr>
+</table>
+<div style=""margin-top:20px;padding:15px;background:#f0fdf4;border-left:4px solid #22c55e;border-radius:0 4px 4px 0;"">
+<h2 style=""margin:0 0 10px;font-size:16px;color:#16a34a;"">&check; Condition Report</h2>
+<table style=""width:100%;font-size:14px;"">
+<tr><td style=""padding:4px 0;""><strong>Screen:</strong></td><td>Excellent</td></tr>
+<tr><td style=""padding:4px 0;""><strong>Chassis:</strong></td><td>Good — minor wear</td></tr>
+<tr><td style=""padding:4px 0;""><strong>Battery Health:</strong></td><td>100%</td></tr>
+<tr><td style=""padding:4px 0;""><strong>SMART Status:</strong></td><td>PASSED</td></tr>
+</table>
+</div>
+<div style=""margin-top:15px;padding:15px;background:#f8f8fc;border-radius:4px;"">
+<h2 style=""margin:0 0 8px;font-size:16px;"">&boxbox; What's Included</h2>
+<ul style=""margin:0;padding-left:20px;font-size:14px;"">
+<li>Dell Vostro 15 7510 Laptop</li>
+<li>Charger: Yes — OEM charger included</li>
+<li>Fresh Windows 11 Pro installation (no bloatware)</li>
+</ul>
+</div>
+<div style=""margin-top:15px;padding:12px;background:#1a1a2e;color:#a0a0c0;border-radius:0 0 8px 8px;text-align:center;font-size:12px;"">
+Professionally audited, securely wiped, and restored. Ships within 3 business days.
+</div>
+</div>",FixedPrice,GTC,420.99,,1,378.89,336.79,1,true,"Boca Raton, FL",Flat,USPSParcel,14.99,UPSGround,18.99,3,,,ReturnsNotAccepted,,,,
+Draft,343GCS3,177,,"Dell Vostro 7620 15.9"" i7-12700H 15GB RAM 512GB SSD RTX 3050 Ti",,,,,3000,Dell,16 in,Intel Core i7 12th Gen.,Dell Vostro 7620,Windows 11 Pro,512 GB,512 GB,Backlit Keyboard|Bluetooth|Built-in Webcam|Wi-Fi,Notebook/Laptop,NVIDIA GeForce RTX 3050 Ti,SSD (Solid State Drive),2022,Gray,1920 x 1200,2.30 GHz,,,,Vostro,15 GB,Casual Computing,Dedicated Graphics,USB-C|USB 3.0|HDMI|SD Card Slot,,,,,,,,https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/343GCS3/01068a9739e64b18d58268db7bc2e195a93ba0b0eb.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/343GCS3/010daf49465b40baa05fa2c5865e023db6ab3f146f.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/343GCS3/010e48adc947f40b77e1457763542c88542c9b2e32.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/343GCS3/011ae623f8e33702c5fa909975cb6aaaaa91caa2e2.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/343GCS3/011ec0c1fef2773ea73e2f73f2599058c06b90cf13.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/343GCS3/0123d7fec9863670e20a4b34e5006e47cbb433ecc7.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/343GCS3/014063a84b1a480a513c55f9d956f661b89928bd54.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/343GCS3/0143305d58fef9634f7397d843cada7777ae13906b.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/343GCS3/0162ecd5a6fc93e274a0e116fee60617d8e59c26de.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/343GCS3/019e60a6ff3ab19fbb9f3a6cdd30ad6a396fafd562.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/343GCS3/01a3c1573308cbfe8cc7e6481c11d5a4540d86978e.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/343GCS3/01a4cc6e494122b1b967ae84c783048e6e04ebf589.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/343GCS3/01d1abff8a67c4bd23fa6f6f2c1569e55585212240.jpg,,,"<div style=""max-width:800px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#333;"">
+<div style=""background:#1a1a2e;color:white;padding:20px;border-radius:8px 8px 0 0;text-align:center;"">
+<h1 style=""margin:0;font-size:22px;"">Dell Vostro 7620</h1>
+<p style=""margin:5px 0 0;color:#a0a0c0;font-size:14px;"">Professionally Audited &amp; Restored</p>
+</div>
+<table style=""width:100%;border-collapse:collapse;margin:0;"">
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;width:40%;"">Processor</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">12th Gen Intel(R) Core(TM) i7-12700H</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">RAM</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">15 GB DDR5</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Storage</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">512 GB NVMe</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Graphics</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">NVIDIA Corporation GA107M [GeForce RTX 3050 Ti Mobile] (rev a1)</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Display</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">15.9"" 1920x1200</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Operating System</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">Windows 11 Pro (Fresh Install)</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Connectivity</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">Wi-Fi 6 (802.11ax) &bull; Bluetooth &bull; Webcam &bull; Fingerprint Reader &bull; Backlit Keyboard</td></tr>
+</table>
+<div style=""margin-top:20px;padding:15px;background:#f0fdf4;border-left:4px solid #22c55e;border-radius:0 4px 4px 0;"">
+<h2 style=""margin:0 0 10px;font-size:16px;color:#16a34a;"">&check; Condition Report</h2>
+<table style=""width:100%;font-size:14px;"">
+<tr><td style=""padding:4px 0;""><strong>Screen:</strong></td><td>Excellent</td></tr>
+<tr><td style=""padding:4px 0;""><strong>Chassis:</strong></td><td>Good — minor wear</td></tr>
+<tr><td style=""padding:4px 0;""><strong>Battery Health:</strong></td><td>89%</td></tr>
+<tr><td style=""padding:4px 0;""><strong>SMART Status:</strong></td><td>PASSED</td></tr>
+</table>
+</div>
+<div style=""margin-top:15px;padding:15px;background:#f8f8fc;border-radius:4px;"">
+<h2 style=""margin:0 0 8px;font-size:16px;"">&boxbox; What's Included</h2>
+<ul style=""margin:0;padding-left:20px;font-size:14px;"">
+<li>Dell Vostro 7620 Laptop</li>
+<li>Charger: Yes — OEM charger included</li>
+<li>Fresh Windows 11 Pro installation (no bloatware)</li>
+</ul>
+</div>
+<div style=""margin-top:15px;padding:12px;background:#1a1a2e;color:#a0a0c0;border-radius:0 0 8px 8px;text-align:center;font-size:12px;"">
+Professionally audited, securely wiped, and restored. Ships within 3 business days.
+</div>
+</div>",FixedPrice,GTC,445.99,,1,401.39,356.79,1,true,"Boca Raton, FL",Flat,USPSParcel,14.99,UPSGround,18.99,3,,,ReturnsNotAccepted,,,,
+Draft,977F9S3,177,,"Dell Vostro 7620 15.9"" i7-12700H 15GB RAM 512GB SSD RTX 3050 Ti",,,,,3000,Dell,16 in,Intel Core i7 12th Gen.,Dell Vostro 7620,Windows 11 Pro,512 GB,512 GB,Backlit Keyboard|Bluetooth|Built-in Webcam|Wi-Fi,Notebook/Laptop,NVIDIA GeForce RTX 3050 Ti,SSD (Solid State Drive),2022,Gray,1920 x 1200,2.30 GHz,,,,Vostro,15 GB,Casual Computing,Dedicated Graphics,USB-C|USB 3.0|HDMI|SD Card Slot,,,,,,,,https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/0101d66e7ee6195127249193da9e776495d3ec49f9.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/0117d109215125620aa8d60dd551381b12adf6d8cf.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/018ff7664735d6b6aae1737b3303c109617c59d231.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/0194587b626079d42f365b18cc924d274ca8f253ee.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/019a3e9c92e77a407059fe10012c9d56f43f59f325.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/019de52645c3dbff037fc7de74237bf7b927e72bea.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/01a0cc3198863a494834d217cf8db8849ea3a51c49.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/01b89f39d5ffefb7b01f379bbcfa282941249e2190.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/01b93137168680ca3ac82f13ce7c76774fe19788ca.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/01c80fb86bbb1ea37b0e7191bff688065016649953.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/01caf1f0e2e4ce25899ba533bce54f4c53d0a36d7e.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/01d9b643c2828ca70faae9ef28a5e037070b273339.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/01f619b7762e615156d34bb8a34e724a44f7884a74.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/01f978b7a8627246cd746a9eecb9ed10446b11b6aa.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/977F9S3/01f97a0431e253248c3043598d12556658a166f635.jpg,,,"<div style=""max-width:800px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#333;"">
+<div style=""background:#1a1a2e;color:white;padding:20px;border-radius:8px 8px 0 0;text-align:center;"">
+<h1 style=""margin:0;font-size:22px;"">Dell Vostro 7620</h1>
+<p style=""margin:5px 0 0;color:#a0a0c0;font-size:14px;"">Professionally Audited &amp; Restored</p>
+</div>
+<table style=""width:100%;border-collapse:collapse;margin:0;"">
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;width:40%;"">Processor</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">12th Gen Intel(R) Core(TM) i7-12700H</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">RAM</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">15 GB DDR5</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Storage</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">512 GB NVMe</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Graphics</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">NVIDIA Corporation GA107M [GeForce RTX 3050 Ti Mobile] (rev a1)</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Display</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">15.9"" 1920x1200</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Operating System</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">Windows 11 Pro (Fresh Install)</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Connectivity</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">Wi-Fi 6 (802.11ax) &bull; Bluetooth &bull; Webcam &bull; Fingerprint Reader &bull; Backlit Keyboard</td></tr>
+</table>
+<div style=""margin-top:20px;padding:15px;background:#f0fdf4;border-left:4px solid #22c55e;border-radius:0 4px 4px 0;"">
+<h2 style=""margin:0 0 10px;font-size:16px;color:#16a34a;"">&check; Condition Report</h2>
+<table style=""width:100%;font-size:14px;"">
+<tr><td style=""padding:4px 0;""><strong>Screen:</strong></td><td>Excellent</td></tr>
+<tr><td style=""padding:4px 0;""><strong>Chassis:</strong></td><td>Good — minor wear</td></tr>
+<tr><td style=""padding:4px 0;""><strong>Battery Health:</strong></td><td>69%</td></tr>
+<tr><td style=""padding:4px 0;""><strong>SMART Status:</strong></td><td>PASSED</td></tr>
+</table>
+</div>
+<div style=""margin-top:15px;padding:15px;background:#f8f8fc;border-radius:4px;"">
+<h2 style=""margin:0 0 8px;font-size:16px;"">&boxbox; What's Included</h2>
+<ul style=""margin:0;padding-left:20px;font-size:14px;"">
+<li>Dell Vostro 7620 Laptop</li>
+<li>Charger: Yes — OEM charger included</li>
+<li>Fresh Windows 11 Pro installation (no bloatware)</li>
+</ul>
+</div>
+<div style=""margin-top:15px;padding:12px;background:#1a1a2e;color:#a0a0c0;border-radius:0 0 8px 8px;text-align:center;font-size:12px;"">
+Professionally audited, securely wiped, and restored. Ships within 3 business days.
+</div>
+</div>",FixedPrice,GTC,420.99,,1,378.89,336.79,1,true,"Boca Raton, FL",Flat,USPSParcel,14.99,UPSGround,18.99,3,,,ReturnsNotAccepted,,,,
+Draft,8YR9LS3,177,,"Dell Vostro 7620 15.9"" i7-12700H 15GB RAM 512GB SSD RTX 3050 Ti",,,,,3000,Dell,16 in,Intel Core i7 12th Gen.,Dell Vostro 7620,Windows 11 Pro,512 GB,512 GB,Backlit Keyboard|Bluetooth|Built-in Webcam|Wi-Fi,Notebook/Laptop,NVIDIA GeForce RTX 3050 Ti,SSD (Solid State Drive),2022,Gray,1920 x 1200,2.30 GHz,,,,Vostro,15 GB,Casual Computing,Dedicated Graphics,USB-C|USB 3.0|HDMI|SD Card Slot,,,,,,,,https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/0102eb214b655c9ab30f9709304ec7e53729de7e0e.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/0115874a338e2f6cc14ad232ecae438357d5bb97ba.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/011f5aff29a770d75395c4be28f8d7e25c8736254d.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/0130a1e606eb361cb13969daa70af25b12692f3614.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/0172b87c03e811c7257ec2e5702de52d07f017a454.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/0186cb626c91066abe96b7826bf17eb12956ab9e89.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/018bbf1e15b2e005c65578480c127b2c26c2864348.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/019a6a10b8376d6158ad2a04421be38502c44c7ec5.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/01aec7f7c18ae838ddd3c8078070c560fe96175d11.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/01b5d25aad51930db0d979595b42160483987f68ae.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/01bf3745b1b36de288c1d361c0616325b78afcddd8.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/01d0f3e42716f0ff45e2d27fe30d41f9337ef264ec.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/01e211797ebf6bc6efc98e0c9fa5af3f64b1610fa8.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/01e4a13bda81732396daf0d583bb67e26ffca78273.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/8YR9LS3/01fdde254fd5f0f00e5f99be11653acefb81208e77.jpg,,,"<div style=""max-width:800px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#333;"">
+<div style=""background:#1a1a2e;color:white;padding:20px;border-radius:8px 8px 0 0;text-align:center;"">
+<h1 style=""margin:0;font-size:22px;"">Dell Vostro 7620</h1>
+<p style=""margin:5px 0 0;color:#a0a0c0;font-size:14px;"">Professionally Audited &amp; Restored</p>
+</div>
+<table style=""width:100%;border-collapse:collapse;margin:0;"">
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;width:40%;"">Processor</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">12th Gen Intel(R) Core(TM) i7-12700H</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">RAM</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">15 GB DDR5</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Storage</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">512 GB NVMe</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Graphics</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">NVIDIA Corporation GA107M [GeForce RTX 3050 Ti Mobile] (rev a1)</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Display</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">15.9"" 1920x1200</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Operating System</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">Windows 11 Pro (Fresh Install)</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Connectivity</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">Wi-Fi 6 (802.11ax) &bull; Bluetooth &bull; Webcam &bull; Fingerprint Reader &bull; Backlit Keyboard</td></tr>
+</table>
+<div style=""margin-top:20px;padding:15px;background:#f0fdf4;border-left:4px solid #22c55e;border-radius:0 4px 4px 0;"">
+<h2 style=""margin:0 0 10px;font-size:16px;color:#16a34a;"">&check; Condition Report</h2>
+<table style=""width:100%;font-size:14px;"">
+<tr><td style=""padding:4px 0;""><strong>Screen:</strong></td><td>Excellent</td></tr>
+<tr><td style=""padding:4px 0;""><strong>Chassis:</strong></td><td>Good — minor wear</td></tr>
+<tr><td style=""padding:4px 0;""><strong>Battery Health:</strong></td><td>91%</td></tr>
+<tr><td style=""padding:4px 0;""><strong>SMART Status:</strong></td><td>PASSED</td></tr>
+</table>
+</div>
+<div style=""margin-top:15px;padding:15px;background:#f8f8fc;border-radius:4px;"">
+<h2 style=""margin:0 0 8px;font-size:16px;"">&boxbox; What's Included</h2>
+<ul style=""margin:0;padding-left:20px;font-size:14px;"">
+<li>Dell Vostro 7620 Laptop</li>
+<li>Charger: Yes — OEM charger included</li>
+<li>Fresh Windows 11 Pro installation (no bloatware)</li>
+</ul>
+</div>
+<div style=""margin-top:15px;padding:12px;background:#1a1a2e;color:#a0a0c0;border-radius:0 0 8px 8px;text-align:center;font-size:12px;"">
+Professionally audited, securely wiped, and restored. Ships within 3 business days.
+</div>
+</div>",FixedPrice,GTC,445.99,,1,401.39,356.79,1,true,"Boca Raton, FL",Flat,USPSParcel,14.99,UPSGround,18.99,3,,,ReturnsNotAccepted,,,,
+Draft,2ZR9LS3,177,,"Dell Vostro 7620 15.9"" i7-12700H 15GB RAM 512GB SSD RTX 3050 Ti",,,,,3000,Dell,16 in,Intel Core i7 12th Gen.,Dell Vostro 7620,Windows 11 Pro,512 GB,512 GB,Backlit Keyboard|Bluetooth|Built-in Webcam|Wi-Fi,Notebook/Laptop,NVIDIA GeForce RTX 3050 Ti,SSD (Solid State Drive),2022,Gray,1920 x 1200,2.30 GHz,,,,Vostro,15 GB,Casual Computing,Dedicated Graphics,USB-C|USB 3.0|HDMI|SD Card Slot,,,,,,,,https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/2ZR9LS3/0148b6bdded7b98d95f2852a81699c09aed03f53f6.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/2ZR9LS3/014ba2ca4b4c2d0a846301898b95db14c2ae2f7704.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/2ZR9LS3/016fa0df19b14621c7ced166668769aedf082dc64d.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/2ZR9LS3/0178d642dea7b38a840ff86c940a1023c4d9607ad9.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/2ZR9LS3/0192cc3c1a1b636c70035f0ddb9fab8e986a604d6e.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/2ZR9LS3/01b424c8f31a7f02ea5c91e795f1ff19900ca043da.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/2ZR9LS3/01b7ac285f728b3abe0369638167295ecdf9d78668.jpg|https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos/2ZR9LS3/01da566d32fe898b1bcb1adb7214ac2be4163b253b.jpg,,,"<div style=""max-width:800px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#333;"">
+<div style=""background:#1a1a2e;color:white;padding:20px;border-radius:8px 8px 0 0;text-align:center;"">
+<h1 style=""margin:0;font-size:22px;"">Dell Vostro 7620</h1>
+<p style=""margin:5px 0 0;color:#a0a0c0;font-size:14px;"">Professionally Audited &amp; Restored</p>
+</div>
+<table style=""width:100%;border-collapse:collapse;margin:0;"">
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;width:40%;"">Processor</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">12th Gen Intel(R) Core(TM) i7-12700H</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">RAM</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">15 GB DDR5</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Storage</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">512 GB NVMe</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Graphics</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">NVIDIA Corporation GA107M [GeForce RTX 3050 Ti Mobile] (rev a1)</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Display</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">15.9"" 1920x1200</td></tr>
+<tr><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Operating System</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">Windows 11 Pro (Fresh Install)</td></tr>
+<tr style=""background:#f8f8fc;""><td style=""padding:10px 15px;border-bottom:1px solid #eee;font-weight:bold;"">Connectivity</td><td style=""padding:10px 15px;border-bottom:1px solid #eee;"">Wi-Fi 6 (802.11ax) &bull; Bluetooth &bull; Webcam &bull; Fingerprint Reader &bull; Backlit Keyboard</td></tr>
+</table>
+<div style=""margin-top:20px;padding:15px;background:#f0fdf4;border-left:4px solid #22c55e;border-radius:0 4px 4px 0;"">
+<h2 style=""margin:0 0 10px;font-size:16px;color:#16a34a;"">&check; Condition Report</h2>
+<table style=""width:100%;font-size:14px;"">
+<tr><td style=""padding:4px 0;""><strong>Screen:</strong></td><td>Excellent</td></tr>
+<tr><td style=""padding:4px 0;""><strong>Chassis:</strong></td><td>Good — minor wear</td></tr>
+<tr><td style=""padding:4px 0;""><strong>Battery Health:</strong></td><td>100%</td></tr>
+<tr><td style=""padding:4px 0;""><strong>SMART Status:</strong></td><td>PASSED</td></tr>
+</table>
+</div>
+<div style=""margin-top:15px;padding:15px;background:#f8f8fc;border-radius:4px;"">
+<h2 style=""margin:0 0 8px;font-size:16px;"">&boxbox; What's Included</h2>
+<ul style=""margin:0;padding-left:20px;font-size:14px;"">
+<li>Dell Vostro 7620 Laptop</li>
+<li>Charger: Yes — OEM charger included</li>
+<li>Fresh Windows 11 Pro installation (no bloatware)</li>
+</ul>
+</div>
+<div style=""margin-top:15px;padding:12px;background:#1a1a2e;color:#a0a0c0;border-radius:0 0 8px 8px;text-align:center;font-size:12px;"">
+Professionally audited, securely wiped, and restored. Ships within 3 business days.
+</div>
+</div>",FixedPrice,GTC,455.99,,1,410.39,364.79,1,true,"Boca Raton, FL",Flat,USPSParcel,14.99,UPSGround,18.99,3,,,ReturnsNotAccepted,,,,

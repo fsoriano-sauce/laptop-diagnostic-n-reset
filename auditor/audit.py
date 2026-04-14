@@ -252,21 +252,48 @@ def get_ram_type() -> str:
     return "N/A"
 
 
+def try_load_vmd_module():
+    """
+    Attempt to load the Intel VMD (Volume Management Device) kernel module.
+    On Dell laptops with Intel RST enabled, the NVMe SSD is hidden behind
+    a VMD/RAID controller. Loading 'vmd' exposes the NVMe as /dev/nvme*.
+    Also tries 'nvme' module as a fallback.
+    """
+    for module in ["vmd", "nvme", "nvme_core"]:
+        ret = os.system(f"modprobe {module} 2>/dev/null")
+        if ret == 0:
+            time.sleep(1)  # give kernel time to enumerate devices
+
+
 def get_primary_disk() -> str:
     """
     Return the primary internal disk device (e.g. /dev/nvme0n1 or /dev/sda).
     Skips the boot USB and removable devices.
+    Prefers the LARGEST non-removable disk to avoid picking up small
+    Optane/eMMC cache modules instead of the main SSD.
     """
     boot_usb = find_boot_usb_partition()
     # Strip partition number to get parent device
     boot_parent = re.sub(r"p?\d+$", "", boot_usb) if boot_usb else ""
 
-    out = run("lsblk -dnpo NAME,TYPE,RM")
+    # Collect all non-removable, non-USB disks with their sizes
+    candidates = []
+    out = run("lsblk -dnpo NAME,TYPE,RM,SIZE --bytes")
     for line in out.splitlines():
         cols = line.split()
-        if len(cols) >= 3 and cols[1] == "disk" and cols[2] == "0":
+        if len(cols) >= 4 and cols[1] == "disk" and cols[2] == "0":
             if cols[0] != boot_parent:
-                return cols[0]
+                try:
+                    size = int(cols[3])
+                except ValueError:
+                    size = 0
+                candidates.append((cols[0], size))
+
+    # Pick the LARGEST disk (avoids Optane/eMMC cache modules)
+    if candidates:
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        return candidates[0][0]
+
     # Fallback: just pick nvme0n1 or sda
     if os.path.exists("/dev/nvme0n1"):
         return "/dev/nvme0n1"
@@ -290,6 +317,29 @@ def get_storage_info(disk: str) -> tuple:
     except ValueError:
         capacity_gb = 0
 
+    # Sanity check: if drive is suspiciously small (<64GB), it's likely
+    # an Intel Optane cache module or eMMC, not the primary SSD.
+    # Try loading VMD module and re-scanning.
+    if capacity_gb < 64:
+        print(f"\n    [!] WARNING: Detected {capacity_gb}GB {stor_type} — too small for primary drive.")
+        print(f"        Attempting Intel RST/VMD module load...")
+        try_load_vmd_module()
+        # Re-scan for the real drive
+        new_disk = get_primary_disk()
+        if new_disk and new_disk != disk:
+            print(f"        Found new disk: {new_disk}")
+            disk = new_disk
+            stor_type = "NVMe" if "nvme" in disk else "SATA"
+            size_bytes = run(f"lsblk -bdn -o SIZE {disk}")
+            try:
+                capacity_gb = round(int(size_bytes) / 1_000_000_000)
+            except ValueError:
+                capacity_gb = 0
+            print(f"        Updated: {stor_type} {capacity_gb}GB")
+        else:
+            print(f"        No additional drives found after VMD load.")
+            print(f"        This may be an Optane/eMMC module. Check BIOS for RST mode.")
+
     # SMART health
     smart_out = run(f"smartctl -H {disk}")
     if "PASSED" in smart_out:
@@ -297,7 +347,14 @@ def get_storage_info(disk: str) -> tuple:
     elif "FAILED" in smart_out:
         smart = "FAILED"
     else:
-        smart = "N/A"
+        # Try smartctl with NVMe-specific flag
+        smart_out = run(f"smartctl -H -d nvme {disk}")
+        if "PASSED" in smart_out:
+            smart = "PASSED"
+        elif "FAILED" in smart_out:
+            smart = "FAILED"
+        else:
+            smart = "N/A"
 
     return stor_type, capacity_gb, smart
 
@@ -899,12 +956,15 @@ def compute_recommendation(data: dict) -> str:
     # Decision tree (order matters)
     if smart == "FAILED" or screen == "C" or chassis == "C":
         return "PARTS/REPAIR"
+    # Battery check BEFORE GPU — a dead battery affects value regardless of GPU
+    if batt_health < 60:
+        if gpu != "None":
+            return "HIGH VALUE — BAD BATTERY (Discount)"
+        return "Bad Battery (Discount)"
     if gpu != "None":
         return "HIGH VALUE (Gaming/Creator)"
     if cpu_gen >= 8 and batt_health > 65:
         return "Standard Resale"
-    if batt_health < 60:
-        return "Bad Battery (Discount)"
     return "Standard Resale"
 
 

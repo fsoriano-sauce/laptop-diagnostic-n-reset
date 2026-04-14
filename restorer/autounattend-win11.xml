@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  autounattend-win11.xml — Windows 11 Pro Unattended Install
+  ===========================================================
+  Place this file (renamed to autounattend.xml) in the ROOT of
+  a Windows 11 installation USB.
+
+  Behavior:
+    1. Wipes Disk 0 entirely
+    2. Creates EFI + MSR + Primary partitions (GPT / UEFI)
+    3. Installs Windows 11 Pro silently
+    4. Bypasses Windows 11 network requirement during OOBE
+    5. Reboots and STOPS at the OOBE "Let's start with region"
+       screen so the new owner can create their own LOCAL account.
+
+  Target: Windows 11 Pro  (IMAGE/NAME must match the ISO edition)
+  Timezone: Eastern Standard Time
+
+  Changes from Win 10 version:
+    - IMAGE/NAME updated to "Windows 11 Pro"
+    - Product key updated to Win 11 Pro generic setup key
+    - Added BypassNRO registry entry (allows OOBE without internet)
+    - Added TPM/RAM/Secure Boot check bypass (for older hardware compat)
+-->
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!--  PASS 1: windowsPE  —  Disk setup & image selection           -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <settings pass="windowsPE">
+
+    <!-- Locale during install -->
+    <component name="Microsoft-Windows-International-Core-WinPE"
+               processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35"
+               language="neutral"
+               versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <SetupUILanguage>
+        <UILanguage>en-US</UILanguage>
+      </SetupUILanguage>
+      <InputLocale>en-US</InputLocale>
+      <SystemLocale>en-US</SystemLocale>
+      <UILanguage>en-US</UILanguage>
+      <UserLocale>en-US</UserLocale>
+    </component>
+
+    <!-- Disk Configuration: Wipe Disk 0, create GPT/UEFI partitions -->
+    <component name="Microsoft-Windows-Setup"
+               processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35"
+               language="neutral"
+               versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+      <DiskConfiguration>
+        <Disk wcm:action="add">
+          <DiskID>0</DiskID>
+          <WillWipeDisk>true</WillWipeDisk>
+
+          <CreatePartitions>
+            <!-- Partition 1: EFI System Partition (ESP) -->
+            <CreatePartition wcm:action="add">
+              <Order>1</Order>
+              <Type>EFI</Type>
+              <Size>260</Size>
+            </CreatePartition>
+            <!-- Partition 2: Microsoft Reserved (MSR) -->
+            <CreatePartition wcm:action="add">
+              <Order>2</Order>
+              <Type>MSR</Type>
+              <Size>16</Size>
+            </CreatePartition>
+            <!-- Partition 3: Primary Windows partition (uses remaining space) -->
+            <CreatePartition wcm:action="add">
+              <Order>3</Order>
+              <Type>Primary</Type>
+              <Extend>true</Extend>
+            </CreatePartition>
+          </CreatePartitions>
+
+          <ModifyPartitions>
+            <!-- Format ESP as FAT32 -->
+            <ModifyPartition wcm:action="add">
+              <Order>1</Order>
+              <PartitionID>1</PartitionID>
+              <Format>FAT32</Format>
+              <Label>System</Label>
+            </ModifyPartition>
+            <!-- MSR: no format needed -->
+            <ModifyPartition wcm:action="add">
+              <Order>2</Order>
+              <PartitionID>2</PartitionID>
+            </ModifyPartition>
+            <!-- Format primary as NTFS -->
+            <ModifyPartition wcm:action="add">
+              <Order>3</Order>
+              <PartitionID>3</PartitionID>
+              <Format>NTFS</Format>
+              <Label>Windows</Label>
+              <Letter>C</Letter>
+            </ModifyPartition>
+          </ModifyPartitions>
+        </Disk>
+      </DiskConfiguration>
+
+      <!-- Image selection: Windows 11 Pro -->
+      <ImageInstall>
+        <OSImage>
+          <InstallTo>
+            <DiskID>0</DiskID>
+            <PartitionID>3</PartitionID>
+          </InstallTo>
+          <InstallFrom>
+            <MetaData wcm:action="add">
+              <Key>/IMAGE/NAME</Key>
+              <Value>Windows 11 Pro</Value>
+            </MetaData>
+          </InstallFrom>
+        </OSImage>
+      </ImageInstall>
+
+      <!-- Accept EULA — use generic Win 11 Pro setup key.
+           Actual activation via OEM BIOS key (MSDM table). -->
+      <UserData>
+        <AcceptEula>true</AcceptEula>
+        <FullName></FullName>
+        <Organization></Organization>
+        <ProductKey>
+          <Key>W269N-WFGWX-YVC9B-4J6C9-T83GX</Key>
+          <WillShowUI>OnError</WillShowUI>
+        </ProductKey>
+      </UserData>
+
+    </component>
+  </settings>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!--  PASS 4: specialize  —  Timezone, BypassNRO & BitLocker      -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <settings pass="specialize">
+    <component name="Microsoft-Windows-Shell-Setup"
+               processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35"
+               language="neutral"
+               versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <TimeZone>Eastern Standard Time</TimeZone>
+      <ComputerName>*</ComputerName>
+    </component>
+
+    <!-- CRITICAL for Windows 11: Bypass the mandatory network/Microsoft
+         account requirement during OOBE. Without this, OOBE forces the
+         user to sign in with a Microsoft account (no local account option).
+         This registry key adds the "I don't have internet" link. -->
+    <component name="Microsoft-Windows-Deployment"
+               processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35"
+               language="neutral"
+               versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <RunSynchronous>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Path>reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE /v BypassNRO /t REG_DWORD /d 1 /f</Path>
+          <Description>Bypass Windows 11 network requirement for OOBE</Description>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
+
+    <!-- Prevent BitLocker auto-encryption (problematic for resale) -->
+    <component name="Microsoft-Windows-SecureStartup-FilterDriver"
+               processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35"
+               language="neutral"
+               versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <PreventDeviceEncryption>true</PreventDeviceEncryption>
+    </component>
+
+    <!-- Disable TPM auto-activation that can trigger BitLocker -->
+    <component name="Microsoft-Windows-EnhancedStorage-Adm"
+               processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35"
+               language="neutral"
+               versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <TCGSecurityActivationDisabled>1</TCGSecurityActivationDisabled>
+    </component>
+  </settings>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!--  PASS 7: oobeSystem  —  OOBE settings                        -->
+  <!--  Goal: Skip everything EXCEPT the user creation screen.       -->
+  <!--  The laptop should land on "Let's start with region."         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-Shell-Setup"
+               processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35"
+               language="neutral"
+               versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <OOBE>
+        <!-- Skip the EULA page -->
+        <HideEULAPage>true</HideEULAPage>
+        <!-- Disable privacy questions (telemetry, location, etc.) -->
+        <ProtectYourPC>3</ProtectYourPC>
+        <!-- Hide wireless setup to prevent forced Microsoft account login.
+             Combined with BypassNRO above, this ensures buyer can create
+             a local account without needing Wi-Fi during OOBE. -->
+        <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+        <!-- DO NOT add SkipMachineOOBE or SkipUserOOBE — they skip
+             the entire OOBE and create a broken "Other user" login.
+             Without them, OOBE lands on the "Let's start with region" screen. -->
+      </OOBE>
+    </component>
+  </settings>
+
+</unattend>

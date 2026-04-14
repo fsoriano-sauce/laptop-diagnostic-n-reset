@@ -254,109 +254,131 @@ def get_ram_type() -> str:
 
 def try_unlock_rst_storage():
     """
-    Comprehensive attempt to expose NVMe drives hidden behind Intel RST.
+    Expose NVMe drives hidden behind Intel RST RAID mode.
 
-    On Dell laptops, BIOS can hide the NVMe behind:
-      - VMD controller (11th/12th gen Intel) → solved by 'vmd' module
-      - RST fakeraid (10th gen Intel)        → solved by 'dmraid' or 'mdadm'
+    Dell laptops (especially Vostro 7500 10th gen) hide the NVMe SSD
+    behind Intel RST in RAID mode. The NVMe controller uses PCI class
+    0104 (RAID) instead of 0106 (AHCI), so Linux can't see the drive.
 
-    This function tries multiple methods in order of reliability:
-      1. Load kernel modules (vmd, nvme, dm-raid)
-      2. dmraid — activates Intel IMSM fakeraid → /dev/mapper/isw_*
-      3. mdadm  — assembles Intel IMSM metadata → /dev/md*
-      4. nvme list — direct NVMe enumeration after module load
+    Strategy (in order):
+      1. PCI rebind: Find Intel RAID controller, unbind, rebind as AHCI
+      2. Load NVMe/VMD modules and rescan PCI bus
+      3. Try dmraid for Intel IMSM fakeraid
+      4. Try mdadm for RAID metadata
+      5. Check nvme list and smartctl
+      6. Scan /sys/class/block for any hidden large devices
 
-    Returns the device path if a new disk is found, else None.
+    Returns the device path if found, else None.
     """
     import glob
 
-    # Step 1: Load all relevant kernel modules
-    modules = ["vmd", "nvme", "nvme_core", "dm_mod", "dm_raid", "md_mod", "raid1", "raid0"]
-    for module in modules:
-        os.system(f"modprobe {module} 2>/dev/null")
-    time.sleep(2)  # give kernel time to enumerate
+    def _find_large(devices):
+        """Return first device > 64GB from a list of paths."""
+        for dev in devices:
+            if not os.path.exists(dev) or os.path.isdir(dev):
+                continue
+            out = run(f"blockdev --getsize64 {dev} 2>/dev/null")
+            try:
+                if int(out.strip()) > 64_000_000_000:
+                    return dev
+            except ValueError:
+                continue
+        return None
 
-    # Step 2: Try dmraid — handles Intel RST "fakeraid" (IMSM format)
-    # This is the most reliable method for 10th gen Intel RST
+    # Step 1: PCI Rebind (Intel RST RAID -> AHCI)
+    print("        Step 1: Looking for Intel RST RAID controller...")
+    lspci_out = run("lspci -nn 2>/dev/null")
+    rst_bdf = None
+    for line in lspci_out.splitlines():
+        if "8086" in line and ("RAID" in line.upper() or "[0104]" in line):
+            rst_bdf = line.split()[0]
+            print(f"        Found: {rst_bdf} - {line.strip()}")
+            break
+
+    if rst_bdf:
+        pci = f"0000:{rst_bdf}"
+        print(f"        Rebinding {pci} from RAID to AHCI...")
+        os.system(f"echo '{pci}' > /sys/bus/pci/devices/{pci}/driver/unbind 2>/dev/null")
+        time.sleep(1)
+        os.system(f"echo '{pci}' > /sys/bus/pci/drivers/ahci/bind 2>/dev/null")
+        time.sleep(2)
+        os.system("echo 1 > /sys/bus/pci/rescan 2>/dev/null")
+        time.sleep(2)
+        r = _find_large(glob.glob("/dev/nvme*n1") + [f"/dev/sd{c}" for c in "abcdefgh"])
+        if r:
+            print(f"        SUCCESS via PCI rebind: {r}")
+            return r
+
+    # Step 2: Load NVMe/VMD modules (minimal set to avoid crashes)
+    print("        Step 2: Loading NVMe/VMD modules...")
+    for mod in ["nvme_core", "nvme", "vmd"]:
+        os.system(f"modprobe {mod} 2>/dev/null")
+    time.sleep(2)
+    os.system("echo 1 > /sys/bus/pci/rescan 2>/dev/null")
+    time.sleep(1)
+    r = _find_large(glob.glob("/dev/nvme*n1"))
+    if r:
+        print(f"        SUCCESS via module load: {r}")
+        return r
+
+    # Step 3: dmraid (Intel IMSM fakeraid)
+    print("        Step 3: Trying dmraid...")
+    os.system("modprobe dm_mod 2>/dev/null")
     os.system("dmraid -a y 2>/dev/null")
     time.sleep(1)
-    # Check for Intel Software RAID mapped devices
-    isw_devices = glob.glob("/dev/mapper/isw_*")
-    # Filter out partition devices — we want the whole disk
-    isw_disks = [d for d in isw_devices if not re.search(r'p?\d+$', d) or d.endswith('_0')]
-    if isw_disks:
-        # Pick the largest one
-        best, best_size = None, 0
-        for dev in isw_disks:
-            size_out = run(f"blockdev --getsize64 {dev} 2>/dev/null")
-            try:
-                sz = int(size_out.strip())
-                if sz > best_size:
-                    best, best_size = dev, sz
-            except ValueError:
-                continue
-        if best and best_size > 64_000_000_000:  # > 64GB
-            return best
+    mapped = [d for d in glob.glob("/dev/mapper/*") if d != "/dev/mapper/control"]
+    r = _find_large(mapped)
+    if r:
+        print(f"        SUCCESS via dmraid: {r}")
+        return r
 
-    # Also check any /dev/mapper device that's large enough
-    mapper_devices = glob.glob("/dev/mapper/*")
-    for dev in mapper_devices:
-        if dev == "/dev/mapper/control":
-            continue
-        size_out = run(f"blockdev --getsize64 {dev} 2>/dev/null")
-        try:
-            sz = int(size_out.strip())
-            if sz > 64_000_000_000:
-                return dev
-        except ValueError:
-            continue
-
-    # Step 3: Try mdadm — handles IMSM RAID metadata
+    # Step 4: mdadm
+    print("        Step 4: Trying mdadm...")
+    os.system("modprobe md_mod 2>/dev/null")
     os.system("mdadm --assemble --scan 2>/dev/null")
     time.sleep(1)
-    md_devices = glob.glob("/dev/md*")
-    for dev in md_devices:
-        if os.path.isdir(dev):
-            continue  # skip /dev/md/ directory
-        size_out = run(f"blockdev --getsize64 {dev} 2>/dev/null")
-        try:
-            sz = int(size_out.strip())
-            if sz > 64_000_000_000:
-                return dev
-        except ValueError:
-            continue
+    r = _find_large(glob.glob("/dev/md*"))
+    if r:
+        print(f"        SUCCESS via mdadm: {r}")
+        return r
 
-    # Step 4: Check if nvme list finds anything new
-    nvme_out = run("nvme list 2>/dev/null")
-    for line in nvme_out.splitlines():
+    # Step 5: nvme CLI + smartctl
+    print("        Step 5: Scanning nvme/smartctl...")
+    for line in run("nvme list 2>/dev/null").splitlines():
         m = re.search(r"(/dev/nvme\d+n\d+)", line)
         if m:
-            dev = m.group(1)
-            size_out = run(f"blockdev --getsize64 {dev} 2>/dev/null")
-            try:
-                sz = int(size_out.strip())
-                if sz > 64_000_000_000:
-                    return dev
-            except ValueError:
-                continue
+            r = _find_large([m.group(1)])
+            if r:
+                print(f"        SUCCESS via nvme list: {r}")
+                return r
 
-    # Step 5: smartctl --scan can sometimes find devices behind controllers
-    smart_scan = run("smartctl --scan 2>/dev/null")
-    for line in smart_scan.splitlines():
+    for line in run("smartctl --scan 2>/dev/null").splitlines():
         m = re.search(r"(/dev/\S+)", line)
-        if m:
-            dev = m.group(1)
-            # Skip known small / boot devices
-            if "loop" in dev or "ram" in dev:
-                continue
-            size_out = run(f"blockdev --getsize64 {dev} 2>/dev/null")
-            try:
-                sz = int(size_out.strip())
-                if sz > 64_000_000_000:
-                    return dev
-            except ValueError:
-                continue
+        if m and "loop" not in m.group(1) and "ram" not in m.group(1):
+            r = _find_large([m.group(1)])
+            if r:
+                print(f"        SUCCESS via smartctl: {r}")
+                return r
 
+    # Step 6: Scan /sys/class/block for ANY large hidden devices
+    print("        Step 6: Scanning /sys/class/block...")
+    blk = "/sys/class/block"
+    if os.path.isdir(blk):
+        for name in os.listdir(blk):
+            sz_file = f"{blk}/{name}/size"
+            if os.path.exists(sz_file):
+                try:
+                    with open(sz_file) as f:
+                        sz = int(f.read().strip()) * 512
+                    if sz > 64_000_000_000:
+                        dev = f"/dev/{name}"
+                        if os.path.exists(dev):
+                            print(f"        Found large block device: {dev} ({sz // 1_000_000_000}GB)")
+                            return dev
+                except (ValueError, IOError):
+                    continue
+
+    print("        All 6 methods exhausted.")
     return None
 
 

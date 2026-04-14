@@ -252,17 +252,112 @@ def get_ram_type() -> str:
     return "N/A"
 
 
-def try_load_vmd_module():
+def try_unlock_rst_storage():
     """
-    Attempt to load the Intel VMD (Volume Management Device) kernel module.
-    On Dell laptops with Intel RST enabled, the NVMe SSD is hidden behind
-    a VMD/RAID controller. Loading 'vmd' exposes the NVMe as /dev/nvme*.
-    Also tries 'nvme' module as a fallback.
+    Comprehensive attempt to expose NVMe drives hidden behind Intel RST.
+
+    On Dell laptops, BIOS can hide the NVMe behind:
+      - VMD controller (11th/12th gen Intel) → solved by 'vmd' module
+      - RST fakeraid (10th gen Intel)        → solved by 'dmraid' or 'mdadm'
+
+    This function tries multiple methods in order of reliability:
+      1. Load kernel modules (vmd, nvme, dm-raid)
+      2. dmraid — activates Intel IMSM fakeraid → /dev/mapper/isw_*
+      3. mdadm  — assembles Intel IMSM metadata → /dev/md*
+      4. nvme list — direct NVMe enumeration after module load
+
+    Returns the device path if a new disk is found, else None.
     """
-    for module in ["vmd", "nvme", "nvme_core"]:
-        ret = os.system(f"modprobe {module} 2>/dev/null")
-        if ret == 0:
-            time.sleep(1)  # give kernel time to enumerate devices
+    import glob
+
+    # Step 1: Load all relevant kernel modules
+    modules = ["vmd", "nvme", "nvme_core", "dm_mod", "dm_raid", "md_mod", "raid1", "raid0"]
+    for module in modules:
+        os.system(f"modprobe {module} 2>/dev/null")
+    time.sleep(2)  # give kernel time to enumerate
+
+    # Step 2: Try dmraid — handles Intel RST "fakeraid" (IMSM format)
+    # This is the most reliable method for 10th gen Intel RST
+    os.system("dmraid -a y 2>/dev/null")
+    time.sleep(1)
+    # Check for Intel Software RAID mapped devices
+    isw_devices = glob.glob("/dev/mapper/isw_*")
+    # Filter out partition devices — we want the whole disk
+    isw_disks = [d for d in isw_devices if not re.search(r'p?\d+$', d) or d.endswith('_0')]
+    if isw_disks:
+        # Pick the largest one
+        best, best_size = None, 0
+        for dev in isw_disks:
+            size_out = run(f"blockdev --getsize64 {dev} 2>/dev/null")
+            try:
+                sz = int(size_out.strip())
+                if sz > best_size:
+                    best, best_size = dev, sz
+            except ValueError:
+                continue
+        if best and best_size > 64_000_000_000:  # > 64GB
+            return best
+
+    # Also check any /dev/mapper device that's large enough
+    mapper_devices = glob.glob("/dev/mapper/*")
+    for dev in mapper_devices:
+        if dev == "/dev/mapper/control":
+            continue
+        size_out = run(f"blockdev --getsize64 {dev} 2>/dev/null")
+        try:
+            sz = int(size_out.strip())
+            if sz > 64_000_000_000:
+                return dev
+        except ValueError:
+            continue
+
+    # Step 3: Try mdadm — handles IMSM RAID metadata
+    os.system("mdadm --assemble --scan 2>/dev/null")
+    time.sleep(1)
+    md_devices = glob.glob("/dev/md*")
+    for dev in md_devices:
+        if os.path.isdir(dev):
+            continue  # skip /dev/md/ directory
+        size_out = run(f"blockdev --getsize64 {dev} 2>/dev/null")
+        try:
+            sz = int(size_out.strip())
+            if sz > 64_000_000_000:
+                return dev
+        except ValueError:
+            continue
+
+    # Step 4: Check if nvme list finds anything new
+    nvme_out = run("nvme list 2>/dev/null")
+    for line in nvme_out.splitlines():
+        m = re.search(r"(/dev/nvme\d+n\d+)", line)
+        if m:
+            dev = m.group(1)
+            size_out = run(f"blockdev --getsize64 {dev} 2>/dev/null")
+            try:
+                sz = int(size_out.strip())
+                if sz > 64_000_000_000:
+                    return dev
+            except ValueError:
+                continue
+
+    # Step 5: smartctl --scan can sometimes find devices behind controllers
+    smart_scan = run("smartctl --scan 2>/dev/null")
+    for line in smart_scan.splitlines():
+        m = re.search(r"(/dev/\S+)", line)
+        if m:
+            dev = m.group(1)
+            # Skip known small / boot devices
+            if "loop" in dev or "ram" in dev:
+                continue
+            size_out = run(f"blockdev --getsize64 {dev} 2>/dev/null")
+            try:
+                sz = int(size_out.strip())
+                if sz > 64_000_000_000:
+                    return dev
+            except ValueError:
+                continue
+
+    return None
 
 
 def get_primary_disk() -> str:
@@ -319,30 +414,45 @@ def get_storage_info(disk: str) -> tuple:
 
     # Sanity check: if drive is suspiciously small (<64GB), it's likely
     # an Intel Optane cache module or eMMC, not the primary SSD.
-    # Try loading VMD module and re-scanning.
+    # Try comprehensive RST/fakeraid unlock methods.
     if capacity_gb < 64:
-        print(f"\n    [!] WARNING: Detected {capacity_gb}GB {stor_type} — too small for primary drive.")
-        print(f"        Attempting Intel RST/VMD module load...")
-        try_load_vmd_module()
-        # Re-scan for the real drive
-        new_disk = get_primary_disk()
-        if new_disk and new_disk != disk:
-            print(f"        Found new disk: {new_disk}")
-            disk = new_disk
+        print(f"\n    [!] WARNING: Detected {capacity_gb}GB {stor_type} - too small for primary drive.")
+        print(f"        Attempting Intel RST/VMD/fakeraid unlock (5 methods)...")
+        rst_disk = try_unlock_rst_storage()
+        if rst_disk:
+            print(f"        SUCCESS: Found real disk at {rst_disk}")
+            disk = rst_disk
             stor_type = "NVMe" if "nvme" in disk else "SATA"
-            size_bytes = run(f"lsblk -bdn -o SIZE {disk}")
+            # For mapped RAID devices, use blockdev instead of lsblk
+            size_bytes = run(f"blockdev --getsize64 {disk} 2>/dev/null")
+            if not size_bytes.strip():
+                size_bytes = run(f"lsblk -bdn -o SIZE {disk}")
             try:
-                capacity_gb = round(int(size_bytes) / 1_000_000_000)
+                capacity_gb = round(int(size_bytes.strip()) / 1_000_000_000)
             except ValueError:
                 capacity_gb = 0
             print(f"        Updated: {stor_type} {capacity_gb}GB")
         else:
-            print(f"        No additional drives found after VMD load.")
-            print(f"        BIOS has Intel RST in RAID mode — NVMe is hidden.")
+            # Also try re-scanning lsblk (modules may have exposed new devices)
+            new_disk = get_primary_disk()
+            if new_disk and new_disk != disk:
+                print(f"        Found new disk via rescan: {new_disk}")
+                disk = new_disk
+                stor_type = "NVMe" if "nvme" in disk else "SATA"
+                size_bytes = run(f"lsblk -bdn -o SIZE {disk}")
+                try:
+                    capacity_gb = round(int(size_bytes) / 1_000_000_000)
+                except ValueError:
+                    capacity_gb = 0
+                print(f"        Updated: {stor_type} {capacity_gb}GB")
+
+        # If STILL too small after all attempts, fall back to manual entry
+        if capacity_gb < 64:
+            print(f"        All automated methods failed.")
+            print(f"        BIOS Intel RST RAID mode is hiding the NVMe.")
             print(f"")
             print(f"    ┌─────────────────────────────────────────────────┐")
             print(f"    │  MANUAL STORAGE ENTRY REQUIRED                  │")
-            print(f"    │  The primary SSD is hidden behind Intel RST.    │")
             print(f"    │  Check the laptop's bottom label or Dell spec   │")
             print(f"    │  sheet for the actual SSD size.                 │")
             print(f"    └─────────────────────────────────────────────────┘")

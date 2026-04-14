@@ -46,6 +46,27 @@
       <UserLocale>en-US</UserLocale>
     </component>
 
+    <!-- Auto-load Intel RST/VMD storage drivers from USB during WinPE.
+         Without this, Dell laptops with Intel RST can't see the NVMe SSD
+         and Windows Setup shows "Install driver to show hardware" error.
+         Drivers are placed in \drivers\rst\ on the USB root. -->
+    <component name="Microsoft-Windows-PnpCustomizationsWinPE"
+               processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35"
+               language="neutral"
+               versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <DriverPaths>
+        <PathAndCredentials wcm:action="add" wcm:keyValue="1">
+          <Path>%configsetroot%\drivers\rst</Path>
+        </PathAndCredentials>
+        <PathAndCredentials wcm:action="add" wcm:keyValue="2">
+          <Path>%configsetroot%\drivers</Path>
+        </PathAndCredentials>
+      </DriverPaths>
+    </component>
+
     <!-- Disk Configuration: Wipe Disk 0, create GPT/UEFI partitions -->
     <component name="Microsoft-Windows-Setup"
                processorArchitecture="amd64"

@@ -338,7 +338,43 @@ def get_storage_info(disk: str) -> tuple:
             print(f"        Updated: {stor_type} {capacity_gb}GB")
         else:
             print(f"        No additional drives found after VMD load.")
-            print(f"        This may be an Optane/eMMC module. Check BIOS for RST mode.")
+            print(f"        BIOS has Intel RST in RAID mode — NVMe is hidden.")
+            print(f"")
+            print(f"    ┌─────────────────────────────────────────────────┐")
+            print(f"    │  MANUAL STORAGE ENTRY REQUIRED                  │")
+            print(f"    │  The primary SSD is hidden behind Intel RST.    │")
+            print(f"    │  Check the laptop's bottom label or Dell spec   │")
+            print(f"    │  sheet for the actual SSD size.                 │")
+            print(f"    └─────────────────────────────────────────────────┘")
+            print(f"")
+            print(f"    Common Dell SSD sizes:")
+            print(f"      [1] 256 GB NVMe")
+            print(f"      [2] 512 GB NVMe")
+            print(f"      [3] 1000 GB (1TB) NVMe")
+            print(f"      [4] Other (enter manually)")
+            print(f"")
+            while True:
+                choice = input("    Enter SSD size [1/2/3/4] > ").strip()
+                if choice == "1":
+                    capacity_gb, stor_type = 256, "NVMe"
+                    break
+                elif choice == "2":
+                    capacity_gb, stor_type = 512, "NVMe"
+                    break
+                elif choice == "3":
+                    capacity_gb, stor_type = 1000, "NVMe"
+                    break
+                elif choice == "4":
+                    try:
+                        capacity_gb = int(input("    Enter capacity in GB > ").strip())
+                        st = input("    Storage type [NVMe/SATA] > ").strip()
+                        stor_type = st if st in ("NVMe", "SATA") else "NVMe"
+                        break
+                    except ValueError:
+                        print("    Invalid number. Try again.")
+                else:
+                    print("    Invalid choice. Enter 1, 2, 3, or 4.")
+            print(f"        Manual entry: {stor_type} {capacity_gb}GB")
 
     # SMART health
     smart_out = run(f"smartctl -H {disk}")

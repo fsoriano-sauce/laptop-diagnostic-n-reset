@@ -19,7 +19,7 @@ describes the per-unit flow and the design rules.
 |---|---|---|
 | Auditor script | `auditor/audit.py` (+ `auditor/autorun`) | SystemRescue on the laptop |
 | Audit evidence | `auditor/audits/<TAG>.json`, `<TAG>/raw/` | copied from the USB |
-| Hand-entered state | `auditor/inventory.csv` | any |
+| Business state (status, price, notes; grade overrides) | `auditor/inventory.csv` | any |
 | Listing CSV build | `auditor/build_master_csv.py` → `audit_master_local.csv` | any (Python 3) |
 | eBay generator | `auditor/generate_ebay_drafts_v2.py`, `verify_listings.py` | any (Python 3) |
 | Restorer answer file | `restorer/autounattend.xml` | Windows Setup |
@@ -36,7 +36,7 @@ describes the per-unit flow and the design rules.
 ## Conventions
 
 - Line endings are enforced by `.gitattributes`: LF for anything that runs on SystemRescue, CRLF for `.cmd`/`.ps1`. Do not fight it.
-- `audit_master_local.csv` is generated. Edit `inventory.csv` or the JSON, then rebuild.
+- `audit_master_local.csv` is generated. Condition grades come from the audit JSON (asked at the laptop); `inventory.csv` holds status/price/notes and may override a grade. Edit those, then rebuild.
 - Legacy v2 audit rows are frozen in `auditor/legacy/`. Do not edit them; re-audit the unit instead.
 - Do not add lookup tables that assert hardware specs. If a value cannot be measured it is `null`.
 - Commit messages: imperative, one line of what and one of why.

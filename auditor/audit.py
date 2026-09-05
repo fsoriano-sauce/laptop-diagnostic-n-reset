@@ -423,15 +423,17 @@ def display_test():
     finally:
         scr.write(ANSI_RESET + "\033[2J\033[H")
         scr.flush()
-    ans = prompt_choice("Any screen defects?",
-                        {"N": "No, panel is clean", "Y": "Yes (dead pixel, bleed, line, scratch)"})
+    grade = prompt_choice("Rate the SCREEN (colours still fresh in mind):",
+                          {"A": "Flawless — no dead pixels, no marks, no bleed",
+                           "B": "Good — minor: 1-2 dead pixels, faint scuff, light wear",
+                           "C": "Damaged — cracked, scratched, backlight bleed, many dead pixels"})
     note = None
-    if ans == "Y":
+    if grade in ("B", "C"):
         try:
-            note = input("  Describe briefly > ").strip() or "defect noted"
+            note = input("  Note the screen issue (what / where) > ").strip() or None
         except EOFError:
-            note = "defect noted"
-    return {"result": "pass" if ans == "N" else "fail", "note": note}
+            note = None
+    return {"result": "pass" if grade in ("A", "B") else "fail", "grade": grade, "note": note}
 
 
 # Linux input keycodes. Required = main block + arrows. Optional groups are
@@ -658,6 +660,82 @@ def detect_fingerprint(raw):
     if "fingerprint" in out("udevadm info --export-db 2>/dev/null | grep -i fingerprint").lower():
         return "yes"
     return "unknown"
+
+
+BATCH_DEFAULTS_FILE = "batch_defaults.cfg"   # lives in audits/ on the stick; not *.json so the CSV builder ignores it
+COLOR_CHOICES = {"1": "Black", "2": "Silver", "3": "Gray", "4": "White", "5": "Blue", "6": "Other"}
+
+
+def load_batch_defaults(audits_dir):
+    try:
+        with open(os.path.join(audits_dir, BATCH_DEFAULTS_FILE)) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_batch_defaults(audits_dir, defaults):
+    try:
+        with open(os.path.join(audits_dir, BATCH_DEFAULTS_FILE), "w") as f:
+            json.dump(defaults, f)
+    except OSError:
+        pass
+
+
+def prompt_yn(question, default="Y"):
+    d = default if default in ("Y", "N") else "Y"
+    while True:
+        try:
+            ans = input(f"\n  {question} [Y/N]  (ENTER = {d}) > ").strip().upper()
+        except EOFError:
+            return d
+        if ans == "":
+            return d
+        if ans in ("Y", "N"):
+            return ans
+        print("  Enter Y or N.")
+
+
+def prompt_color(default=None):
+    print("\n  Laptop colour?")
+    for k, v in COLOR_CHOICES.items():
+        print(f"    [{k}] {v}")
+    hint = f"  (ENTER = {default})" if default else ""
+    while True:
+        try:
+            ans = input(f"  >{hint} ").strip()
+        except EOFError:
+            return default
+        if ans == "" and default:
+            return default
+        if ans in COLOR_CHOICES:
+            return COLOR_CHOICES[ans]
+        print(f"  Enter 1-{len(COLOR_CHOICES)}" + (" or ENTER" if default else ""))
+
+
+def run_grading(audits_dir, skip):
+    """Cosmetic grades. Attended, so they run before the walk-away message.
+    Colour and charger defaults persist on the stick across units; screen
+    (asked in the display test) and body are asked fresh every time."""
+    if skip:
+        return {}
+    banner("CONDITION")
+    defaults = load_batch_defaults(audits_dir)
+    chassis = prompt_choice("Rate the BODY — lid, deck, bottom, hinges, ports:",
+                            {"A": "Mint — no marks",
+                             "B": "Good — minor scuffs/scratches, normal wear",
+                             "C": "Rough — dents, cracks, deep scratches, missing parts"})
+    chassis_note = None
+    if chassis in ("B", "C"):
+        try:
+            chassis_note = input("  Note the damage (where / how bad) > ").strip() or None
+        except EOFError:
+            chassis_note = None
+    charger = prompt_yn("Charger included?", defaults.get("charger", "Y"))
+    color = prompt_color(defaults.get("color"))
+    save_batch_defaults(audits_dir, {"color": color, "charger": charger})
+    return {"chassis_grade": chassis, "chassis_note": chassis_note,
+            "charger": charger, "color": color}
 
 
 def run_attended_tests(raw, skip):
@@ -1049,6 +1127,11 @@ def build_warnings(rec):
     b = rec.get("battery") or {}
     s = rec.get("storage") or {}
     t = rec.get("tests") or {}
+    gr = rec.get("grades") or {}
+    if gr.get("screen_grade") == "C":
+        w.append("screen grade C (cracked/scratched/bleed)")
+    if gr.get("chassis_grade") == "C":
+        w.append("body grade C (dents/cracks)")
     if b.get("health_pct") is not None and b["health_pct"] < 60:
         w.append(f"battery health {b['health_pct']}%")
     if s.get("smart_passed") is False:
@@ -1088,6 +1171,8 @@ def print_summary(rec):
         ("GPU", f"{g.get('discrete') or 'integrated only'}"),
         ("Wi-Fi", f"{f.get('wifi_standard')}  BT:{f.get('bluetooth')}  cam:{f.get('webcam')}  backlit:{f.get('backlit_keyboard')}  fp:{f.get('fingerprint_reader')}"),
         ("License", "OEM key present" if (rec.get('license') or {}).get('oem_key_present') else "NO OEM KEY"),
+        ("Condition", f"screen {(rec.get('grades') or {}).get('screen_grade')}  body {(rec.get('grades') or {}).get('chassis_grade')}  "
+                      f"{(rec.get('grades') or {}).get('color')}  charger {(rec.get('grades') or {}).get('charger')}"),
         ("Tests", "  ".join(f"{k}:{(v or {}).get('result')}" for k, v in (rec.get('tests') or {}).items())),
         ("Erase", f"{(rec.get('erase') or {}).get('method') or 'none'}  blank:{(rec.get('erase') or {}).get('verified_blank')}"),
     ]
@@ -1108,6 +1193,7 @@ def write_record(rec, audits_dir):
     line = (f"{rec['audited_at']}  {tag:<8} {((rec.get('identity') or {}).get('model') or '')[:18]:<18} "
             f"batt {(rec.get('battery') or {}).get('health_pct')}%  "
             f"ssd {(rec.get('storage') or {}).get('size_gb')}GB wear {(rec.get('storage') or {}).get('percentage_used')}%  "
+            f"scr/body {(rec.get('grades') or {}).get('screen_grade') or '-'}/{(rec.get('grades') or {}).get('chassis_grade') or '-'}  "
             f"erase {(rec.get('erase') or {}).get('method') or 'NONE'}  "
             f"warn {len(rec.get('warnings') or [])}\n")
     with open(os.path.join(audits_dir, "summary.txt"), "a") as f:
@@ -1209,6 +1295,10 @@ def main():
                                 {"Y": "Yes", "N": "No"})
             fp = "yes" if ans == "Y" else "no"
             rec["tests"]["fingerprint_confirm"] = "operator"
+        grades = run_grading(audits_dir, args.skip_tests)
+        grades["screen_grade"] = (rec["tests"].get("display") or {}).get("grade")
+        grades["screen_note"] = (rec["tests"].get("display") or {}).get("note")
+        rec["grades"] = grades
         print()
         print("  ────────────────────────────────────────────────────────")
         print("  Attended part is done. Scan, erase and power-off run on their own.")

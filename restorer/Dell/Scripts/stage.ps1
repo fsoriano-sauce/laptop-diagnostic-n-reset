@@ -21,10 +21,10 @@ $reports = Join-Path $Usb "Dell\Reports"
 New-Item -ItemType Directory -Force -Path $reports | Out-Null
 
 function Get-Model {
-    try { (Get-CimInstance Win32_ComputerSystem).Model.Trim() } catch { "" }
+    try { (Get-CimInstance Win32_ComputerSystem -ErrorAction Stop).Model.Trim() } catch { "" }
 }
 function Get-Tag {
-    try { (Get-CimInstance Win32_BIOS).SerialNumber.Trim() } catch { "UNKNOWN" }
+    try { (Get-CimInstance Win32_BIOS -ErrorAction Stop).SerialNumber.Trim() } catch { "UNKNOWN" }
 }
 function Normalize([string]$s) { ($s -replace "[^A-Za-z0-9]", "").ToLower() }
 
@@ -65,34 +65,34 @@ foreach ($f in $folders) {
 # ── 2. Report ────────────────────────────────────────────────────────────────
 "" | Add-Content $report
 try {
-    $os = Get-CimInstance Win32_OperatingSystem
-    $cv = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion"
+    $os = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
+    $cv = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -ErrorAction Stop
     "Windows     : $($os.Caption)  $($cv.DisplayVersion)  build $($cv.CurrentBuild).$($cv.UBR)  edition $($cv.EditionID)" | Add-Content $report
 } catch { "Windows     : (query failed: $_)" | Add-Content $report }
 
 try {
-    $oa3 = (Get-CimInstance SoftwareLicensingService).OA3xOriginalProductKey
+    $oa3 = (Get-CimInstance SoftwareLicensingService -ErrorAction Stop).OA3xOriginalProductKey
     if ($oa3) { "OEM key     : present, ends ...$($oa3.Substring($oa3.Length-5))  (activates on first internet connection)" | Add-Content $report }
     else      { "OEM key     : NONE IN FIRMWARE - this unit will not activate" | Add-Content $report }
 } catch { "OEM key     : (query failed: $_)" | Add-Content $report }
 
-try { "Secure Boot : $(if (Confirm-SecureBootUEFI) {'ON'} else {'OFF - turn on in BIOS before shipping'})" | Add-Content $report }
+try { "Secure Boot : $(if (Confirm-SecureBootUEFI -ErrorAction Stop) {'ON'} else {'OFF - turn on in BIOS before shipping'})" | Add-Content $report }
 catch { "Secure Boot : unknown ($_)" | Add-Content $report }
 
 try {
-    $tpm = Get-CimInstance -Namespace root\cimv2\security\microsofttpm -ClassName Win32_Tpm
+    $tpm = Get-CimInstance -Namespace root\cimv2\security\microsofttpm -ClassName Win32_Tpm -ErrorAction Stop
     "TPM         : present=$($tpm.IsEnabled_InitialValue) spec=$($tpm.SpecVersion)" | Add-Content $report
 } catch { "TPM         : unknown" | Add-Content $report }
 
 try {
     "Disks       :" | Add-Content $report
-    Get-PhysicalDisk | ForEach-Object { "  $($_.FriendlyName)  $([math]::Round($_.Size/1GB)) GB  bus=$($_.BusType)  media=$($_.MediaType)" } | Add-Content $report
+    Get-PhysicalDisk -ErrorAction Stop | ForEach-Object { "  $($_.FriendlyName)  $([math]::Round($_.Size/1GB)) GB  bus=$($_.BusType)  media=$($_.MediaType)" } | Add-Content $report
 } catch { "Disks       : unknown" | Add-Content $report }
 
 "" | Add-Content $report
 "Devices with problems (empty = driver set complete):" | Add-Content $report
 try {
-    $bad = Get-PnpDevice -PresentOnly | Where-Object { $_.Status -ne "OK" -and $_.Class -notin @("SoftwareDevice","Volume","VolumeSnapshot") }
+    $bad = Get-PnpDevice -PresentOnly -ErrorAction Stop | Where-Object { $_.Status -ne "OK" -and $_.Class -notin @("SoftwareDevice","Volume","VolumeSnapshot") }
     if ($bad) { $bad | ForEach-Object { "  [$($_.Status)] $($_.Class): $($_.FriendlyName)  ($($_.InstanceId))" } | Add-Content $report }
     else { "  (none)" | Add-Content $report }
 } catch { "  (query failed: $_)" | Add-Content $report }

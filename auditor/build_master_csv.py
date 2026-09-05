@@ -51,7 +51,7 @@ NEW_COLUMNS = [
     "ram_config", "ssd_model", "ssd_wear_pct", "ssd_power_on_hours", "ssd_data_written_tb",
     "battery_design_wh", "battery_full_wh", "display_aspect", "wifi_card",
     "oem_key_present", "test_display", "test_keyboard", "test_speaker",
-    "erase_method", "erase_verified", "warnings",
+    "erase_method", "erase_verified", "condition_notes", "warnings",
 ]
 INVENTORY_COLUMNS = ["screen_grade", "chassis_grade", "color", "charger",
                      "status", "sale_price", "sale_date", "notes"]
@@ -88,6 +88,7 @@ def row_from_json(rec):
                                  ("identity", "cpu", "memory", "storage", "battery",
                                   "display", "gpu", "features", "license"))
     t, e = rec.get("tests") or {}, rec.get("erase") or {}
+    gr = rec.get("grades") or {}
     try:
         ts = datetime.fromisoformat(rec["audited_at"]).strftime("%Y-%m-%d %H:%M:%S")
     except (KeyError, ValueError):
@@ -118,6 +119,12 @@ def row_from_json(rec):
         "wifi_standard": na(f.get("wifi_standard")),
         "bluetooth": yn(f.get("bluetooth")),
         "webcam": yn(f.get("webcam")),
+        # graded at the laptop by the auditor (inventory.csv can still override)
+        "screen_grade": gr.get("screen_grade") or "",
+        "chassis_grade": gr.get("chassis_grade") or "",
+        "color": gr.get("color") or "",
+        "charger": gr.get("charger") or "",
+        "condition_notes": "; ".join(x for x in (gr.get("screen_note"), gr.get("chassis_note")) if x),
         # new evidence columns
         "audit_version": rec.get("auditor_version", ""),
         "express_service_code": na(i.get("express_service_code")),
@@ -217,7 +224,10 @@ def main():
     for s in skipped:
         print(f"  skipped {s}")
     if missing_inventory:
-        print(f"  no inventory.csv row (grades blank): {', '.join(missing_inventory)}")
+        print(f"  not in inventory.csv (grades come from the audit; add a row only for price/status): {', '.join(missing_inventory)}")
+    ungraded = [r["service_tag"] for r in ordered if not r.get("chassis_grade")]
+    if ungraded:
+        print(f"  NO BODY GRADE (audited with --skip-tests or before v3.1): {', '.join(ungraded)}")
     no_key = [r["service_tag"] for r in ordered if r.get("oem_key_present") == "No"]
     if no_key:
         print(f"  NO OEM WINDOWS KEY: {', '.join(no_key)}")

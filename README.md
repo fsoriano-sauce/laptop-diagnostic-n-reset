@@ -13,7 +13,7 @@ Design rules, in order of importance:
 
 1. **The BIOS is set to AHCI/NVMe before anything runs.** Intel RST/VMD mode hid the SSD from Linux and from stock Windows media; every driver-injection and unlock hack in earlier versions existed to work around it. The auditor refuses to run in RST/VMD mode.
 2. **Measure, never assume.** No lookup tables. If a value cannot be read it is `null`, and every raw command output is saved next to the JSON so it can be re-derived later without rebooting the laptop.
-3. **Facts, state and derived values live apart.** `audits/<TAG>.json` is what the machine reported. `inventory.csv` is what you decide (grades, colour, charger, price, status). Recommendations and prices are computed by scripts, never stored in an audit.
+3. **Facts, state and derived values live apart.** `audits/<TAG>.json` is what the machine reported plus the condition grades you gave it at the laptop. `inventory.csv` is business state (status, sale price, notes) and a place to correct a grade. Recommendations and prices are computed by scripts, never stored in an audit.
 4. **The buyer gets a retail machine.** Stock OOBE (region, Wi-Fi, Microsoft account, Windows Hello, privacy), Secure Boot on, edition matched to the OEM key in firmware, drivers present at first boot.
 
 ---
@@ -29,7 +29,8 @@ Design rules, in order of importance:
 
 2. Auditor boots and runs audit.py            ~1 min attended, then hands-off
      preflight  : identity, BIOS mode, SSD visible (stops with instructions if not)
-     attended   : colour screens -> keyboard map -> speaker tone -> fingerprint Y/N
+     attended   : colour screens + screen grade -> keyboard map -> speaker tone
+                  -> fingerprint Y/N -> body grade -> charger Y/N -> colour (remembered)
      unattended : scan, secure erase (10 s abort window), JSON + raw dumps, power off
 
 3. Swap to Restorer USB, power on, F2         <1 min, attended
@@ -63,7 +64,7 @@ auditor/
 ├── audit.py               v3 auditor (stdlib only, runs on SystemRescue)
 ├── autorun                SystemRescue autorun hook (LF endings, no extension)
 ├── audits/                <TAG>.json + <TAG>/raw/*  copied back from the USB
-├── inventory.csv          per-unit grades, colour, charger, status, price, notes
+├── inventory.csv          per-unit status, sale price, notes; can override a grade
 ├── build_master_csv.py    audits/ + inventory.csv + legacy -> audit_master_local.csv
 ├── audit_master_local.csv generated; what the eBay generator reads
 ├── legacy/                v2 audit rows for the first 14 units (frozen)
@@ -96,8 +97,8 @@ ebay_listings_upload.csv   last generated eBay upload file
 
 **Update later**: replace `audit.py` on the stick. Nothing else changes.
 
-**After a batch**: copy the stick's `audits/` folder into `auditor/audits/`,
-fill grades in `auditor/inventory.csv` while photographing, then
+**After a batch**: copy the stick's `audits/` folder into `auditor/audits/`
+(grades are already in the JSON), then
 
 ```bash
 python3 auditor/build_master_csv.py
@@ -124,6 +125,7 @@ Manual run from the SystemRescue console: `python3 /run/archiso/bootmnt/audit.py
 | features | Wi-Fi card and standard, Bluetooth, webcam, backlit keyboard, touchscreen, fingerprint |
 | license | whether an OEM Windows key exists in the ACPI MSDM table (last 5 characters only) |
 | tests | display pass/fail + note, keyboard missing keys, speaker pass/fail/not_tested |
+| grades | screen A/B/C with note, body A/B/C with note, charger Y/N, colour. Colour and charger defaults persist on the stick (`audits/batch_defaults.cfg`) so a uniform batch is one ENTER each |
 | erase | method used, duration, post-erase zero check |
 | warnings | battery < 60 %, SMART fail, wear ≥ 50 %, no OEM key, failed tests, not erased |
 

@@ -1,3 +1,7 @@
-# Force Linux line endings for scripts that run on SystemRescue
+# Scripts that run on SystemRescue (Linux) must have LF endings
 auditor/autorun eol=lf
-auditor/audit.py eol=lf
+auditor/*.py eol=lf
+# Scripts that run on Windows are safest with CRLF
+restorer/Dell/Scripts/*.cmd eol=crlf
+restorer/*.ps1 eol=crlf
+restorer/Dell/Scripts/*.ps1 eol=crlf

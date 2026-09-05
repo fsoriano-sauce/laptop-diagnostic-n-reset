@@ -1,346 +1,232 @@
 # Laptop Diagnostic & Reset Toolkit
-### The "20-Laptop Factory Line"
+### The "20-Laptop Factory Line" — v3
 
-Two USB tools to **audit, grade, and factory-reset** a batch of Dell laptops for resale.
+Two USB sticks turn a used Dell laptop into a tested, wiped, retail-style
+Windows 11 machine with a JSON evidence file for the eBay listing.
 
-| USB Stick | Purpose | OS |
-|-----------|---------|-----|
-| **Auditor** | Scan hardware, grade condition, export CSV | SystemRescue (Linux) |
-| **Restorer** | Wipe disk + clean Windows 10 install → stops at OOBE | Windows 10 Pro |
+| USB | What it does | Base |
+|---|---|---|
+| **Auditor** | Attended tests (screen, keyboard, speaker), hardware scan with raw evidence, secure erase, power off | SystemRescue (Linux) |
+| **Restorer** | Wipes disk, clean Windows 11 install, stages Dell drivers, stops at the retail out-of-box screen | Windows 11 stock ISO |
+
+Design rules, in order of importance:
+
+1. **The BIOS is set to AHCI/NVMe before anything runs.** Intel RST/VMD mode hid the SSD from Linux and from stock Windows media; every driver-injection and unlock hack in earlier versions existed to work around it. The auditor refuses to run in RST/VMD mode.
+2. **Measure, never assume.** No lookup tables. If a value cannot be read it is `null`, and every raw command output is saved next to the JSON so it can be re-derived later without rebooting the laptop.
+3. **Facts, state and derived values live apart.** `audits/<TAG>.json` is what the machine reported. `inventory.csv` is what you decide (grades, colour, charger, price, status). Recommendations and prices are computed by scripts, never stored in an audit.
+4. **The buyer gets a retail machine.** Stock OOBE (region, Wi-Fi, Microsoft account, Windows Hello, privacy), Secure Boot on, edition matched to the OEM key in firmware, drivers present at first boot.
 
 ---
 
-## Quick Start: Batch Workflow
+## Per-unit flow
 
 ```
-For each laptop:
-  1. BIOS prep (one-time): F2 → disable Secure Boot
-  2. Boot from Auditor USB (F12 → select SanDisk/RESCUE)
-     → auto-runs audit.py, scans hardware, prompts for grades
-     → auto-shuts down when complete
-  3. Swap to Restorer USB → boot (F12 → select ESD-ISO)
-     → wipes disk, installs Windows 10 automatically
-  4. Laptop reboots to "Let's start with region" OOBE screen
-     → take resale photo, then hold power to shut down
-  5. Move to next laptop
+1. Power on, F2 (BIOS)                       ~1 min, attended
+     Secure Boot ........ Off        (SystemRescue is not Secure-Boot signed)
+     SATA/NVMe Operation  AHCI/NVMe  (10th gen: "SATA Operation"; 11th/12th gen: "Storage")
+     Boot sequence ...... USB first
+   Save, exit. Auditor USB is plugged in.
+
+2. Auditor boots and runs audit.py            ~1 min attended, then hands-off
+     preflight  : identity, BIOS mode, SSD visible (stops with instructions if not)
+     attended   : colour screens -> keyboard map -> speaker tone -> fingerprint Y/N
+     unattended : scan, secure erase (10 s abort window), JSON + raw dumps, power off
+
+3. Swap to Restorer USB, power on, F2         <1 min, attended
+     Secure Boot ........ On
+   Save, exit. Setup starts from the USB.
+
+4. Windows 11 installs                        ~20 min, unattended
+     wipes disk 0, installs the edition matching the OEM key,
+     stage.ps1 installs Dell drivers and writes Dell\Reports\<TAG>.txt to the USB,
+     reboots to "Is this the right country or region?"
+
+5. Photo of the OOBE screen, pull the USB, hold power to shut down.
 ```
 
-Your audit results accumulate in `audit_master.csv` on the Auditor USB.
+Three attended visits, each under two minutes. Run Restorer installs three
+wide with three sticks; the auditor is never the bottleneck.
+
+**Before the first batch, run one unit of each model end to end**, then
+finish OOBE on it with a throwaway Microsoft account and check: activation
+(Settings → System → Activation), Wi-Fi, Bluetooth, fingerprint enrolment,
+camera, speakers, GPU in Device Manager. Read `Dell\Reports\<TAG>.txt` on the
+Restorer USB. Then restore it again. That is the only test that proves the
+driver set and the erase/install sequence on your hardware.
 
 ---
 
-## What's In This Repo
+## What's in the repo
 
 ```
-├── auditor/                       # → Copy contents to Auditor USB root
-│   ├── audit.py                   # Python auditor v2.0 (stdlib only, runs on SystemRescue)
-│   ├── autorun                    # SystemRescue autorun script (auto-launches audit.py)
-│   ├── audit_master_local.csv     # Local copy of audit data (source of truth for listings)
-│   ├── generate_ebay_drafts.py    # v1 eBay generator (HTML description builder, helpers)
-│   ├── generate_ebay_drafts_v2.py # v2 eBay full listing CSV generator ← PRIMARY SCRIPT
-│   └── verify_listings.py         # Cross-reference audit data against generated CSV
-├── listing-photos/                # Laptop photos organized by service tag
-│   ├── JW3X9S3/                   # 12 photos
-│   ├── 9P81KL3/                   # 13 photos
-│   └── ...                        # (one folder per laptop)
-├── restorer/                      # → Copy contents to Restorer USB root
-│   └── autounattend.xml           # Windows 10 Pro unattended answer file
-├── ebay_listings_upload.csv       # Latest generated eBay upload CSV
-├── .gitattributes                 # Forces LF line endings for Linux scripts
-└── README.md                      # ← You are here
+auditor/
+├── audit.py               v3 auditor (stdlib only, runs on SystemRescue)
+├── autorun                SystemRescue autorun hook (LF endings, no extension)
+├── audits/                <TAG>.json + <TAG>/raw/*  copied back from the USB
+├── inventory.csv          per-unit grades, colour, charger, status, price, notes
+├── build_master_csv.py    audits/ + inventory.csv + legacy -> audit_master_local.csv
+├── audit_master_local.csv generated; what the eBay generator reads
+├── legacy/                v2 audit rows for the first 14 units (frozen)
+├── generate_ebay_drafts_v2.py, generate_ebay_drafts.py, verify_listings.py
+restorer/
+├── autounattend.xml       Windows 11, retail OOBE, edition from OEM key
+├── build_restorer.ps1     copies everything onto each ESD-ISO stick (Windows, admin)
+├── get_dell_drivers.ps1   downloads the per-model driver packages from Dell's catalog
+├── BUILD_ON_WINDOWS.md    step-by-step build + test guide for any Windows PC
+├── SURFACE_AGENT_PROMPT.md  paste-in prompt for a Claude Code session on that PC
+└── Dell/
+    ├── Scripts/stage.cmd, stage.ps1   run by Setup during specialize
+    ├── Drivers/<Model>/               driver packages (not in git) — see Drivers/README.md
+    ├── Downloads/<Model>/*.exe        Dell packages to extract (not in git)
+    └── Reports/                       written by each install (not in git)
+listing-photos/<TAG>/      photos for eBay
+ebay_listings_upload.csv   last generated eBay upload file
 ```
 
-> **Each folder = one USB.** Copy everything inside `auditor/` to the Auditor USB root.
-> Copy everything inside `restorer/` to the Restorer USB root.
-
 ---
 
-## USB #1 — Building the Auditor
+## USB 1 — Auditor
 
-### Requirements
-- **USB drive**: 4 GB+ (SystemRescue is ~1.2 GB)
-- **Software**: [Rufus 4.x](https://rufus.ie) (Windows)
-- **ISO**: [SystemRescue](https://www.system-rescue.org/Download/) (latest, e.g., `systemrescue-13.00-amd64.iso`)
+**Build once** (any OS that can write FAT32; macOS works):
 
-### Steps
+1. Download the latest SystemRescue ISO from https://www.system-rescue.org/Download/
+2. Rufus (Windows): device = stick, boot selection = the ISO, partition scheme **MBR**, file system **FAT32**, write in **ISO image mode**. On macOS: format the stick FAT32/MBR with the volume label SystemRescue expects (the `archisolabel=` value in the ISO's `boot/grub/grubsrcd.cfg`, e.g. `RESCUE1302`), then copy the ISO contents onto it.
+3. Copy `auditor/audit.py` to the stick root and `auditor/autorun` into the stick's existing `autorun/` folder. The file must be named exactly `autorun` with LF line endings.
+4. If a unit with a GTX 1650 Ti (Vostro 7500) panics at boot, add `modprobe.blacklist=nouveau` to the default kernel line in `boot/grub/grubsrcd.cfg`. Do **not** use `nomodeset`; it disables the Intel display driver and the auditor then cannot read the panel's EDID.
 
-1. **Download SystemRescue ISO**
-   - Go to [https://www.system-rescue.org/Download/](https://www.system-rescue.org/Download/)
-   - Download the latest `.iso` (e.g., `systemrescue-13.00-amd64.iso`)
+**Update later**: replace `audit.py` on the stick. Nothing else changes.
 
-2. **Flash the ISO to USB with Rufus**
-
-   | Rufus Field | Set To |
-   |-------------|--------|
-   | **Device** | Select your Auditor USB drive |
-   | **Boot selection** | `Disk or ISO image` → click **SELECT** → pick the SystemRescue `.iso` |
-   | **Partition scheme** | **MBR** |
-   | **Target system** | **BIOS (or UEFI-CSM)** ← auto-set by Rufus |
-   | **Volume label** | `RESCUE` (or leave default) |
-   | **File system** | **FAT32** (default) |
-   | **Cluster size** | Leave default |
-   | **Persistence** | 0 (no persistence) |
-
-   Click **START** → **Write in ISO image mode** → **OK**.
-
-3. **Copy repo files to the USB**
-   - Copy `auditor/audit.py` → USB **root** (`X:\audit.py`)
-   - Copy `auditor/autorun` → **inside** the existing `X:\autorun\` folder (`X:\autorun\autorun`)
-   - ⚠️ `autorun` must have **no file extension** — just `autorun`, not `autorun.txt`
-   - ⚠️ `autorun` must have **LF line endings** (not CRLF). The repo's `.gitattributes` handles this, but if copying manually, verify with a text editor.
-
-4. **Test it**
-   - Plug into a laptop → **F2** to disable Secure Boot → **F12** → boot from USB
-   - SystemRescue boots → audit.py auto-launches → scans hardware → prompts for grades
-   - After completion, laptop auto-shuts down and CSV is saved to USB
-
-### SystemRescue notes
-> - SystemRescue v13+ looks for autorun scripts in `/run/archiso/bootmnt/autorun/`
-> - **Secure Boot must be disabled** in BIOS for SystemRescue to boot on Dell hardware
-> - If autorun fails, run manually: `python3 /run/archiso/bootmnt/audit.py`
-> - Errors are saved to `audit_error.log` on the USB root
-
----
-
-## USB #2 — Building the Restorer
-
-### Requirements
-- **USB drive**: 16 GB+ (Windows image with drivers is ~5 GB)
-- **Software**: [Rufus 4.x](https://rufus.ie)
-- **ISO**: Windows 10 via [Media Creation Tool](https://www.microsoft.com/en-us/software-download/windows10ISO)
-
-### Option A: Clone from an Existing Restorer (Recommended)
-
-If you already have a working Restorer USB, this is the **fastest and most reliable** method.
-The working USB has Intel drivers injected into `boot.wim` and `install.wim` — a stock ISO will NOT work on Dell NVMe laptops.
-
-1. **Flash the new USB with Rufus** using the stock Windows 10 ISO:
-
-   | Rufus Field | Set To |
-   |-------------|--------|
-   | **Device** | Select the new USB drive |
-   | **Boot selection** | `Disk or ISO image` → click **SELECT** → pick `Windows.iso` |
-   | **Partition scheme** | **GPT** |
-   | **Target system** | **UEFI (non CSM)** |
-   | **Volume label** | **ESD-ISO** |
-   | **File system** | **NTFS** |
-   | **Cluster size** | Leave default (4096 bytes) |
-
-   Click **START** → **Uncheck ALL** on "Windows User Experience" → **OK**.
-
-   > ⚠️ Rufus may show "Revoked UEFI bootloader detected" — click **OK**, this is safe for official Microsoft ISOs.
-
-2. **Copy the driver-injected images from the working USB** (this is the critical step):
-
-   ```powershell
-   # Plug in both USBs. Find drive letters:
-   Get-Volume | Where-Object { $_.FileSystemLabel -match 'ESD' }
-
-   # Replace X: with the WORKING Restorer, Y: with the NEW one:
-   Copy-Item "X:\sources\boot.wim" "Y:\sources\boot.wim" -Force
-   Rename-Item "Y:\sources\install.esd" "install.esd.bak" -Force
-   Copy-Item "X:\sources\install.wim" "Y:\sources\install.wim" -Force
-   ```
-
-   > The `install.wim` copy takes ~5 minutes per USB (4.6 GB file).
-
-3. **Copy `autounattend.xml` to the new USB root**:
-   ```powershell
-   Copy-Item "restorer\autounattend.xml" "Y:\autounattend.xml" -Force
-   ```
-
-4. **Verify** — the new USB should have:
-   - `Y:\autounattend.xml` (8,747 bytes)
-   - `Y:\sources\boot.wim` (~468 MB — with Intel drivers)
-   - `Y:\sources\install.wim` (~4,599 MB — with Intel drivers)
-   - `Y:\sources\install.esd.bak` (original, unused backup)
-
-### Option B: Build from Scratch (First Time Only)
-
-Use this only if you have no working Restorer USB to clone from.
-
-1. **Download Windows 10 ISO**
-   - Download [Media Creation Tool](https://www.microsoft.com/en-us/software-download/windows10ISO) (~18 MB .exe)
-   - Run it → **Create installation media** → English, Windows 10, 64-bit → **ISO file**
-   - Save to Downloads (~5.8 GB download, 10 min)
-
-2. **Flash with Rufus** using the same settings as Option A above.
-
-3. **Inject Intel drivers** into `boot.wim` and `install.wim` using DISM:
-   - Download [Intel RST/VMD drivers](https://www.intel.com/content/www/us/en/download/720755/intel-rapid-storage-technology-driver-installation-software-with-intel-optane-memory.html) or [Dell WinPE Driver Pack](https://www.dell.com/support/home/en-us/drivers/driversdetails?driverid=2V5TD)
-   - Inject into `boot.wim` (both indexes) and `install.wim` (Index 1) via DISM
-
-   > ⚠️ **Without driver injection, the Windows installer will NOT see the NVMe drive** on Dell laptops. You'll get error `0x80300025: disk 0 does not exist`. This is because Dell ships laptops with Intel RST/VMD mode enabled.
-
-4. **Copy `autounattend.xml`** to the USB root.
-
-### What the `autounattend.xml` does
-> - **windowsPE pass**: Wipes Disk 0, creates GPT partitions (EFI + MSR + Primary), selects Windows 10 Pro using Microsoft's generic setup key, accepts EULA
-> - **specialize pass**: Sets timezone to Eastern, prevents BitLocker auto-encryption, disables TPM auto-activation
-> - **oobeSystem pass**: Skips EULA, hides Wi-Fi setup (prevents forced Microsoft account), stops at **"Let's start with region"** screen
-
-### Windows Licensing
-> The `autounattend.xml` uses Microsoft's public generic Windows 10 Pro setup key (`VK7JG-NPHTM-C97JM-9MPGT-3V66T`). This is NOT a piracy key — it only tells the installer which edition to install. The actual activation happens automatically via the **OEM product key embedded in the laptop's BIOS** (MSDM table). If the laptop originally had Windows 10 Pro, it will auto-activate on first internet connection.
-
----
-
-## Dell BIOS Prerequisites
-
-Before booting **either** USB, check these BIOS settings (F2 at power-on):
-
-| Setting | Required For | Location |
-|---------|-------------|----------|
-| **Secure Boot** → Disabled | Auditor (SystemRescue) | Security → Secure Boot |
-| **Boot Mode** → UEFI | Both USBs | Boot Configuration → Boot Mode |
-
-> 💡 **Tip**: For batch processing, set USB-first in the boot order so you don't have to press F12 on every laptop.
-
----
-
-## audit_master.csv — Output Format (v2.0)
-
-Each audited laptop adds one row. Duplicate service tags are detected and prompt for update.
-
-### Hardware Fields (auto-detected)
-| Column | Example |
-|--------|---------|
-| `timestamp` | 2026-04-05 12:33:04 |
-| `service_tag` | 9P81KL3 |
-| `model` | Vostro 15 7510 |
-| `cpu` | 11th Gen Intel i7-11800H |
-| `cores` | 16 |
-| `ram_gb` | 15 |
-| `ram_type` | DDR4 |
-| `storage_type` | NVMe |
-| `storage_gb` | 512 |
-| `smart_status` | PASSED |
-| `battery_health_pct` | 100 |
-| `battery_charge_pct` | 82 |
-| `battery_cycles` | N/A |
-| `gpu` | NVIDIA RTX 3050 |
-| `resolution` | 1920x1080 |
-| `resolution_class` | Standard |
-| `screen_size_in` | 15.6 |
-| `touchscreen` | No |
-| `fingerprint_reader` | Yes |
-| `backlit_keyboard` | Yes |
-| `wifi_standard` | Wi-Fi 6 (802.11ax) |
-| `bluetooth` | Yes |
-| `webcam` | Yes |
-
-### Grading Fields (interactive prompts)
-| Column | Example |
-|--------|---------|
-| `screen_grade` | A |
-| `chassis_grade` | B |
-| `color` | Silver |
-| `charger` | Y |
-
-### Output Fields
-| Column | Example |
-|--------|---------|
-| `recommendation` | HIGH VALUE (Gaming/Creator) |
-| `status` | audited |
-| `sale_price` | *(fill manually)* |
-| `sale_date` | *(fill manually)* |
-| `notes` | *(fill manually)* |
-
-### Recommendation Logic
-
-| Condition | Recommendation |
-|-----------|---------------|
-| SMART failed OR Screen=C OR Chassis=C | **PARTS/REPAIR** |
-| Discrete NVIDIA/AMD GPU detected | **HIGH VALUE (Gaming/Creator)** |
-| CPU ≥ 8th Gen AND Battery Health > 65% | **Standard Resale** |
-| Battery Health < 60% | **Bad Battery (Discount)** |
-| Everything else | **Standard Resale** |
-
-### Inventory Tracking
-The `status`, `sale_price`, `sale_date`, and `notes` columns are for manual tracking in Excel/Sheets:
-- `audited` → `listed` → `sold`
-
----
-
-## eBay Listing Pipeline
-
-After auditing, the listing pipeline generates a fully populated eBay CSV for bulk upload via **Seller Hub → Reports → Upload**.
-
-### Pipeline Overview
-
-```
-audit_master_local.csv → generate_ebay_drafts_v2.py → ebay_listings_upload.csv → eBay Seller Hub Upload
-  (audit data)             (listing generator)          (ready-to-upload CSV)       (bulk upload)
-```
-
-### How to Generate Listings
+**After a batch**: copy the stick's `audits/` folder into `auditor/audits/`,
+fill grades in `auditor/inventory.csv` while photographing, then
 
 ```bash
-# From the repo root:
-python auditor/generate_ebay_drafts_v2.py auditor/audit_master_local.csv
+python3 auditor/build_master_csv.py
 ```
 
-This produces `ebay_listings_upload.csv` with:
+`audits/summary.txt` on the stick is a one-line-per-unit log. A unit that
+was blocked (RST mode, no disk) or errored gets a JSON with `status` set
+accordingly and is excluded from the master CSV.
 
-| Feature | Details |
-|---------|--------|
-| **Template** | eBay "Create or Schedule new listings" (full `fx_category_template`) |
-| **Item Specifics** | All `C:` columns auto-populated (Brand, CPU, RAM, GPU, Screen, etc.) |
-| **Photos** | Auto-built from `listing-photos/{service_tag}/` via GitHub raw URLs |
-| **Pricing** | Battery-based tiering with Best Offer (90% auto-accept, 80% minimum) |
-| **Shipping** | USPS Ground Advantage ($14.99) + UPS Ground ($18.99), buyer pays |
-| **Returns** | Not accepted |
-| **Location** | Boca Raton, FL |
-| **Handling** | 3 business days |
-| **Condition** | Seller Refurbished (3000) — mapped from screen/chassis grades |
+Manual run from the SystemRescue console: `python3 /run/archiso/bootmnt/audit.py`
+(flags: `--dry-run`, `--no-erase`, `--skip-tests`, `--outdir`).
 
-### Pricing Logic
+### What the auditor records
 
-| Criteria | Base Price | Notes |
-|----------|-----------|-------|
-| Vostro 7620 (12th Gen, RTX 3050 Ti) | $420.99 | Base tier |
-| ... + Battery ≥ 85% | $445.99 | +$25 premium |
-| ... + Battery = 100% | $455.99 | +$35 premium |
-| Vostro 7510 (11th Gen, RTX 3050) | $420.99 | Older gen, no Ti |
+| Group | Fields |
+|---|---|
+| identity | service tag, express code, model, SKU, BIOS version/date |
+| cpu | model, physical cores, threads, generation |
+| memory | total GB from DMI (not MemTotal), type, speed, per-module sizes, slots used/total |
+| storage | device, transport, model, capacity, SMART pass, wear %, power-on hours, TB written, media errors |
+| battery | health % (full/design), charge %, cycles if the firmware reports them, design Wh |
+| display | native resolution and physical size from the EDID timing descriptor, diagonal snapped to a standard size, aspect |
+| gpu | discrete and integrated strings from lspci |
+| features | Wi-Fi card and standard, Bluetooth, webcam, backlit keyboard, touchscreen, fingerprint |
+| license | whether an OEM Windows key exists in the ACPI MSDM table (last 5 characters only) |
+| tests | display pass/fail + note, keyboard missing keys, speaker pass/fail/not_tested |
+| erase | method used, duration, post-erase zero check |
+| warnings | battery < 60 %, SMART fail, wear ≥ 50 %, no OEM key, failed tests, not erased |
 
-### Adding Photos for New Laptops
+The speaker test is `not_tested` on 11th/12th gen units because SystemRescue
+does not ship Intel SOF audio firmware; speakers get checked on the golden
+unit in Windows.
 
-1. Take 12-15 photos of the laptop (open, closed, ports, keyboard, stickers, bottom)
-2. Upload to iCloud Shared Album named with the service tag
-3. Copy to `listing-photos/{SERVICE_TAG}/`
-4. Commit and push to GitHub (`git add listing-photos/ && git commit && git push`)
-5. Re-run the generator — photo URLs will auto-populate
+### The erase
 
-> **Note:** The first photo in alphabetical filename order becomes the eBay gallery/main image. After uploading, reorder photos in the eBay listing editor by drag-and-drop.
+Order tried: `nvme format --ses=1` (NVMe user-data erase), `blkdiscard`
+(whole-device TRIM), `nvme sanitize` block erase; SATA: `blkdiscard` then
+ATA Security Erase. Guards: the target must be non-removable, on the NVMe or
+SATA bus, at least 64 GB, and not the boot USB. There is a 10 second
+any-key abort. Afterwards the start, middle and end of the device are read
+back and must be zeros for `verified_blank` to be true.
 
-### Upload Steps
+---
 
-1. Go to **Seller Hub → Reports → Upload**
-2. Click **Upload template**
-3. Select `ebay_listings_upload.csv`
-4. Listings go live immediately (`Action=Add`) — photos, specs, and shipping all pre-filled
-5. Reorder photos in each listing as desired
+## USB 2 — Restorer
 
-### Verification
+**Build** (any Windows PC with a USB-A port, as Administrator). The
+full guide with tests and troubleshooting is
+[restorer/BUILD_ON_WINDOWS.md](restorer/BUILD_ON_WINDOWS.md); the short
+version:
+
+1. Download the Windows 11 multi-edition ISO: https://www.microsoft.com/software-download/windows11
+2. Rufus: device = stick, boot selection = the ISO, partition scheme **GPT**, target **UEFI (non CSM)**, file system **NTFS**, volume label **ESD-ISO**. Click START and **uncheck every box** in the "Windows User Experience" dialog (those options would inject the local-account and privacy bypasses we are deliberately not using).
+3. Fetch and extract the driver packages (Wi-Fi and Bluetooth are the must-haves; see `restorer/Dell/Drivers/README.md`):
+
+```powershell
+cd restorer
+.\get_dell_drivers.ps1 -IncludeBios
+.\build_restorer.ps1 -ExtractDups -ExtractOnly
+```
+
+4. Copy everything onto the stick:
+
+```powershell
+.\build_restorer.ps1
+```
+
+Repeat step 2 and 4 for each stick. No DISM, no image injection, no
+cloning between sticks: with the BIOS in AHCI/NVMe mode the stock media sees
+the SSD, so a Restorer stick is Rufus output plus the files this script copies.
+
+Sticks built under the old workflow (injected `install.wim`, Pro-only,
+`\drivers` folder) still work but always install Pro. Re-flash them so Setup
+can match the edition to each unit's OEM key.
+
+### What the answer file does
+
+- **windowsPE**: wipes Disk 0, GPT partitions (EFI 260 MB, MSR 16 MB, rest NTFS), accepts the EULA. No product key and no image name: Setup installs the edition that matches the key in the laptop's firmware. A unit without a firmware key stops at the key prompt; the auditor flags those units beforehand.
+- **specialize**: finds the USB by looking for `\Dell\Scripts\stage.cmd`, runs `pnputil /add-driver … /install` over `Dell\Drivers\<Model>` and `Dell\Drivers\Common`, then writes `Dell\Reports\<TAG>.txt` with the edition, OEM-key presence, Secure Boot state, disk bus type, and every device still lacking a driver.
+- **oobeSystem**: nothing. The buyer gets the stock Windows 11 experience.
+
+### Activation
+
+Dell embeds the Windows license in firmware (ACPI MSDM). Setup reads it, and
+Windows activates on the first internet connection. Corporate units bought
+with volume licensing have no firmware key; those show
+`oem_key_present: false` in the audit and `NONE IN FIRMWARE` in the report,
+and need a purchased key or an honest "no OS license" listing.
+
+---
+
+## BIOS settings reference (Dell, F2 at power-on)
+
+| Setting | Auditor | Restorer | Shipped |
+|---|---|---|---|
+| Secure Boot | Off | On | **On** |
+| SATA / NVMe Operation | AHCI/NVMe | AHCI/NVMe | **AHCI/NVMe** |
+| Boot sequence | USB first | USB first | any |
+
+AHCI is not Dell's factory default (RAID On / VMD). It is invisible to the
+buyer and means any future reinstall needs no Intel RST driver. The one
+support case: a buyer who later "loads BIOS defaults" flips storage back to
+RAID and Windows will not boot until they set AHCI again.
+
+Optional: Dell's F12 menu → **BIOS Flash Update** can flash the latest BIOS
+from a FAT32 stick (drop the model's BIOS `.exe` on the Auditor stick). Worth
+doing on 2020–2022 units for the security fixes; one more attended start.
+
+---
+
+## eBay listing pipeline (unchanged)
+
+```
+audits/*.json + inventory.csv ─ build_master_csv.py ─▶ audit_master_local.csv
+        ─ generate_ebay_drafts_v2.py ─▶ ebay_listings_upload.csv ─▶ Seller Hub upload
+```
 
 ```bash
-# Run the verification script to cross-check audit data vs. CSV:
-python auditor/verify_listings.py
+python3 auditor/build_master_csv.py
+python3 auditor/generate_ebay_drafts_v2.py auditor/audit_master_local.csv
+python3 auditor/verify_listings.py
 ```
 
-This performs 150+ automated checks per batch: field accuracy, photo count matching, iCloud sync verification, and pricing logic validation.
-
-### Architecture Notes
-
-- **`generate_ebay_drafts.py`** (v1) — Contains the HTML description builder (`build_html_description()`), helper functions for CPU/GPU cleaning, and title builder. Still imported by v2.
-- **`generate_ebay_drafts_v2.py`** (v2) — The primary generator. Uses the full eBay template with 67+ columns. Maps audit data to all item specifics, handles pricing tiers, and builds photo URLs from the repo.
-- **Photo hosting** — Photos are served via `raw.githubusercontent.com` from this repo. No external hosting needed.
-- **Template format** — Uses eBay's `fx_category_template_EBAY_US` (the "Create or Schedule new listings" template). The simpler "Create new drafts" template does NOT support item specifics or the `Draft` action in the full template.
-
-### Known Limitations
-
-- **Draft mode** — The full listing template only supports `Action=Add` (live immediately). There is no `Draft` action. Post-upload edits have no negative impact on search ranking or listing date.
-- **Photo ordering** — Photos are included in alphabetical filename order. Manual drag-and-drop reordering in the eBay editor is required for hero shot selection.
-- **API access** — Currently uses CSV bulk upload. Future improvement: eBay Trading API for programmatic listing management.
+The master CSV keeps the v2 column names first so the generator needs no
+changes, and appends evidence columns (`ssd_wear_pct`, `ssd_power_on_hours`,
+`oem_key_present`, `erase_method`, `warnings`, …) for the description
+template to use later. Photos, pricing tiers and upload steps are as before:
+photos in `listing-photos/<TAG>/` served from GitHub raw URLs, first photo
+alphabetically is the gallery image, reorder in Seller Hub after upload.
 
 ---
 

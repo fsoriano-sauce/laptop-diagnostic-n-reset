@@ -22,3 +22,12 @@ __pycache__/
 ebay_listings_upload-*.csv
 ebay_drafts_upload.csv
 eBay-category-listing-template-*.csv
+
+# Restorer driver payloads (multi-GB, downloaded per model) and reports
+restorer/Dell/Drivers/*
+!restorer/Dell/Drivers/README.md
+restorer/Dell/Downloads/
+restorer/Dell/Reports/
+
+# Auditor scratch on the USB
+auditor/audits/_pending/

@@ -1,1425 +1,1240 @@
 #!/usr/bin/env python3
 """
-audit.py — The "20-Laptop Factory Line" Auditor
-=================================================
-Boots on a SystemRescue Live USB, scans laptop hardware,
-collects an interactive quality grade, and exports results to
-audit_master.csv on the physical USB stick.
+audit.py v3.0 — Laptop line auditor (runs on SystemRescue, stdlib only)
+=======================================================================
 
-v2.0 — Added eBay listing-optimized fields: screen size (inches),
-       color, touchscreen, fingerprint reader, backlit keyboard,
-       WiFi standard, Bluetooth, and webcam detection.
+Per unit, in this order:
 
-Requires: Python 3.6+  (stdlib only — no pip installs)
-Must run as root (for dmidecode, smartctl).
+  ATTENDED  (about one minute at the keyboard)
+    1. Preflight: identity, BIOS storage mode must be AHCI/NVMe, internal
+       disk must be visible. Stops here with instructions if not.
+    2. Display test (solid colours), keyboard test (every key), speaker
+       tone, fingerprint confirmation if not auto-detected.
+
+  UNATTENDED  (walk away after the tests)
+    3. Hardware scan. Every command's raw output is saved next to the JSON
+       so any value can be re-derived later without rebooting the laptop.
+    4. Secure erase of the internal disk (NVMe format / TRIM / sanitize),
+       with a 10 second abort window and a post-erase zero check.
+    5. Write audits/<SERVICE_TAG>.json and audits/<SERVICE_TAG>/raw/*,
+       then power off.
+
+Nothing here grades cosmetics or computes prices. Those live in
+inventory.csv and the listing generator respectively.
+
+Usage (normally launched by the autorun script):
+    python3 audit.py                 # full run
+    python3 audit.py --dry-run       # no erase, no poweroff
+    python3 audit.py --no-erase      # everything except the erase
+    python3 audit.py --skip-tests    # unattended only (bench testing)
+
+Requires root. Tested against SystemRescue 13.x (Python 3.14, nvme-cli,
+smartmontools, alsa-utils, dmidecode, pciutils, usbutils, util-linux).
 """
 
-import csv
+import argparse
+import fcntl
+import glob
+import json
 import os
 import re
+import select
+import struct
 import subprocess
 import sys
+import termios
 import time
-from datetime import datetime
-from pathlib import Path
+from datetime import datetime, timezone
 
-# ─── Constants ───────────────────────────────────────────────────────────────
+VERSION = "3.0"
+MIN_INTERNAL_DISK_GB = 64            # anything smaller is a USB stick or cache module
+ERASE_ABORT_WINDOW_S = 10
+KEYBOARD_TEST_TIMEOUT_S = 240
+ARCHISO_MNT = "/run/archiso/bootmnt"
+FALLBACK_SAVE_DIR = "/tmp"
 
-CSV_FILENAME = "audit_master.csv"
-USB_MOUNT_POINT = "/mnt/usb_data"
-CSV_HEADERS = [
-    "timestamp", "service_tag", "express_service_code",
-    "model", "manufacture_year", "cpu", "cores",
-    "ram_gb", "ram_type", "storage_type", "storage_gb",
-    "smart_status", "battery_health_pct", "battery_charge_pct",
-    "battery_cycles", "gpu", "resolution",
-    "resolution_class", "screen_size_in",
-    "touchscreen", "fingerprint_reader",
-    "backlit_keyboard", "wifi_standard", "bluetooth", "webcam",
-    "screen_grade", "chassis_grade", "color",
-    "charger", "recommendation",
-    "status", "sale_price", "sale_date", "notes",
-]
-
-COLORS_ANSI = {
-    "White":  "\033[107m",   # bright white background
-    "Red":    "\033[41m",
-    "Green":  "\033[42m",
-    "Blue":   "\033[44m",
-    "Black":  "\033[40m",
-}
-RESET_ANSI = "\033[0m"
+ANSI_RESET = "\033[0m"
+ANSI_GREEN = "\033[42m\033[30m"
+ANSI_DIM = "\033[2m"
+ANSI_RED = "\033[41m\033[97m"
+ANSI_BOLD = "\033[1m"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  UTILITY HELPERS
+#  SMALL HELPERS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def run(cmd: str, timeout: int = 15) -> str:
-    """Run a shell command and return stripped stdout, or '' on failure."""
+def run(cmd, timeout=30):
+    """Run a shell command. Returns (rc, stdout, stderr). Never raises."""
     try:
-        result = subprocess.run(
-            cmd, shell=True, capture_output=True, text=True, timeout=timeout
-        )
-        return result.stdout.strip()
-    except Exception:
-        return ""
+        p = subprocess.run(cmd, shell=True, capture_output=True, text=True,
+                           errors="replace", timeout=timeout)
+        return p.returncode, p.stdout, p.stderr
+    except subprocess.TimeoutExpired:
+        return 124, "", f"timeout after {timeout}s"
+    except Exception as e:  # noqa: BLE001
+        return 1, "", str(e)
 
 
-def read_file(path: str) -> str:
-    """Read a text file and return its contents, or '' on failure."""
+def out(cmd, timeout=30):
+    """Stdout of a shell command, stripped, '' on failure."""
+    return run(cmd, timeout)[1].strip()
+
+
+def read_text(path, default=""):
     try:
-        return Path(path).read_text().strip()
-    except Exception:
-        return ""
+        with open(path, "r", errors="replace") as f:
+            return f.read().strip()
+    except OSError:
+        return default
+
+
+def read_bytes(path):
+    try:
+        with open(path, "rb") as f:
+            return f.read()
+    except OSError:
+        return b""
+
+
+def to_int(s, default=None):
+    try:
+        return int(str(s).strip())
+    except (TypeError, ValueError):
+        return default
+
+
+def to_float(s, default=None):
+    try:
+        return float(str(s).strip())
+    except (TypeError, ValueError):
+        return default
+
+
+def now_iso():
+    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
 def clear_screen():
-    os.system("clear")
+    sys.stdout.write("\033[2J\033[H")
+    sys.stdout.flush()
 
 
-def pause(prompt: str = "Press ENTER to continue..."):
-    input(prompt)
+def banner(text, char="═", width=64):
+    print()
+    print(char * width)
+    print(f"  {text}")
+    print(char * width)
 
 
-def getch() -> str:
-    """Read a single keypress (no echo, no ENTER needed)."""
+def wait_key(prompt="Press ENTER to continue..."):
     try:
-        import tty
-        import termios
+        input(prompt)
+    except EOFError:
+        pass
+
+
+def prompt_choice(question, options):
+    """options: dict of single-key -> label. Returns the chosen key (upper)."""
+    while True:
+        print(f"\n  {question}")
+        for k, label in options.items():
+            print(f"    [{k}] {label}")
+        try:
+            ans = input("  > ").strip().upper()
+        except EOFError:
+            return list(options.keys())[0]
+        if ans in options:
+            return ans
+        print(f"  Enter one of: {', '.join(options.keys())}")
+
+
+def key_within(seconds):
+    """Wait up to `seconds` for any keypress on stdin. True if pressed."""
+    try:
         fd = sys.stdin.fileno()
         old = termios.tcgetattr(fd)
+        new = termios.tcgetattr(fd)
+        new[3] = new[3] & ~(termios.ICANON | termios.ECHO)
+        termios.tcsetattr(fd, termios.TCSANOW, new)
         try:
-            tty.setraw(fd)
-            ch = sys.stdin.read(1)
+            termios.tcflush(fd, termios.TCIFLUSH)
+            end = time.time() + seconds
+            while time.time() < end:
+                remaining = max(0.0, end - time.time())
+                sys.stdout.write(f"\r    {int(remaining) + 1:2d}s ")
+                sys.stdout.flush()
+                r, _, _ = select.select([fd], [], [], min(1.0, remaining))
+                if r:
+                    os.read(fd, 64)
+                    return True
+            return False
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old)
-        return ch
-    except (ImportError, termios.error, OSError):
-        # Fallback when no TTY (e.g., launched via autorun pipe)
-        return input()
+            sys.stdout.write("\r        \r")
+    except (termios.error, OSError, ValueError):
+        time.sleep(seconds)
+        return False
+
+
+class Tee:
+    """Mirror stdout to a log file so the console transcript is evidence too."""
+
+    def __init__(self, path):
+        self.stream = sys.stdout
+        self.f = open(path, "a", buffering=1, errors="replace")
+
+    def write(self, s):
+        self.stream.write(s)
+        self.f.write(s)
+
+    def flush(self):
+        self.stream.flush()
+        self.f.flush()
+
+    def fileno(self):
+        return self.stream.fileno()
+
+    def isatty(self):
+        return self.stream.isatty()
+
+
+class RawStore:
+    """Every raw command output lands here. Derive later, never re-boot."""
+
+    def __init__(self, directory):
+        self.dir = directory
+        os.makedirs(directory, exist_ok=True)
+        self.files = []
+
+    def save(self, name, content):
+        path = os.path.join(self.dir, name)
+        mode = "wb" if isinstance(content, bytes) else "w"
+        try:
+            with open(path, mode) as f:
+                f.write(content)
+            self.files.append(name)
+        except OSError:
+            pass
+
+    def capture(self, name, cmd, timeout=30):
+        """Run cmd, save stdout(+stderr) as name, return stdout."""
+        rc, so, se = run(cmd, timeout)
+        body = so if not se else f"{so}\n--- stderr (rc={rc}) ---\n{se}"
+        self.save(name, body)
+        return so
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  PHASE 0 — MOUNT USB READ/WRITE  (Revision A)
+#  PHASE 0 — WRITABLE USB
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def find_boot_usb_partition() -> str:
-    """
-    Identify the USB partition that SystemRescue booted from.
-    Strategy: look through /proc/mounts for the live-media mount,
-    then fall back to scanning for removable block devices.
-    Returns a device path like '/dev/sdb1' or '' if not found.
-    """
-    # Strategy 1: SystemRescue mounts the USB as /run/archiso/bootmnt
-    mounts = read_file("/proc/mounts")
-    for line in mounts.splitlines():
+def boot_device():
+    """Device the live system booted from, e.g. /dev/sdb1, or ''."""
+    for line in read_text("/proc/mounts").splitlines():
         parts = line.split()
-        if len(parts) >= 2 and parts[1] in (
-            "/run/archiso/bootmnt", "/run/initramfs/live",
-            "/cdrom", "/live/image"
-        ):
+        if len(parts) >= 2 and parts[1] == ARCHISO_MNT:
             return parts[0]
-
-    # Strategy 2: find removable USB block devices via lsblk
-    out = run("lsblk -nrpo NAME,RM,TYPE | grep '1 part'")
-    for line in out.splitlines():
-        cols = line.split()
-        if cols:
-            return cols[0]
-
     return ""
 
 
-def mount_usb_rw() -> str:
-    """
-    Make the boot USB writable and return the path to save CSV data.
-    SystemRescue v12 mounts the USB at /run/archiso/bootmnt (read-only).
-    We remount it in-place rather than creating a new mount point.
-    """
-    # Strategy 1: SystemRescue v12 native mount point
-    ARCHISO_MNT = "/run/archiso/bootmnt"
+def parent_disk(dev):
+    """/dev/sdb1 -> /dev/sdb, /dev/nvme0n1p1 -> /dev/nvme0n1."""
+    if not dev:
+        return ""
+    real = os.path.realpath(dev)
+    name = os.path.basename(real)
+    for cand in os.listdir("/sys/block") if os.path.isdir("/sys/block") else []:
+        if name == cand or os.path.isdir(f"/sys/block/{cand}/{name}"):
+            return f"/dev/{cand}"
+    return re.sub(r"p?\d+$", "", real)
+
+
+def mount_usb_rw():
     if os.path.ismount(ARCHISO_MNT):
-        ret = os.system(f"mount -o remount,rw {ARCHISO_MNT} 2>/dev/null")
-        if ret == 0:
-            print(f"[✓] Remounted {ARCHISO_MNT} as R/W")
+        rc, _, _ = run(f"mount -o remount,rw {ARCHISO_MNT}")
+        if rc == 0:
+            print(f"  [✓] USB writable at {ARCHISO_MNT}")
             return ARCHISO_MNT
-        print(f"[!] WARNING: Failed to remount {ARCHISO_MNT} as R/W.")
-
-    # Strategy 2: detect partition and try a fresh mount
-    partition = find_boot_usb_partition()
-    if partition:
-        os.makedirs(USB_MOUNT_POINT, exist_ok=True)
-        ret = os.system(f"mount -o remount,rw {partition} {USB_MOUNT_POINT} 2>/dev/null")
-        if ret != 0:
-            ret = os.system(f"mount -o rw {partition} {USB_MOUNT_POINT} 2>/dev/null")
-        if ret == 0:
-            print(f"[✓] USB partition {partition} mounted R/W at {USB_MOUNT_POINT}")
-            return USB_MOUNT_POINT
-        print(f"[!] WARNING: Failed to mount {partition} as R/W.")
-
-    # Fallback: /tmp (RAM-backed, lost on reboot)
-    print("[!] WARNING: Could not make USB writable.")
-    print("    CSV will be saved to /tmp (may be lost on reboot).")
-    return "/tmp"
-
-
-def sync_and_unmount():
-    """Flush writes to disk."""
-    os.system("sync")
+        print(f"  [!] Could not remount {ARCHISO_MNT} read-write")
+    print("  [!] USB not writable. Results go to /tmp and are LOST on poweroff.")
+    return FALLBACK_SAVE_DIR
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  PHASE 1 — SILENT HARDWARE SCAN
+#  PHASE 1 — PREFLIGHT (identity, storage mode, internal disk)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def get_service_tag() -> str:
-    return run("dmidecode -s system-serial-number") or "N/A"
-
-
-def compute_express_service_code(service_tag: str) -> str:
-    """Convert Dell service tag (base-36) to Express Service Code (base-10)."""
-    if not service_tag or service_tag == "N/A":
-        return "N/A"
-    try:
-        express = 0
-        for c in service_tag.upper():
-            if c.isdigit():
-                val = int(c)
-            elif c.isalpha():
-                val = ord(c) - ord('A') + 10
-            else:
-                return "N/A"
-            express = express * 36 + val
-        return str(express)
-    except Exception:
-        return "N/A"
-
-
-def get_manufacture_year() -> str:
-    """Get manufacture/ship year from BIOS release date via dmidecode."""
-    # Try the BIOS release date first
-    bios_date = run("dmidecode -s bios-release-date")
-    if bios_date:
-        # Format is typically MM/DD/YYYY or YYYY-MM-DD
-        import re
-        m = re.search(r'(20\d{2})', bios_date)
-        if m:
-            return m.group(1)
-    # Fallback: chassis manufacture date
-    chassis_info = run("dmidecode -t chassis")
-    if chassis_info:
-        import re
-        m = re.search(r'(20\d{2})', chassis_info)
-        if m:
-            return m.group(1)
-    return "N/A"
-
-
-def get_model_name() -> str:
-    return run("dmidecode -s system-product-name") or "N/A"
-
-
-def get_cpu_info() -> tuple:
-    """Return (model_name, core_count)."""
-    cpuinfo = read_file("/proc/cpuinfo")
-    model = "N/A"
-    cores = 0
-    for line in cpuinfo.splitlines():
-        if line.startswith("model name") and model == "N/A":
-            model = line.split(":", 1)[1].strip()
-        if line.startswith("processor"):
-            cores += 1
-    return model, cores
-
-
-def get_ram_total_gb() -> int:
-    """Return total RAM in GB (rounded)."""
-    meminfo = read_file("/proc/meminfo")
-    for line in meminfo.splitlines():
-        if line.startswith("MemTotal"):
-            kb = int(re.findall(r"\d+", line)[0])
-            return round(kb / 1_048_576)  # kB → GB
-    return 0
-
-
-def get_ram_type() -> str:
-    """Return DDR type via dmidecode."""
-    out = run("dmidecode -t memory")
-    for line in out.splitlines():
-        if "Type:" in line and "DDR" in line:
-            return line.split(":", 1)[1].strip()
-    return "N/A"
-
-
-def try_unlock_rst_storage():
-    """
-    Expose NVMe drives hidden behind Intel RST RAID mode.
-
-    Dell laptops (especially Vostro 7500 10th gen) hide the NVMe SSD
-    behind Intel RST in RAID mode. The NVMe controller uses PCI class
-    0104 (RAID) instead of 0106 (AHCI), so Linux can't see the drive.
-
-    Strategy (in order):
-      1. PCI rebind: Find Intel RAID controller, unbind, rebind as AHCI
-      2. Load NVMe/VMD modules and rescan PCI bus
-      3. Try dmraid for Intel IMSM fakeraid
-      4. Try mdadm for RAID metadata
-      5. Check nvme list and smartctl
-      6. Scan /sys/class/block for any hidden large devices
-
-    Returns the device path if found, else None.
-    """
-    import glob
-
-    def _find_large(devices):
-        """Return first device > 64GB from a list of paths."""
-        for dev in devices:
-            if not os.path.exists(dev) or os.path.isdir(dev):
-                continue
-            out = run(f"blockdev --getsize64 {dev} 2>/dev/null")
-            try:
-                if int(out.strip()) > 64_000_000_000:
-                    return dev
-            except ValueError:
-                continue
+def express_service_code(tag):
+    if not tag or not re.fullmatch(r"[A-Z0-9]+", tag.upper()):
         return None
+    n = 0
+    for c in tag.upper():
+        n = n * 36 + (int(c) if c.isdigit() else ord(c) - ord("A") + 10)
+    return str(n)
 
-    # Step 1: PCI Rebind (Intel RST RAID -> AHCI)
-    print("        Step 1: Looking for Intel RST RAID controller...")
-    lspci_out = run("lspci -nn 2>/dev/null")
-    rst_bdf = None
-    for line in lspci_out.splitlines():
-        if "8086" in line and ("RAID" in line.upper() or "[0104]" in line):
-            rst_bdf = line.split()[0]
-            print(f"        Found: {rst_bdf} - {line.strip()}")
-            break
 
-    if rst_bdf:
-        pci = f"0000:{rst_bdf}"
-        print(f"        Rebinding {pci} from RAID to AHCI...")
-        os.system(f"echo '{pci}' > /sys/bus/pci/devices/{pci}/driver/unbind 2>/dev/null")
-        time.sleep(1)
-        os.system(f"echo '{pci}' > /sys/bus/pci/drivers/ahci/bind 2>/dev/null")
-        time.sleep(2)
-        os.system("echo 1 > /sys/bus/pci/rescan 2>/dev/null")
-        time.sleep(2)
-        r = _find_large(glob.glob("/dev/nvme*n1") + [f"/dev/sd{c}" for c in "abcdefgh"])
-        if r:
-            print(f"        SUCCESS via PCI rebind: {r}")
-            return r
+def read_identity(raw):
+    dmi = "/sys/class/dmi/id"
+    ident = {
+        "service_tag": read_text(f"{dmi}/product_serial") or out("dmidecode -s system-serial-number") or None,
+        "manufacturer": read_text(f"{dmi}/sys_vendor") or None,
+        "model": read_text(f"{dmi}/product_name") or None,
+        "sku": read_text(f"{dmi}/product_sku") or None,
+        "family": read_text(f"{dmi}/product_family") or None,
+        "bios_version": read_text(f"{dmi}/bios_version") or None,
+        "bios_date": read_text(f"{dmi}/bios_date") or None,
+        "chassis_type": read_text(f"{dmi}/chassis_type") or None,
+    }
+    if ident["service_tag"]:
+        ident["service_tag"] = ident["service_tag"].strip().upper()
+    ident["express_service_code"] = express_service_code(ident["service_tag"])
+    raw.capture("dmidecode.txt", "dmidecode", timeout=20)
+    return ident
 
-    # Step 2: Load NVMe/VMD modules (minimal set to avoid crashes)
-    print("        Step 2: Loading NVMe/VMD modules...")
-    for mod in ["nvme_core", "nvme", "vmd"]:
-        os.system(f"modprobe {mod} 2>/dev/null")
-    time.sleep(2)
-    os.system("echo 1 > /sys/bus/pci/rescan 2>/dev/null")
-    time.sleep(1)
-    r = _find_large(glob.glob("/dev/nvme*n1"))
-    if r:
-        print(f"        SUCCESS via module load: {r}")
-        return r
 
-    # Step 3: dmraid (Intel IMSM fakeraid)
-    print("        Step 3: Trying dmraid...")
-    os.system("modprobe dm_mod 2>/dev/null")
-    os.system("dmraid -a y 2>/dev/null")
-    time.sleep(1)
-    mapped = [d for d in glob.glob("/dev/mapper/*") if d != "/dev/mapper/control"]
-    r = _find_large(mapped)
-    if r:
-        print(f"        SUCCESS via dmraid: {r}")
-        return r
+def storage_controller_mode(raw):
+    """
+    Returns ('ahci'|'rst_or_vmd'|'unknown', description).
+    Intel RST RAID and Intel VMD both present a PCI class 0104 (RAID)
+    controller with vendor 8086. In that mode the NVMe SSD is hidden from
+    Linux (10th gen) and from stock Windows media (all gens).
+    """
+    lspci_n = raw.capture("lspci-n.txt", "lspci -n")
+    lspci_nn = raw.capture("lspci-nn.txt", "lspci -nn")
+    raw.capture("lspci-vvv.txt", "lspci -vvv", timeout=20)
+    raid = []
+    for line in lspci_n.splitlines():
+        parts = line.split()
+        if len(parts) >= 3 and parts[1].startswith("0104") and parts[2].startswith("8086:"):
+            raid.append(parts[0])
+    if raid:
+        desc = [l for l in lspci_nn.splitlines() if l.split()[0] in raid]
+        return "rst_or_vmd", "; ".join(desc) or ", ".join(raid)
+    if not lspci_n:
+        return "unknown", "lspci produced no output"
+    return "ahci", "no Intel RAID/VMD controller present"
 
-    # Step 4: mdadm
-    print("        Step 4: Trying mdadm...")
-    os.system("modprobe md_mod 2>/dev/null")
-    os.system("mdadm --assemble --scan 2>/dev/null")
-    time.sleep(1)
-    r = _find_large(glob.glob("/dev/md*"))
-    if r:
-        print(f"        SUCCESS via mdadm: {r}")
-        return r
 
-    # Step 5: nvme CLI + smartctl
-    print("        Step 5: Scanning nvme/smartctl...")
-    for line in run("nvme list 2>/dev/null").splitlines():
-        m = re.search(r"(/dev/nvme\d+n\d+)", line)
-        if m:
-            r = _find_large([m.group(1)])
-            if r:
-                print(f"        SUCCESS via nvme list: {r}")
-                return r
+def list_block_devices(raw):
+    js = raw.capture("lsblk.json",
+                     "lsblk -J -b -o NAME,PATH,TYPE,RM,HOTPLUG,SIZE,TRAN,ROTA,MODEL,SERIAL,VENDOR,MOUNTPOINTS")
+    try:
+        return json.loads(js).get("blockdevices", [])
+    except (ValueError, AttributeError):
+        return []
 
-    for line in run("smartctl --scan 2>/dev/null").splitlines():
-        m = re.search(r"(/dev/\S+)", line)
-        if m and "loop" not in m.group(1) and "ram" not in m.group(1):
-            r = _find_large([m.group(1)])
-            if r:
-                print(f"        SUCCESS via smartctl: {r}")
-                return r
 
-    # Step 6: Scan /sys/class/block for ANY large hidden devices
-    print("        Step 6: Scanning /sys/class/block...")
-    blk = "/sys/class/block"
-    if os.path.isdir(blk):
-        for name in os.listdir(blk):
-            sz_file = f"{blk}/{name}/size"
-            if os.path.exists(sz_file):
+def find_internal_disks(devices, boot_parent):
+    """Non-removable NVMe/SATA disks >= MIN_INTERNAL_DISK_GB, largest first."""
+    found = []
+    for d in devices:
+        if d.get("type") != "disk":
+            continue
+        path = d.get("path") or f"/dev/{d.get('name')}"
+        if path == boot_parent:
+            continue
+        tran = (d.get("tran") or "").lower()
+        if tran == "usb" or d.get("rm") in (True, "1", 1):
+            continue
+        if tran not in ("nvme", "sata", "ata", ""):
+            continue
+        size_gb = (to_int(d.get("size"), 0) or 0) / 1e9
+        if size_gb < MIN_INTERNAL_DISK_GB:
+            continue
+        found.append({
+            "device": path,
+            "transport": tran or ("nvme" if "nvme" in path else "sata"),
+            "size_gb": round(size_gb),
+            "size_bytes": to_int(d.get("size"), 0),
+            "model": (d.get("model") or "").strip() or None,
+            "serial": (d.get("serial") or "").strip() or None,
+            "rotational": d.get("rota") in (True, "1", 1),
+        })
+    found.sort(key=lambda x: x["size_gb"], reverse=True)
+    return found
+
+
+def preflight(raw):
+    """Returns (identity, disks, problems). problems non-empty => stop."""
+    problems = []
+    ident = read_identity(raw)
+    print(f"  Service tag : {ident['service_tag']}   Model: {ident['model']}   BIOS: {ident['bios_version']}")
+
+    mode, desc = storage_controller_mode(raw)
+    if mode == "rst_or_vmd":
+        problems.append(
+            "Storage controller is in Intel RST/VMD (RAID) mode.\n"
+            f"      {desc}\n"
+            "      Reboot, press F2, set  SATA/NVMe Operation  (or  SATA Operation)  to  AHCI/NVMe,\n"
+            "      save, and boot this USB again. Both the audit and the Windows install need this.")
+    boot = boot_device()
+    bparent = parent_disk(boot)
+    disks = find_internal_disks(list_block_devices(raw), bparent)
+    if not disks and mode != "rst_or_vmd":
+        problems.append(
+            f"No internal disk of at least {MIN_INTERNAL_DISK_GB} GB is visible.\n"
+            "      Check BIOS storage mode (AHCI/NVMe) and that the SSD is seated.")
+    if disks:
+        d = disks[0]
+        print(f"  Internal SSD: {d['device']}  {d['size_gb']} GB  {d['transport'].upper()}  {d['model'] or ''}")
+    if len(disks) > 1:
+        others = ", ".join(f"{x['device']} {x['size_gb']}GB" for x in disks[1:])
+        print(f"  [!] More than one internal disk: {others}. Only the largest is audited and erased.")
+    return ident, disks, problems
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  PHASE 2 — ATTENDED TESTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+COLOR_SCREENS = [
+    ("WHITE", "\033[107m", "\033[30m"),
+    ("RED", "\033[41m", "\033[97m"),
+    ("GREEN", "\033[42m", "\033[30m"),
+    ("BLUE", "\033[44m", "\033[97m"),
+    ("BLACK", "\033[40m", "\033[97m"),
+]
+
+
+def display_test():
+    """Solid colour screens. Operator looks for dead pixels, bleed, lines."""
+    banner("DISPLAY TEST")
+    print("  Each screen fills with one colour. Look for dead pixels, bright spots,")
+    print("  lines, backlight bleed, and yellowing. Press ENTER to advance.")
+    wait_key("  Press ENTER to start...")
+    try:
+        size = os.get_terminal_size()
+        lines, cols = size.lines, size.columns
+    except OSError:
+        lines, cols = 50, 200
+    scr = sys.__stdout__          # screen only; keep the fills out of console.log
+    try:
+        for name, bg, fg in COLOR_SCREENS:
+            scr.write("\033[2J\033[H" + bg)
+            for _ in range(lines):
+                scr.write(" " * cols)
+            row, col = lines // 2, max(0, (cols - len(name) - 24) // 2)
+            scr.write(f"\033[{row};{col}H{fg}  [ {name} — ENTER for next ]  ")
+            scr.flush()
+            input()
+    except (EOFError, OSError):
+        pass
+    finally:
+        scr.write(ANSI_RESET + "\033[2J\033[H")
+        scr.flush()
+    ans = prompt_choice("Any screen defects?",
+                        {"N": "No, panel is clean", "Y": "Yes (dead pixel, bleed, line, scratch)"})
+    note = None
+    if ans == "Y":
+        try:
+            note = input("  Describe briefly > ").strip() or "defect noted"
+        except EOFError:
+            note = "defect noted"
+    return {"result": "pass" if ans == "N" else "fail", "note": note}
+
+
+# Linux input keycodes. Required = main block + arrows. Optional groups are
+# reported but never fail the unit (F-row is Fn-dependent on Dell firmware).
+KEY_ROWS = [
+    [("ESC", 1, "opt"), ("F1", 59, "opt"), ("F2", 60, "opt"), ("F3", 61, "opt"), ("F4", 62, "opt"),
+     ("F5", 63, "opt"), ("F6", 64, "opt"), ("F7", 65, "opt"), ("F8", 66, "opt"), ("F9", 67, "opt"),
+     ("F10", 68, "opt"), ("F11", 87, "opt"), ("F12", 88, "opt"), ("PRTSC", 99, "opt"),
+     ("INS", 110, "opt"), ("DEL", 111, "req")],
+    [("`", 41, "req"), ("1", 2, "req"), ("2", 3, "req"), ("3", 4, "req"), ("4", 5, "req"),
+     ("5", 6, "req"), ("6", 7, "req"), ("7", 8, "req"), ("8", 9, "req"), ("9", 10, "req"),
+     ("0", 11, "req"), ("-", 12, "req"), ("=", 13, "req"), ("BKSP", 14, "req")],
+    [("TAB", 15, "req"), ("Q", 16, "req"), ("W", 17, "req"), ("E", 18, "req"), ("R", 19, "req"),
+     ("T", 20, "req"), ("Y", 21, "req"), ("U", 22, "req"), ("I", 23, "req"), ("O", 24, "req"),
+     ("P", 25, "req"), ("[", 26, "req"), ("]", 27, "req"), ("\\", 43, "req")],
+    [("CAPS", 58, "req"), ("A", 30, "req"), ("S", 31, "req"), ("D", 32, "req"), ("F", 33, "req"),
+     ("G", 34, "req"), ("H", 35, "req"), ("J", 36, "req"), ("K", 37, "req"), ("L", 38, "req"),
+     (";", 39, "req"), ("'", 40, "req"), ("ENTER", 28, "req")],
+    [("LSHIFT", 42, "req"), ("Z", 44, "req"), ("X", 45, "req"), ("C", 46, "req"), ("V", 47, "req"),
+     ("B", 48, "req"), ("N", 49, "req"), ("M", 50, "req"), (",", 51, "req"), (".", 52, "req"),
+     ("/", 53, "req"), ("RSHIFT", 54, "req")],
+    [("LCTRL", 29, "req"), ("WIN", 125, "req"), ("LALT", 56, "req"), ("SPACE", 57, "req"),
+     ("RALT", 100, "req"), ("RCTRL", 97, "req"), ("←", 105, "req"), ("↑", 103, "req"),
+     ("↓", 108, "req"), ("→", 106, "req")],
+    [("HOME", 102, "opt"), ("END", 107, "opt"), ("PGUP", 104, "opt"), ("PGDN", 109, "opt"),
+     ("MENU", 127, "opt")],
+    [("NUMLK", 69, "pad"), ("KP/", 98, "pad"), ("KP*", 55, "pad"), ("KP-", 74, "pad"),
+     ("KP7", 71, "pad"), ("KP8", 72, "pad"), ("KP9", 73, "pad"), ("KP+", 78, "pad"),
+     ("KP4", 75, "pad"), ("KP5", 76, "pad"), ("KP6", 77, "pad"), ("KP1", 79, "pad"),
+     ("KP2", 80, "pad"), ("KP3", 81, "pad"), ("KP0", 82, "pad"), ("KP.", 83, "pad"),
+     ("KPENT", 96, "pad")],
+]
+EVIOCGRAB = 0x40044590
+INPUT_EVENT = struct.Struct("llHHi")
+EV_KEY = 1
+
+
+def find_keyboard_devices(raw):
+    text = read_text("/proc/bus/input/devices")
+    raw.save("proc_bus_input_devices.txt", text)
+    devs = []
+    skip = ("power button", "sleep button", "lid switch", "video bus", "hotkey", "wmi")
+    for block in text.split("\n\n"):
+        name_m = re.search(r'N: Name="(.*)"', block)
+        h_m = re.search(r"H: Handlers=(.*)", block)
+        ev_m = re.search(r"B: EV=([0-9a-f]+)", block)
+        if not (name_m and h_m and ev_m):
+            continue
+        name = name_m.group(1)
+        if "kbd" not in h_m.group(1):
+            continue
+        if any(s in name.lower() for s in skip):
+            continue
+        ev = int(ev_m.group(1), 16)
+        if not ev & (1 << EV_KEY):
+            continue
+        e = re.search(r"event(\d+)", h_m.group(1))
+        if e:
+            devs.append((name, f"/dev/input/event{e.group(1)}"))
+    # Internal keyboard first (i8042 / AT Translated), then anything else.
+    devs.sort(key=lambda d: 0 if "at translated" in d[0].lower() else 1)
+    return devs
+
+
+def _draw_keyboard(pressed, remaining_req, elapsed):
+    scr = sys.__stdout__          # screen only; redraws stay out of console.log
+    buf = ["\033[H",
+           f"{ANSI_BOLD}  KEYBOARD TEST{ANSI_RESET}  press every key · ESC×3 to finish · "
+           f"{remaining_req} required keys left · {int(elapsed)}s   \n\n"]
+    for row in KEY_ROWS:
+        line = "  "
+        for label, code, group in row:
+            cell = f" {label} "
+            if code in pressed:
+                line += ANSI_GREEN + cell + ANSI_RESET
+            elif group == "req":
+                line += ANSI_RED + cell + ANSI_RESET
+            else:
+                line += ANSI_DIM + cell + ANSI_RESET
+            line += " "
+        buf.append(line + "   \n")
+    buf.append(f"\n  {ANSI_RED} red {ANSI_RESET} required  {ANSI_DIM} dim {ANSI_RESET} optional (F-row needs Fn held)  "
+               f"{ANSI_GREEN} green {ANSI_RESET} seen        \n")
+    scr.write("".join(buf))
+    scr.flush()
+
+
+def keyboard_test(raw):
+    banner("KEYBOARD TEST")
+    devs = find_keyboard_devices(raw)
+    if not devs:
+        print("  [!] No keyboard input device found. Test skipped.")
+        return {"result": "not_tested", "reason": "no evdev keyboard device"}
+    print("  Reading: " + "; ".join(f"{n} ({p})" for n, p in devs))
+    print("  Press every key, including Shift/Ctrl/Alt on both sides and the arrows.")
+    print("  Numpad keys count only if you press any of them. Finish with ESC three times.")
+    wait_key("  Press ENTER to start...")
+
+    required = {code for row in KEY_ROWS for _, code, g in row if g == "req"}
+    pad = {code for row in KEY_ROWS for _, code, g in row if g == "pad"}
+    labels = {code: label for row in KEY_ROWS for label, code, _ in row}
+    pressed, extra = set(), set()
+    fds = []
+    for _, path in devs:
+        try:
+            fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+            fcntl.ioctl(fd, EVIOCGRAB, 1)
+            fds.append(fd)
+        except OSError:
+            continue
+    if not fds:
+        print("  [!] Could not open keyboard devices. Test skipped.")
+        return {"result": "not_tested", "reason": "could not open evdev devices"}
+
+    clear_screen()
+    start = time.time()
+    last_event = start
+    esc_streak = 0
+    finished_reason = "esc"
+    try:
+        _draw_keyboard(pressed, len(required), 0)
+        while True:
+            r, _, _ = select.select(fds, [], [], 0.5)
+            changed = False
+            for fd in r:
                 try:
-                    with open(sz_file) as f:
-                        sz = int(f.read().strip()) * 512
-                    if sz > 64_000_000_000:
-                        dev = f"/dev/{name}"
-                        if os.path.exists(dev):
-                            print(f"        Found large block device: {dev} ({sz // 1_000_000_000}GB)")
-                            return dev
-                except (ValueError, IOError):
+                    data = os.read(fd, INPUT_EVENT.size * 64)
+                except (BlockingIOError, OSError):
                     continue
+                for off in range(0, len(data) - INPUT_EVENT.size + 1, INPUT_EVENT.size):
+                    _, _, typ, code, val = INPUT_EVENT.unpack_from(data, off)
+                    if typ != EV_KEY or val != 1:
+                        continue
+                    last_event = time.time()
+                    changed = True
+                    esc_streak = esc_streak + 1 if code == 1 else 0
+                    (pressed if code in labels else extra).add(code)
+            if changed:
+                _draw_keyboard(pressed, len(required - pressed), time.time() - start)
+            if esc_streak >= 3:
+                break
+            if required <= pressed and (not (pad & pressed) or pad <= pressed):
+                finished_reason = "all_required"
+                _draw_keyboard(pressed, 0, time.time() - start)
+                time.sleep(1.0)
+                break
+            if time.time() - last_event > KEYBOARD_TEST_TIMEOUT_S:
+                finished_reason = "timeout"
+                break
+    finally:
+        for fd in fds:
+            try:
+                fcntl.ioctl(fd, EVIOCGRAB, 0)
+                os.close(fd)
+            except OSError:
+                pass
+        try:
+            termios.tcflush(sys.stdin.fileno(), termios.TCIFLUSH)
+        except (termios.error, ValueError):
+            pass
+        clear_screen()
 
-    print("        All 6 methods exhausted.")
+    missing_req = sorted(labels[c] for c in required - pressed)
+    pad_used = bool(pad & pressed)
+    missing_pad = sorted(labels[c] for c in pad - pressed) if pad_used else []
+    missing_opt = sorted(labels[c] for c in
+                         {code for row in KEY_ROWS for _, code, g in row if g == "opt"} - pressed)
+    result = "pass" if not missing_req and not missing_pad else "fail"
+    print(f"  Keys seen: {len(pressed)}   required missing: {missing_req or 'none'}")
+    if pad_used:
+        print(f"  Numpad missing: {missing_pad or 'none'}")
+    if result == "fail":
+        ans = prompt_choice("Required keys did not register. Confirm:",
+                            {"F": "Keyboard FAIL (dead keys)", "P": "Pass anyway (operator skipped keys)"})
+        if ans == "P":
+            result = "pass_operator_override"
+    return {
+        "result": result,
+        "finished_by": finished_reason,
+        "keys_seen": len(pressed),
+        "missing_required": missing_req,
+        "numpad_present": pad_used,
+        "missing_numpad": missing_pad,
+        "missing_optional": missing_opt,
+        "devices": [n for n, _ in devs],
+    }
+
+
+def speaker_test(raw):
+    banner("SPEAKER TEST")
+    cards = raw.capture("proc_asound_cards.txt", "cat /proc/asound/cards")
+    if not cards.strip() or "no soundcards" in cards:
+        print("  [i] No ALSA sound card in this live environment (Intel SOF firmware is not")
+        print("      shipped with SystemRescue). Speakers get checked in Windows instead.")
+        return {"result": "not_tested", "reason": "no sound card exposed in live environment"}
+    for ctl in ("Master", "Speaker", "PCM", "Headphone"):
+        run(f"amixer -q sset '{ctl}' unmute 2>/dev/null; amixer -q sset '{ctl}' 80% 2>/dev/null", timeout=5)
+    raw.capture("amixer.txt", "amixer")
+    while True:
+        print("  Playing a tone on left then right...")
+        rc = 1
+        for dev in ("default", "plughw:0,0", "plughw:1,0"):
+            rc, _, _ = run(f"timeout 8 speaker-test -D {dev} -t sine -f 523 -c 2 -l 1", timeout=12)
+            if rc in (0, 124):
+                break
+        if rc not in (0, 124):
+            print("  [!] speaker-test could not open a playback device.")
+            return {"result": "not_tested", "reason": "no playback device"}
+        ans = prompt_choice("Did you hear the tone from BOTH speakers?",
+                            {"Y": "Yes, both", "N": "No / only one / distorted", "R": "Replay"})
+        if ans == "R":
+            continue
+        return {"result": "pass" if ans == "Y" else "fail"}
+
+
+FINGERPRINT_USB_IDS = ("27c6:", "138a:", "06cb:00", "1c7a:", "2808:", "04f3:0c", "10a5:", "298d:")
+
+
+def detect_fingerprint(raw):
+    lsusb = raw.capture("lsusb.txt", "lsusb")
+    low = lsusb.lower()
+    if "fingerprint" in low or any(i in low for i in FINGERPRINT_USB_IDS):
+        return "yes"
+    if "fingerprint" in out("udevadm info --export-db 2>/dev/null | grep -i fingerprint").lower():
+        return "yes"
+    return "unknown"
+
+
+def run_attended_tests(raw, skip):
+    tests = {}
+    if skip:
+        return {"display": {"result": "not_tested"}, "keyboard": {"result": "not_tested"},
+                "speaker": {"result": "not_tested"}}
+    tests["display"] = display_test()
+    tests["keyboard"] = keyboard_test(raw)
+    tests["speaker"] = speaker_test(raw)
+    return tests
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  PHASE 3 — UNATTENDED HARDWARE SCAN
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def cpu_generation(model):
+    m = re.search(r"i[3579]-(\d{4,5})", model or "")
+    if m:
+        n = m.group(1)
+        return int(n[:2]) if len(n) == 5 else int(n[0])
+    m = re.search(r"Core\(TM\) Ultra \d+ (\d)", model or "")
+    if m:
+        return 100 + int(m.group(1))     # Core Ultra series 1/2 -> 101/102
+    m = re.search(r"Ryzen\s+\d\s+(\d)", model or "")
+    if m:
+        return int(m.group(1))
     return None
 
 
-def get_primary_disk() -> str:
-    """
-    Return the primary internal disk device (e.g. /dev/nvme0n1 or /dev/sda).
-    Skips the boot USB and removable devices.
-    Prefers the LARGEST non-removable disk to avoid picking up small
-    Optane/eMMC cache modules instead of the main SSD.
-    """
-    boot_usb = find_boot_usb_partition()
-    # Strip partition number to get parent device
-    boot_parent = re.sub(r"p?\d+$", "", boot_usb) if boot_usb else ""
-
-    # Collect all non-removable, non-USB disks with their sizes
-    candidates = []
-    out = run("lsblk -dnpo NAME,TYPE,RM,SIZE --bytes")
-    for line in out.splitlines():
-        cols = line.split()
-        if len(cols) >= 4 and cols[1] == "disk" and cols[2] == "0":
-            if cols[0] != boot_parent:
-                try:
-                    size = int(cols[3])
-                except ValueError:
-                    size = 0
-                candidates.append((cols[0], size))
-
-    # Pick the LARGEST disk (avoids Optane/eMMC cache modules)
-    if candidates:
-        candidates.sort(key=lambda x: x[1], reverse=True)
-        return candidates[0][0]
-
-    # Fallback: just pick nvme0n1 or sda
-    if os.path.exists("/dev/nvme0n1"):
-        return "/dev/nvme0n1"
-    if os.path.exists("/dev/sda"):
-        return "/dev/sda"
-    return ""
+def scan_cpu(raw):
+    info = read_text("/proc/cpuinfo")
+    raw.save("proc_cpuinfo.txt", info)
+    raw.capture("lscpu.txt", "lscpu")
+    model, threads, cores = None, 0, set()
+    for line in info.splitlines():
+        if line.startswith("model name") and model is None:
+            model = line.split(":", 1)[1].strip()
+        elif line.startswith("processor"):
+            threads += 1
+        elif line.startswith("core id"):
+            cores.add(line.split(":", 1)[1].strip())
+    return {"model": model, "cores": len(cores) or None, "threads": threads or None,
+            "generation": cpu_generation(model)}
 
 
-def get_storage_info(disk: str) -> tuple:
-    """Return (type_str, capacity_gb, smart_status)."""
-    if not disk:
-        return "N/A", 0, "N/A"
-
-    # Type
-    stor_type = "NVMe" if "nvme" in disk else "SATA"
-
-    # Capacity
-    size_bytes = run(f"lsblk -bdn -o SIZE {disk}")
-    try:
-        capacity_gb = round(int(size_bytes) / 1_000_000_000)
-    except ValueError:
-        capacity_gb = 0
-
-    # Sanity check: if drive is suspiciously small (<64GB), it's likely
-    # an Intel Optane cache module or eMMC, not the primary SSD.
-    # Try comprehensive RST/fakeraid unlock methods.
-    if capacity_gb < 64:
-        print(f"\n    [!] WARNING: Detected {capacity_gb}GB {stor_type} - too small for primary drive.")
-        print(f"        Attempting Intel RST/VMD/fakeraid unlock (5 methods)...")
-        rst_disk = try_unlock_rst_storage()
-        if rst_disk:
-            print(f"        SUCCESS: Found real disk at {rst_disk}")
-            disk = rst_disk
-            stor_type = "NVMe" if "nvme" in disk else "SATA"
-            # For mapped RAID devices, use blockdev instead of lsblk
-            size_bytes = run(f"blockdev --getsize64 {disk} 2>/dev/null")
-            if not size_bytes.strip():
-                size_bytes = run(f"lsblk -bdn -o SIZE {disk}")
-            try:
-                capacity_gb = round(int(size_bytes.strip()) / 1_000_000_000)
-            except ValueError:
-                capacity_gb = 0
-            print(f"        Updated: {stor_type} {capacity_gb}GB")
-        else:
-            # Also try re-scanning lsblk (modules may have exposed new devices)
-            new_disk = get_primary_disk()
-            if new_disk and new_disk != disk:
-                print(f"        Found new disk via rescan: {new_disk}")
-                disk = new_disk
-                stor_type = "NVMe" if "nvme" in disk else "SATA"
-                size_bytes = run(f"lsblk -bdn -o SIZE {disk}")
-                try:
-                    capacity_gb = round(int(size_bytes) / 1_000_000_000)
-                except ValueError:
-                    capacity_gb = 0
-                print(f"        Updated: {stor_type} {capacity_gb}GB")
-
-        # If STILL too small after all attempts, try model-based lookup.
-        # Intel RST "remapped NVMe" on 10th gen Comet Lake is firmware-locked
-        # and CANNOT be exposed from Linux without changing BIOS to AHCI.
-        # (Confirmed: Arch Wiki, Fedora docs, Dell support, kernel docs)
-        if capacity_gb < 64:
-            print(f"        All automated RST unlock methods failed.")
-            print(f"        Intel RST remapped NVMe (firmware-locked, BIOS must be AHCI).")
-
-            # Step A: Check dmesg for any NVMe identity info leaked by ahci driver
-            dmesg_out = run("dmesg 2>/dev/null")
-            for line in dmesg_out.splitlines():
-                # ahci driver sometimes logs remapped NVMe capacity
-                if "nvme" in line.lower() and ("gb" in line.lower() or "sectors" in line.lower()):
-                    print(f"        dmesg hint: {line.strip()}")
-
-            # Step B: Dell model-to-storage lookup table
-            # Based on observed fleet data — all units in current Dell batches
-            # ship with NVMe SSDs. The 31GB seen is Intel Optane cache module.
-            model_name = run("dmidecode -s system-product-name 2>/dev/null").strip()
-            print(f"        Model: {model_name}")
-
-            # Dell Vostro/Inspiron standard storage configs (i7 variants)
-            DELL_STORAGE_DEFAULTS = {
-                "Vostro 7500":         (512, "NVMe"),   # 10th gen, RST RAID
-                "Vostro 15 7510":      (512, "NVMe"),   # 11th gen
-                "Vostro 7510":         (512, "NVMe"),   # 11th gen
-                "Vostro 7620":         (512, "NVMe"),   # 12th gen
-                "Inspiron 7500":       (512, "NVMe"),
-                "Inspiron 7510":       (512, "NVMe"),
-                "Inspiron 7610":       (512, "NVMe"),
-                "Inspiron 7620":       (512, "NVMe"),
-                "Latitude 5520":       (256, "NVMe"),
-                "Latitude 5530":       (256, "NVMe"),
-                "Latitude 5540":       (256, "NVMe"),
-                "Latitude 7420":       (256, "NVMe"),
-                "Latitude 7430":       (256, "NVMe"),
-                "Precision 5560":      (512, "NVMe"),
-                "Precision 5570":      (512, "NVMe"),
-                "XPS 15 9500":         (512, "NVMe"),
-                "XPS 15 9510":         (512, "NVMe"),
-                "XPS 15 9520":         (512, "NVMe"),
-            }
-
-            # Fuzzy match: check if any key is a substring of the model name
-            matched = None
-            for key, (default_gb, default_type) in DELL_STORAGE_DEFAULTS.items():
-                if key.lower() in model_name.lower():
-                    matched = (key, default_gb, default_type)
-                    break
-
-            if matched:
-                key, default_gb, default_type = matched
-                print(f"")
-                print(f"    ┌─────────────────────────────────────────────────┐")
-                print(f"    │  INTEL RST DETECTED - USING MODEL SPEC LOOKUP   │")
-                print(f"    │  Model: {model_name:<40s}│")
-                print(f"    │  Default SSD: {default_gb}GB {default_type:<29s}│")
-                print(f"    │  (NVMe hidden behind RST RAID firmware lock)    │")
-                print(f"    └─────────────────────────────────────────────────┘")
-                capacity_gb, stor_type = default_gb, default_type
-                print(f"        Auto-resolved: {stor_type} {capacity_gb}GB")
-            else:
-                # Model not in lookup table — fall back to manual entry
-                print(f"")
-                print(f"    ┌─────────────────────────────────────────────────┐")
-                print(f"    │  MANUAL STORAGE ENTRY REQUIRED                  │")
-                print(f"    │  Model '{model_name}' not in spec table.       │")
-                print(f"    │  Check the laptop's bottom label or Dell spec.  │")
-                print(f"    └─────────────────────────────────────────────────┘")
-                print(f"")
-                print(f"    Common Dell SSD sizes:")
-                print(f"      [1] 256 GB NVMe")
-                print(f"      [2] 512 GB NVMe")
-                print(f"      [3] 1000 GB (1TB) NVMe")
-                print(f"      [4] Other (enter manually)")
-                print(f"")
-                while True:
-                    choice = input("    Enter SSD size [1/2/3/4] > ").strip()
-                    if choice == "1":
-                        capacity_gb, stor_type = 256, "NVMe"
-                        break
-                    elif choice == "2":
-                        capacity_gb, stor_type = 512, "NVMe"
-                        break
-                    elif choice == "3":
-                        capacity_gb, stor_type = 1000, "NVMe"
-                        break
-                    elif choice == "4":
-                        try:
-                            capacity_gb = int(input("    Enter capacity in GB > ").strip())
-                            st = input("    Storage type [NVMe/SATA] > ").strip()
-                            stor_type = st if st in ("NVMe", "SATA") else "NVMe"
-                            break
-                        except ValueError:
-                            print("    Invalid number. Try again.")
-                    else:
-                        print("    Invalid choice. Enter 1, 2, 3, or 4.")
-                print(f"        Manual entry: {stor_type} {capacity_gb}GB")
-
-    # SMART health
-    smart_out = run(f"smartctl -H {disk}")
-    if "PASSED" in smart_out:
-        smart = "PASSED"
-    elif "FAILED" in smart_out:
-        smart = "FAILED"
-    else:
-        # Try smartctl with NVMe-specific flag
-        smart_out = run(f"smartctl -H -d nvme {disk}")
-        if "PASSED" in smart_out:
-            smart = "PASSED"
-        elif "FAILED" in smart_out:
-            smart = "FAILED"
-        else:
-            smart = "N/A"
-
-    return stor_type, capacity_gb, smart
-
-
-def get_battery_info() -> dict:
-    """
-    Return battery health data:
-      - health_pct: current max capacity vs design capacity (wear level)
-      - charge_pct: current charge level
-      - cycles: charge cycle count
-    """
-    result = {"health_pct": "N/A", "charge_pct": "N/A", "cycles": "N/A"}
-
-    # Try upower first
-    out = run("upower -i /org/freedesktop/UPower/devices/battery_BAT0")
-    if not out:
-        # Try BAT1 (some Dells use BAT1)
-        out = run("upower -i /org/freedesktop/UPower/devices/battery_BAT1")
-
-    full = None
-    design = None
-    for line in out.splitlines():
-        line_s = line.strip()
-        if "energy-full:" in line_s and "design" not in line_s:
-            nums = re.findall(r"[\d.]+", line_s)
-            if nums:
-                full = float(nums[0])
-        if "energy-full-design:" in line_s:
-            nums = re.findall(r"[\d.]+", line_s)
-            if nums:
-                design = float(nums[0])
-        if "percentage:" in line_s:
-            nums = re.findall(r"[\d.]+", line_s)
-            if nums:
-                result["charge_pct"] = str(round(float(nums[0])))
-
-    if full and design and design > 0:
-        result["health_pct"] = str(round((full / design) * 100))
-
-    # Cycle count — try /sys first (most reliable on Dell)
-    for bat in ["BAT0", "BAT1"]:
-        cycle_path = f"/sys/class/power_supply/{bat}/cycle_count"
-        cycles = read_file(cycle_path).strip()
-        if cycles and cycles != "0" and cycles != "":
-            result["cycles"] = cycles
-            break
-
-    # Fallback: upower sometimes has cycle_count
-    if result["cycles"] == "N/A":
-        for line in out.splitlines():
-            if "cycle" in line.lower() and "count" in line.lower():
-                nums = re.findall(r"\d+", line)
-                if nums:
-                    result["cycles"] = nums[0]
-
-    return result
-
-
-def get_discrete_gpu() -> str:
-    """Return GPU name if NVIDIA/AMD discrete GPU detected, else 'None'."""
-    out = run("lspci")
-    for line in out.splitlines():
-        lower = line.lower()
-        if "nvidia" in lower or ("amd" in lower and "radeon" in lower):
-            # Extract the description after the colon
-            parts = line.split(": ", 1)
-            return parts[1].strip() if len(parts) > 1 else "Discrete GPU"
-    return "None"
-
-
-def get_screen_resolution() -> tuple:
-    """Return (resolution_str, class_str)."""
-    # Try xrandr first
-    out = run("xrandr 2>/dev/null")
-    max_w, max_h = 0, 0
-    for line in out.splitlines():
-        match = re.search(r"(\d{3,5})x(\d{3,5})", line)
-        if match:
-            w, h = int(match.group(1)), int(match.group(2))
-            if w * h > max_w * max_h:
-                max_w, max_h = w, h
-
-    # Fallback: /sys/class/drm
-    if max_w == 0:
-        drm_cards = Path("/sys/class/drm")
-        if drm_cards.exists():
-            for modes_file in drm_cards.glob("*/modes"):
-                content = read_file(str(modes_file))
-                for line in content.splitlines():
-                    match = re.search(r"(\d{3,5})x(\d{3,5})", line)
-                    if match:
-                        w, h = int(match.group(1)), int(match.group(2))
-                        if w * h > max_w * max_h:
-                            max_w, max_h = w, h
-
-    if max_w == 0:
-        return "N/A", "N/A"
-
-    res_str = f"{max_w}x{max_h}"
-    res_class = "4K/Retina Class" if max_w > 2500 else "Standard"
-    return res_str, res_class
-
-
-def get_screen_size_inches() -> str:
-    """
-    Calculate physical screen diagonal in inches from EDID data via xrandr.
-    xrandr reports physical dimensions in mm for connected displays.
-    Returns a string like '15.6' or 'N/A' if not detected.
-    """
-    out = run("xrandr 2>/dev/null")
-    for line in out.splitlines():
-        if " connected" not in line:
+def scan_memory(raw):
+    text = raw.capture("dmidecode-memory.txt", "dmidecode -t 17", timeout=20)
+    raw.save("proc_meminfo.txt", read_text("/proc/meminfo"))
+    modules, slots = [], 0
+    for block in text.split("\n\n"):
+        if "Memory Device" not in block:
             continue
-        # Match pattern like "309mm x 174mm"
-        match = re.search(r'(\d+)mm\s+x\s+(\d+)mm', line)
-        if match:
-            w_mm = int(match.group(1))
-            h_mm = int(match.group(2))
-            if w_mm > 0 and h_mm > 0:
-                diagonal_mm = (w_mm**2 + h_mm**2) ** 0.5
-                diagonal_in = round(diagonal_mm / 25.4, 1)
-                return str(diagonal_in)
+        slots += 1
+        size_m = re.search(r"^\s*Size:\s*(\d+)\s*(GB|MB)", block, re.M)
+        if not size_m:
+            continue
+        size_gb = int(size_m.group(1)) if size_m.group(2) == "GB" else int(size_m.group(1)) // 1024
+        def field(name):
+            m = re.search(rf"^\s*{name}:\s*(.+)$", block, re.M)
+            v = m.group(1).strip() if m else ""
+            return None if v in ("", "Unknown", "Not Specified", "None") else v
+        speed = field("Configured Memory Speed") or field("Speed")
+        modules.append({
+            "size_gb": size_gb,
+            "type": field("Type"),
+            "speed_mts": to_int(speed.split()[0]) if speed else None,
+            "form_factor": field("Form Factor"),
+            "manufacturer": field("Manufacturer"),
+            "part_number": field("Part Number"),
+        })
+    total = sum(m["size_gb"] for m in modules)
+    if not total:
+        # DMI unavailable: fall back to MemTotal, rounded UP to the next
+        # power of two so 15.4 GB reports as 16 and not 15.
+        m = re.search(r"MemTotal:\s*(\d+)", read_text("/proc/meminfo") or "")
+        gb = int(m.group(1)) / 1048576 if m else 0
+        total = 1 << (int(gb - 1).bit_length()) if gb else 0
+    types = {m["type"] for m in modules if m["type"]}
+    return {"total_gb": total or None, "type": next(iter(types)) if types else None,
+            "slots_total": slots or None, "slots_used": len(modules) or None, "modules": modules}
 
-    # Fallback: parse EDID binary from /sys/class/drm for physical size
-    drm_path = Path("/sys/class/drm")
-    if drm_path.exists():
-        for edid_file in drm_path.glob("*/edid"):
-            try:
-                raw = edid_file.read_bytes()
-                if len(raw) >= 68:
-                    # EDID bytes 21-22 contain physical size in cm
-                    w_cm = raw[21]
-                    h_cm = raw[22]
-                    if w_cm > 0 and h_cm > 0:
-                        diagonal_cm = (w_cm**2 + h_cm**2) ** 0.5
-                        diagonal_in = round(diagonal_cm / 2.54, 1)
-                        return str(diagonal_in)
-            except Exception:
-                continue
 
-    return "N/A"
+def scan_gpu(raw):
+    text = raw.capture("lspci-vga.txt", "lspci -nn -d ::0300; lspci -nn -d ::0302; lspci -nn -d ::0380")
+    discrete, integrated = None, None
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        desc = line.split(": ", 1)[1] if ": " in line else line
+        if "[10de:" in line or "NVIDIA" in line or "[1002:" in line:
+            discrete = discrete or desc.strip()
+        elif "[8086:" in line:
+            integrated = integrated or desc.strip()
+    return {"discrete": discrete, "integrated": integrated}
 
 
-def get_fingerprint_reader() -> str:
-    """
-    Detect fingerprint reader hardware.
-    Many Dell laptops use SPI-connected fingerprint readers that do NOT
-    appear in lsusb. Auto-detection is attempted first, but for reliability
-    this falls back to an interactive prompt during grading.
-    Returns 'Yes', 'No', or 'Check' (to be resolved during grading).
-    """
-    out = run("lsusb")
+STANDARD_DIAGONALS = (10.1, 11.6, 12.5, 13.3, 13.4, 14.0, 15.6, 16.0, 17.3)
 
-    # Keywords that are ONLY used for fingerprint devices
-    exact_keywords = [
-        "fingerprint", "biometric", "fprint", "finger print",
+
+def parse_edid(raw_edid):
+    if len(raw_edid) < 128 or raw_edid[:8] != b"\x00\xff\xff\xff\xff\xff\xff\x00":
+        return None
+    r = {"width_px": None, "height_px": None, "width_mm": None, "height_mm": None, "name": None}
+    d = raw_edid[54:72]
+    if d[0] or d[1]:
+        r["width_px"] = d[2] | ((d[4] & 0xF0) << 4)
+        r["height_px"] = d[5] | ((d[7] & 0xF0) << 4)
+        r["width_mm"] = d[12] | ((d[14] & 0xF0) << 4)
+        r["height_mm"] = d[13] | ((d[14] & 0x0F) << 8)
+    if not r["width_mm"] and raw_edid[21] and raw_edid[22]:
+        r["width_mm"], r["height_mm"] = raw_edid[21] * 10, raw_edid[22] * 10
+    for off in (54, 72, 90, 108):
+        blk = raw_edid[off:off + 18]
+        if blk[0:3] == b"\x00\x00\x00" and blk[3] == 0xFC:
+            r["name"] = blk[5:18].decode("ascii", "replace").strip()
+    return r
+
+
+def scan_display(raw):
+    best = None
+    for conn in sorted(glob.glob("/sys/class/drm/card*-*")):
+        status = read_text(f"{conn}/status")
+        edid = read_bytes(f"{conn}/edid")
+        if not edid:
+            continue
+        raw.save(f"edid-{os.path.basename(conn)}.bin", edid)
+        parsed = parse_edid(edid)
+        if not parsed:
+            continue
+        internal = any(k in conn for k in ("eDP", "LVDS", "DSI"))
+        cand = {"connector": os.path.basename(conn), "status": status, "internal": internal, **parsed}
+        if best is None or (internal and not best["internal"]):
+            best = cand
+    raw.capture("xrandr.txt", "xrandr 2>&1")
+    if not best:
+        return {"width_px": None, "height_px": None, "diagonal_in": None, "note": "no EDID readable"}
+    diag = None
+    if best["width_mm"] and best["height_mm"]:
+        d_in = ((best["width_mm"] ** 2 + best["height_mm"] ** 2) ** 0.5) / 25.4
+        snap = min(STANDARD_DIAGONALS, key=lambda s: abs(s - d_in))
+        diag = snap if abs(snap - d_in) <= 0.35 else round(d_in, 1)
+    w, h = best["width_px"], best["height_px"]
+    return {
+        "connector": best["connector"], "panel_name": best["name"],
+        "width_px": w, "height_px": h, "resolution": f"{w}x{h}" if w and h else None,
+        "physical_mm": [best["width_mm"], best["height_mm"]],
+        "diagonal_in": diag,
+        "aspect": "16:10" if w and h and abs(w / h - 1.6) < 0.02 else ("16:9" if w and h and abs(w / h - 16 / 9) < 0.02 else None),
+        "resolution_class": "4K/Retina Class" if (w or 0) > 2500 else "Standard",
+    }
+
+
+def scan_battery(raw):
+    raw.capture("upower.txt", "upower -d", timeout=15)
+    for bat in sorted(glob.glob("/sys/class/power_supply/BAT*")):
+        def rd(n):
+            return read_text(f"{bat}/{n}") or None
+        dump = "\n".join(f"{os.path.basename(p)}={read_text(p)}" for p in sorted(glob.glob(f"{bat}/*")) if os.path.isfile(p))
+        raw.save(f"sysfs-{os.path.basename(bat)}.txt", dump)
+        full = to_int(rd("energy_full")) or to_int(rd("charge_full"))
+        design = to_int(rd("energy_full_design")) or to_int(rd("charge_full_design"))
+        unit = "wh" if rd("energy_full") else "ah"
+        health = round(100 * full / design) if full and design else None
+        cycles = to_int(rd("cycle_count"))
+        return {
+            "present": True, "health_pct": health, "charge_pct": to_int(rd("capacity")),
+            "cycles": cycles if cycles else None,
+            "design_wh": round(design / 1e6, 1) if design and unit == "wh" else None,
+            "full_wh": round(full / 1e6, 1) if full and unit == "wh" else None,
+            "status": rd("status"), "manufacturer": rd("manufacturer"),
+            "model": rd("model_name"), "serial": rd("serial_number"),
+        }
+    return {"present": False, "health_pct": None, "charge_pct": None, "cycles": None}
+
+
+def scan_storage(raw, disk):
+    if not disk:
+        return {"present": False}
+    dev = disk["device"]
+    info = dict(disk)
+    info["present"] = True
+    js = raw.capture("smartctl.json", f"smartctl -j -a {dev}", timeout=60)
+    try:
+        sm = json.loads(js)
+    except ValueError:
+        sm = {}
+    info["smart_passed"] = (sm.get("smart_status") or {}).get("passed")
+    info["model"] = sm.get("model_name") or info.get("model")
+    info["firmware"] = sm.get("firmware_version")
+    info["temperature_c"] = (sm.get("temperature") or {}).get("current")
+    info["power_on_hours"] = (sm.get("power_on_time") or {}).get("hours")
+    nv = sm.get("nvme_smart_health_information_log") or {}
+    if nv:
+        info["percentage_used"] = nv.get("percentage_used")
+        duw = nv.get("data_units_written")
+        info["data_written_tb"] = round(duw * 512000 / 1e12, 2) if isinstance(duw, (int, float)) else None
+        info["media_errors"] = nv.get("media_errors")
+        info["unsafe_shutdowns"] = nv.get("unsafe_shutdowns")
+        info["critical_warning"] = nv.get("critical_warning")
+        info["power_cycles"] = nv.get("power_cycles")
+        raw.capture("nvme-id-ctrl.json", f"nvme id-ctrl {dev} -o json", timeout=15)
+        raw.capture("nvme-smart-log.txt", f"nvme smart-log {dev}", timeout=15)
+    else:
+        table = ((sm.get("ata_smart_attributes") or {}).get("table")) or []
+        for a in table:
+            if a.get("id") in (177, 231, 233) and info.get("percentage_used") is None:
+                v = (a.get("value"))
+                info["percentage_used"] = 100 - v if isinstance(v, int) else None
+            if a.get("id") == 241:
+                lba = (a.get("raw") or {}).get("value")
+                info["data_written_tb"] = round(lba * 512 / 1e12, 2) if isinstance(lba, int) else None
+        raw.capture("hdparm-I.txt", f"hdparm -I {dev}", timeout=15)
+    return info
+
+
+def scan_features(raw):
+    lspci = read_text(os.path.join(raw.dir, "lspci-nn.txt")) or out("lspci -nn")
+    lsusb = read_text(os.path.join(raw.dir, "lsusb.txt")) or raw.capture("lsusb.txt", "lsusb")
+    iw = raw.capture("iw-list.txt", "iw list 2>&1", timeout=15)
+    raw.capture("rfkill.txt", "rfkill list 2>&1")
+    raw.capture("bluetoothctl.txt", "timeout 5 bluetoothctl list 2>&1")
+    raw.capture("sys-class-leds.txt", "ls -1 /sys/class/leds")
+    raw.capture("udev-input.txt", "udevadm info --export-db 2>/dev/null | grep -E 'ID_INPUT_(TOUCHSCREEN|TOUCHPAD|KEYBOARD)=1|^N: '")
+
+    wifi_card = None
+    for line in lspci.splitlines():
+        if re.search(r"Network controller|Wireless", line):
+            wifi_card = line.split(": ", 1)[1].strip() if ": " in line else line.strip()
+            break
+    wl = (wifi_card or "").lower() + " " + iw.lower()
+    if re.search(r"\bbe\d{3}\b|wi-fi 7", wl) or " eht" in iw.lower():
+        wifi_std = "Wi-Fi 7 (802.11be)"
+    elif re.search(r"ax2(10|11)|ax4\d\d|wi-fi 6e|6 ghz", wl):
+        wifi_std = "Wi-Fi 6E (802.11ax)"
+    elif re.search(r"\bax\d{3}\b|wi-fi 6|802\.11ax", wl) or " he " in iw.lower():
+        wifi_std = "Wi-Fi 6 (802.11ax)"
+    elif re.search(r"\bac\b|802\.11ac|vht", wl):
+        wifi_std = "Wi-Fi 5 (802.11ac)"
+    elif wifi_card:
+        wifi_std = "Wi-Fi"
+    else:
+        wifi_std = None
+
+    bt = "yes" if (os.path.isdir("/sys/class/bluetooth") and os.listdir("/sys/class/bluetooth")) \
+        or "bluetooth" in lsusb.lower() else "no"
+    webcam = "yes" if glob.glob("/dev/video*") or re.search(r"camera|webcam", lsusb, re.I) else "no"
+    leds = out("ls /sys/class/leds")
+    backlit = "yes" if "kbd_backlight" in leds else "no"
+    udev_touch = out("udevadm info --export-db 2>/dev/null | grep -c ID_INPUT_TOUCHSCREEN=1")
+    touch = "yes" if to_int(udev_touch, 0) else "no"
+    return {
+        "wifi_card": wifi_card, "wifi_standard": wifi_std, "bluetooth": bt,
+        "webcam": webcam, "backlit_keyboard": backlit, "touchscreen": touch,
+    }
+
+
+def scan_license(raw):
+    """OEM Windows key lives in the ACPI MSDM table. Only presence and the
+    last 5 characters are recorded; the full key stays on the machine."""
+    data = read_bytes("/sys/firmware/acpi/tables/MSDM")
+    if not data:
+        raw.save("msdm.txt", "MSDM table absent")
+        return {"oem_key_present": False, "oem_key_suffix": None}
+    key = data[56:85].decode("ascii", "replace") if len(data) >= 85 else ""
+    ok = bool(re.fullmatch(r"[A-Z0-9]{5}(-[A-Z0-9]{5}){4}", key))
+    raw.save("msdm.txt", f"MSDM table present, {len(data)} bytes, key format {'valid' if ok else 'unrecognised'}, ends ...{key[-5:] if ok else '?'}")
+    return {"oem_key_present": ok, "oem_key_suffix": key[-5:] if ok else None}
+
+
+def hardware_scan(raw, disk):
+    banner("HARDWARE SCAN (unattended)")
+    steps = [
+        ("CPU", lambda: scan_cpu(raw)),
+        ("Memory", lambda: scan_memory(raw)),
+        ("GPU", lambda: scan_gpu(raw)),
+        ("Display", lambda: scan_display(raw)),
+        ("Battery", lambda: scan_battery(raw)),
+        ("Storage", lambda: scan_storage(raw, disk)),
+        ("Features", lambda: scan_features(raw)),
+        ("License", lambda: scan_license(raw)),
     ]
-
-    # Vendor:Product ID prefixes known to be fingerprint readers
-    fingerprint_usb_ids = [
-        "27c6:",    # Goodix
-        "04f3:0c",  # Elan fingerprint (0c** range, not touchpad range)
-        "138a:",    # Validity Sensors (now Synaptics fingerprint)
-        "06cb:00b", # Synaptics fingerprint (specific range)
-        "06cb:00f", # Synaptics fingerprint
-        "1c7a:",    # LighTuning (fingerprint)
-        "2808:",    # AuthenTec / Upek
-    ]
-
-    for line in out.splitlines():
-        lower = line.lower()
-        for kw in exact_keywords:
-            if kw in lower:
-                return "Yes"
-        for usb_id in fingerprint_usb_ids:
-            if usb_id in lower:
-                return "Yes"
-
-    # Check udev for fingerprint class devices
-    udev_out = run("udevadm info --export-db 2>/dev/null | grep -i fingerprint")
-    if "fingerprint" in udev_out.lower():
-        return "Yes"
-
-    # Not auto-detected — many Dell models use SPI-based readers
-    # that are invisible to lsusb. Mark for interactive confirmation.
-    return "Check"
-
-
-def get_touchscreen() -> str:
-    """
-    Detect touchscreen input device.
-    IMPORTANT: Must distinguish 'touchscreen' from 'touchpad' — every laptop
-    has a touchpad, but few have a touchscreen.
-    Returns 'Yes' or 'No'.
-    """
-    # Method 1: xinput (if X is running)
-    # Look specifically for 'touchscreen', exclude 'touchpad'
-    out = run("xinput list 2>/dev/null")
-    for line in out.lower().splitlines():
-        if "touchscreen" in line and "touchpad" not in line:
-            return "Yes"
-
-    # Method 2: libinput — look for devices with 'touch' capability
-    # that are NOT touchpads
-    out = run("libinput list-devices 2>/dev/null")
-    if out:
-        # Split into device blocks and check each
-        blocks = out.split("\n\n")
-        for block in blocks:
-            lower = block.lower()
-            # A touchscreen will have 'touch' in capabilities but NOT 'touchpad'
-            if "touchscreen" in lower:
-                return "Yes"
-
-    # Method 3: kernel input devices
-    input_devs = read_file("/proc/bus/input/devices")
-    blocks = input_devs.split("\n\n")
-    for block in blocks:
-        lower = block.lower()
-        # Look for 'touchscreen' specifically, skip touchpad blocks
-        if "touchscreen" in lower and "touchpad" not in lower:
-            return "Yes"
-
-    # Method 4: check udev for touchscreen tag (most reliable)
-    udev_out = run("udevadm info --export-db 2>/dev/null | grep ID_INPUT_TOUCHSCREEN=1")
-    if "TOUCHSCREEN=1" in udev_out:
-        return "Yes"
-
-    return "No"
-
-
-def get_backlit_keyboard() -> str:
-    """
-    Detect backlit keyboard via /sys/class/leds.
-    Dell and most laptops expose keyboard backlight LEDs here.
-    Returns 'Yes' or 'No'.
-    """
-    leds_path = Path("/sys/class/leds")
-    if leds_path.exists():
-        for led_dir in leds_path.iterdir():
-            if "kbd" in led_dir.name.lower() or "backlight" in led_dir.name.lower():
-                # Check if it's a keyboard LED (not screen backlight)
-                if "kbd" in led_dir.name.lower():
-                    return "Yes"
-
-    # Fallback: check for dell-specific backlight
-    out = run("ls /sys/class/leds/ 2>/dev/null")
-    if "kbd" in out.lower():
-        return "Yes"
-
-    return "No"
-
-
-def get_wifi_standard() -> str:
-    """
-    Detect WiFi adapter and determine the wireless standard.
-    Parses 'iw list' for supported bands/protocols or falls back to lspci.
-    Returns a string like 'Wi-Fi 6 (802.11ax)' or 'Wi-Fi 5 (802.11ac)'.
-    """
-    # Method 1: iw list — check for supported standards
-    out = run("iw list 2>/dev/null")
-    if out:
-        out_lower = out.lower()
-        # Wi-Fi 7 (802.11be)
-        if "eht" in out_lower or "11be" in out_lower:
-            return "Wi-Fi 7 (802.11be)"
-        # Wi-Fi 6E/6 (802.11ax)
-        if "he" in out_lower and ("ht" in out_lower or "vht" in out_lower):
-            # Check for 6GHz band → Wi-Fi 6E
-            if "6 ghz" in out_lower or "6ghz" in out_lower:
-                return "Wi-Fi 6E (802.11ax)"
-            return "Wi-Fi 6 (802.11ax)"
-        # Wi-Fi 5 (802.11ac)
-        if "vht" in out_lower:
-            return "Wi-Fi 5 (802.11ac)"
-        # Wi-Fi 4 (802.11n)
-        if "ht" in out_lower:
-            return "Wi-Fi 4 (802.11n)"
-
-    # Method 2: lspci — identify the card name for known models
-    out = run("lspci")
-    for line in out.splitlines():
-        lower = line.lower()
-        if "network" in lower or "wireless" in lower or "wifi" in lower or "wi-fi" in lower:
-            if "ax" in lower or "wifi 6" in lower or "wi-fi 6" in lower:
-                if "6e" in lower:
-                    return "Wi-Fi 6E (802.11ax)"
-                return "Wi-Fi 6 (802.11ax)"
-            if "ac" in lower or "wifi 5" in lower or "wi-fi 5" in lower:
-                return "Wi-Fi 5 (802.11ac)"
-            if "wireless-n" in lower or "wifi 4" in lower:
-                return "Wi-Fi 4 (802.11n)"
-            # Generic — has WiFi but unknown standard
-            return "Wi-Fi"
-
-    return "N/A"
-
-
-def get_bluetooth() -> str:
-    """
-    Detect Bluetooth adapter presence and version.
-    Returns 'Yes' or 'No'. (Version detection is unreliable in live env.)
-    """
-    # Method 1: hciconfig
-    out = run("hciconfig 2>/dev/null")
-    if "hci" in out.lower() and ("up" in out.lower() or "down" in out.lower()):
-        return "Yes"
-
-    # Method 2: bluetoothctl
-    out = run("bluetoothctl show 2>/dev/null")
-    if "controller" in out.lower():
-        return "Yes"
-
-    # Method 3: check for Bluetooth in lsusb or lspci
-    for cmd in ["lsusb", "lspci"]:
-        out = run(cmd)
-        if "bluetooth" in out.lower():
-            return "Yes"
-
-    # Method 4: /sys/class/bluetooth
-    bt_path = Path("/sys/class/bluetooth")
-    if bt_path.exists() and any(bt_path.iterdir()):
-        return "Yes"
-
-    return "No"
-
-
-def get_webcam() -> str:
-    """
-    Detect built-in webcam.
-    Checks /dev/video* devices and lsusb for camera hardware.
-    Returns 'Yes' or 'No'.
-    """
-    # Method 1: check for video devices
-    import glob
-    video_devs = glob.glob("/dev/video*")
-    if video_devs:
-        return "Yes"
-
-    # Method 2: lsusb for camera keywords
-    out = run("lsusb")
-    camera_keywords = ["camera", "webcam", "video", "imaging", "cam"]
-    for line in out.splitlines():
-        lower = line.lower()
-        for kw in camera_keywords:
-            if kw in lower:
-                return "Yes"
-
-    # Method 3: check /sys/class/video4linux
-    v4l_path = Path("/sys/class/video4linux")
-    if v4l_path.exists() and any(v4l_path.iterdir()):
-        return "Yes"
-
-    return "No"
-
-
-def parse_cpu_generation(cpu_model: str) -> int:
-    """
-    Extract Intel CPU generation from model string.
-    Examples:
-        i7-8565U   → 8
-        i7-1185G7  → 11
-        i5-13500H  → 13
-        i7-14700H  → 14
-    For AMD Ryzen, return the series number (e.g., Ryzen 7 5800H → 5).
-    Returns 0 if not detected.
-    """
-    # Intel: i[3579]-XXYY or i[3579]-XXXYY
-    m = re.search(r"i[3579]-(\d{2,5})", cpu_model)
-    if m:
-        model_num = m.group(1)
-        if len(model_num) == 4:
-            return int(model_num[0])       # e.g., 8565 → 8
-        elif len(model_num) == 5:
-            return int(model_num[:2])      # e.g., 11850 → 11, 13500 → 13
-    # AMD Ryzen
-    m = re.search(r"Ryzen\s+\d\s+(\d)", cpu_model)
-    if m:
-        return int(m.group(1))
-    return 0
-
-
-def run_hardware_scan() -> dict:
-    """Execute the full silent hardware scan and return a data dict."""
-    print("=" * 60)
-    print("  LAPTOP AUDITOR v2.0 — Hardware Scan")
-    print("=" * 60)
-    print()
-
     data = {}
-
-    print("  [ 1/15] Reading system identity...", end="", flush=True)
-    data["service_tag"] = get_service_tag()
-    data["express_service_code"] = compute_express_service_code(data["service_tag"])
-    data["model"] = get_model_name()
-    data["manufacture_year"] = get_manufacture_year()
-    print(f" {data['service_tag']} / {data['model']} ({data['manufacture_year']})")
-
-    print("  [ 2/15] Scanning CPU...", end="", flush=True)
-    data["cpu"], data["cores"] = get_cpu_info()
-    print(f" {data['cpu']} ({data['cores']} threads)")
-
-    print("  [ 3/15] Scanning RAM...", end="", flush=True)
-    data["ram_gb"] = get_ram_total_gb()
-    data["ram_type"] = get_ram_type()
-    print(f" {data['ram_gb']} GB {data['ram_type']}")
-
-    print("  [ 4/15] Scanning storage...", end="", flush=True)
-    disk = get_primary_disk()
-    data["storage_type"], data["storage_gb"], data["smart_status"] = get_storage_info(disk)
-    data["_disk"] = disk  # internal use for wipe
-    print(f" {data['storage_type']} {data['storage_gb']} GB — SMART: {data['smart_status']}")
-
-    print("  [ 5/15] Checking battery...", end="", flush=True)
-    batt = get_battery_info()
-    data["battery_health_pct"] = batt["health_pct"]
-    data["battery_charge_pct"] = batt["charge_pct"]
-    data["battery_cycles"] = batt["cycles"]
-    print(f" Health: {batt['health_pct']}% | Charge: {batt['charge_pct']}% | Cycles: {batt['cycles']}")
-
-    print("  [ 6/15] Detecting GPU...", end="", flush=True)
-    data["gpu"] = get_discrete_gpu()
-    print(f" {data['gpu']}")
-
-    print("  [ 7/15] Detecting display resolution...", end="", flush=True)
-    data["resolution"], data["resolution_class"] = get_screen_resolution()
-    print(f" {data['resolution']} ({data['resolution_class']})")
-
-    print("  [ 8/15] Measuring screen size...", end="", flush=True)
-    data["screen_size_in"] = get_screen_size_inches()
-    print(f" {data['screen_size_in']}\"" if data["screen_size_in"] != "N/A" else " N/A")
-
-    print("  [ 9/15] Checking for touchscreen...", end="", flush=True)
-    data["touchscreen"] = get_touchscreen()
-    print(f" {data['touchscreen']}")
-
-    print("  [10/15] Checking fingerprint reader...", end="", flush=True)
-    data["fingerprint_reader"] = get_fingerprint_reader()
-    print(f" {data['fingerprint_reader']}")
-
-    print("  [11/15] Checking backlit keyboard...", end="", flush=True)
-    data["backlit_keyboard"] = get_backlit_keyboard()
-    print(f" {data['backlit_keyboard']}")
-
-    print("  [12/15] Detecting WiFi standard...", end="", flush=True)
-    data["wifi_standard"] = get_wifi_standard()
-    print(f" {data['wifi_standard']}")
-
-    print("  [13/15] Checking Bluetooth...", end="", flush=True)
-    data["bluetooth"] = get_bluetooth()
-    print(f" {data['bluetooth']}")
-
-    print("  [14/15] Checking webcam...", end="", flush=True)
-    data["webcam"] = get_webcam()
-    print(f" {data['webcam']}")
-
-    print("  [15/15] Parsing CPU generation...", end="", flush=True)
-    data["_cpu_gen"] = parse_cpu_generation(data["cpu"])
-    print(f" Gen {data['_cpu_gen']}" if data["_cpu_gen"] else " Unknown")
-
-    print()
-    print("-" * 60)
-    print("  Hardware scan complete.")
-    print("-" * 60)
-    print()
+    for i, (name, fn) in enumerate(steps, 1):
+        print(f"  [{i}/{len(steps)}] {name:<9}", end="", flush=True)
+        try:
+            data[name.lower()] = fn()
+            print(" ok")
+        except Exception as e:  # noqa: BLE001
+            data[name.lower()] = {"error": str(e)}
+            print(f" ERROR {e}")
+    raw.capture("dmesg.txt", "dmesg", timeout=15)
+    raw.capture("uname.txt", "uname -a; cat /etc/os-release")
     return data
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  PHASE 2 — INTERACTIVE GRADING
+#  PHASE 4 — SECURE ERASE
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def display_test():
-    """Cycle full-screen colors for dead-pixel / backlight bleed inspection."""
-    print("  DISPLAY TEST — Press ENTER to cycle through colors.\n")
-    input("  Press ENTER to start...")
-
+def read_sample(dev, offset, length=4 * 1024 * 1024):
     try:
-        term_lines = os.get_terminal_size().lines
-        term_cols = os.get_terminal_size().columns
+        with open(dev, "rb", buffering=0) as f:
+            f.seek(offset)
+            return f.read(length)
     except OSError:
-        term_lines = 50
-        term_cols = 200
-
-    try:
-        for name, code in COLORS_ANSI.items():
-            # Clear screen, set background color, fill uniformly
-            sys.stdout.write("\033[2J\033[H")  # clear screen, cursor to top
-            sys.stdout.write(code)
-            # Fill screen with spaces in the background color
-            line = " " * term_cols
-            for _ in range(term_lines):
-                sys.stdout.write(line)
-            # Show label centered
-            label_color = "\033[30m" if name == "White" else "\033[97m"
-            row = term_lines // 2
-            col = (term_cols - len(name) - 20) // 2
-            sys.stdout.write(f"\033[{row};{col}H{label_color}  [ {name} — press ENTER ]  ")
-            sys.stdout.flush()
-            input()
-        # Reset
-        sys.stdout.write(RESET_ANSI)
-        sys.stdout.write("\033[2J\033[H")  # clear screen
-        sys.stdout.flush()
-    except (OSError, EOFError):
-        sys.stdout.write(RESET_ANSI)
-        sys.stdout.write("\033[2J\033[H")
-        sys.stdout.flush()
-        print("\n  [!] Display test skipped (no interactive terminal)")
+        return None
 
 
-def prompt_choice(question: str, options: dict) -> str:
-    """
-    Prompt the user with a question and validate answer against options dict.
-    options: {'A': 'Perfect', 'B': 'White Spots/Dead Pixel', ...}
-    Returns the chosen key (uppercase).
-    """
-    while True:
-        print(f"\n  {question}")
-        for key, label in options.items():
-            print(f"    [{key}] {label}")
-        answer = input("\n  > ").strip().upper()
-        if answer in options:
-            return answer
-        print(f"  Invalid. Please enter one of: {', '.join(options.keys())}")
+def is_blank(dev, size_bytes):
+    """Sample start, middle and end of the device for zeros."""
+    for off in (0, size_bytes // 2, max(0, size_bytes - 8 * 1024 * 1024)):
+        chunk = read_sample(dev, off)
+        if chunk is None:
+            return None
+        if any(chunk):
+            return False
+    return True
 
 
-def run_interactive_grading(hw_data: dict = None) -> dict:
-    """Run the interactive grading phase and return grade data."""
-    if hw_data is None:
-        hw_data = {}
-    print()
-    print("=" * 60)
-    print("  INTERACTIVE GRADING")
-    print("=" * 60)
+def secure_erase(disk, allow):
+    dev, tran = disk["device"], disk["transport"]
+    size_bytes = disk.get("size_bytes") or disk["size_gb"] * 10 ** 9
+    result = {"performed": False, "method": None, "verified_blank": None, "duration_s": None, "error": None}
+    banner("SECURE ERASE")
+    if not allow:
+        result["error"] = "erase disabled by flag"
+        print("  Skipped (flag).")
+        return result
+    print(f"  Target: {dev}  {disk['size_gb']} GB  {disk.get('model') or ''}")
+    print(f"  Erasing in {ERASE_ABORT_WINDOW_S}s. Press any key to ABORT.")
+    if key_within(ERASE_ABORT_WINDOW_S):
+        result["error"] = "aborted by operator"
+        print("  ABORTED by operator. Disk untouched.")
+        return result
 
-    display_test()
-
-    screen_grade = prompt_choice(
-        "Rate Screen Condition?",
-        {"A": "Perfect", "B": "White Spots / Dead Pixel", "C": "Scratched"},
-    )
-
-    chassis_grade = prompt_choice(
-        "Rate Chassis Condition?",
-        {"A": "Mint", "B": "Minor Scuffs", "C": "Dents / Cracks"},
-    )
-
-    charger = prompt_choice(
-        "Charger Included?",
-        {"Y": "Yes", "N": "No"},
-    )
-
-    # Fingerprint: resolve if auto-detection was inconclusive (SPI-based readers)
-    fingerprint = hw_data.get("fingerprint_reader", "Check")
-    if fingerprint == "Check":
-        fp_answer = prompt_choice(
-            "Fingerprint Reader? (look for biometric sticker/sensor)",
-            {"Y": "Yes", "N": "No"},
-        )
-        fingerprint = "Yes" if fp_answer == "Y" else "No"
-
-    color = prompt_choice(
-        "Laptop Color?",
-        {"1": "Black", "2": "Silver", "3": "Gray",
-         "4": "White", "5": "Blue", "6": "Other"},
-    )
-    # Map number keys to actual color names
-    color_map = {"1": "Black", "2": "Silver", "3": "Gray",
-                 "4": "White", "5": "Blue", "6": "Other"}
-    color = color_map.get(color, color)
-
-    return {
-        "screen_grade": screen_grade,
-        "chassis_grade": chassis_grade,
-        "fingerprint_reader": fingerprint,
-        "color": color,
-        "charger": charger,
-    }
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#  PHASE 3 — VALUE LOGIC & RECOMMENDATION
-# ═══════════════════════════════════════════════════════════════════════════════
-
-def compute_recommendation(data: dict) -> str:
-    """Apply the value-logic decision tree and return a recommendation string."""
-    smart = data.get("smart_status", "N/A")
-    screen = data.get("screen_grade", "")
-    chassis = data.get("chassis_grade", "")
-    gpu = data.get("gpu", "None")
-    cpu_gen = data.get("_cpu_gen", 0)
-
-    try:
-        batt_health = int(data.get("battery_health_pct", "0"))
-    except ValueError:
-        batt_health = 0
-
-    # Decision tree (order matters)
-    if smart == "FAILED" or screen == "C" or chassis == "C":
-        return "PARTS/REPAIR"
-    # Battery check BEFORE GPU — a dead battery affects value regardless of GPU
-    if batt_health < 60:
-        if gpu != "None":
-            return "HIGH VALUE — BAD BATTERY (Discount)"
-        return "Bad Battery (Discount)"
-    if gpu != "None":
-        return "HIGH VALUE (Gaming/Creator)"
-    if cpu_gen >= 8 and batt_health > 65:
-        return "Standard Resale"
-    return "Standard Resale"
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#  PHASE 4 — CSV EXPORT & OPTIONAL WIPE
-# ═══════════════════════════════════════════════════════════════════════════════
-
-def export_to_csv(data: dict, save_dir: str):
-    """Append one row to audit_master.csv, with duplicate detection and header migration."""
-    csv_path = os.path.join(save_dir, CSV_FILENAME)
-
-    row = {
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "service_tag": data.get("service_tag", "N/A"),
-        "express_service_code": data.get("express_service_code", "N/A"),
-        "model": data.get("model", "N/A"),
-        "manufacture_year": data.get("manufacture_year", "N/A"),
-        "cpu": data.get("cpu", "N/A"),
-        "cores": data.get("cores", 0),
-        "ram_gb": data.get("ram_gb", 0),
-        "ram_type": data.get("ram_type", "N/A"),
-        "storage_type": data.get("storage_type", "N/A"),
-        "storage_gb": data.get("storage_gb", 0),
-        "smart_status": data.get("smart_status", "N/A"),
-        "battery_health_pct": data.get("battery_health_pct", "N/A"),
-        "battery_charge_pct": data.get("battery_charge_pct", "N/A"),
-        "battery_cycles": data.get("battery_cycles", "N/A"),
-        "gpu": data.get("gpu", "None"),
-        "resolution": data.get("resolution", "N/A"),
-        "resolution_class": data.get("resolution_class", "N/A"),
-        "screen_size_in": data.get("screen_size_in", "N/A"),
-        "touchscreen": data.get("touchscreen", "No"),
-        "fingerprint_reader": data.get("fingerprint_reader", "No"),
-        "backlit_keyboard": data.get("backlit_keyboard", "No"),
-        "wifi_standard": data.get("wifi_standard", "N/A"),
-        "bluetooth": data.get("bluetooth", "No"),
-        "webcam": data.get("webcam", "No"),
-        "screen_grade": data.get("screen_grade", ""),
-        "chassis_grade": data.get("chassis_grade", ""),
-        "color": data.get("color", ""),
-        "charger": data.get("charger", ""),
-        "recommendation": data.get("recommendation", ""),
-        "status": "audited",
-        "sale_price": "",
-        "sale_date": "",
-        "notes": "",
-    }
-
-    # Read existing rows (if any) and migrate to current headers
-    existing_rows = []
-    if os.path.isfile(csv_path):
-        try:
-            with open(csv_path, "r", newline="") as f:
-                reader = csv.DictReader(f)
-                for r in reader:
-                    # Migrate old 'battery_pct' field to new names
-                    if "battery_pct" in r and "battery_health_pct" not in r:
-                        r["battery_health_pct"] = r.pop("battery_pct", "N/A")
-                        r.setdefault("battery_charge_pct", "N/A")
-                        r.setdefault("battery_cycles", "N/A")
-                    # Migrate v1 → v2: add defaults for new eBay fields
-                    r.setdefault("screen_size_in", "N/A")
-                    r.setdefault("touchscreen", "N/A")
-                    r.setdefault("fingerprint_reader", "N/A")
-                    r.setdefault("backlit_keyboard", "N/A")
-                    r.setdefault("wifi_standard", "N/A")
-                    r.setdefault("bluetooth", "N/A")
-                    r.setdefault("webcam", "N/A")
-                    r.setdefault("color", "")
-                    # Migrate v2 → v3: add express code and manufacture year
-                    r.setdefault("express_service_code", "N/A")
-                    r.setdefault("manufacture_year", "N/A")
-                    existing_rows.append(r)
-        except Exception:
-            pass  # corrupted CSV — start fresh
-
-    # Check for duplicate service tag
-    service_tag = row["service_tag"]
-    duplicate_idx = None
-    for i, existing in enumerate(existing_rows):
-        if existing.get("service_tag") == service_tag:
-            duplicate_idx = i
-            break
-
-    if duplicate_idx is not None:
-        prev = existing_rows[duplicate_idx]
-        prev_time = prev.get("timestamp", "unknown time")
-        print(f"\n  ⚠  DUPLICATE: {service_tag} was already audited on {prev_time}")
-        answer = input("  Update existing record? [Y/N] > ").strip().upper()
-        if answer == "Y":
-            # Preserve manually-entered inventory fields from old record
-            row["status"] = prev.get("status", "audited")
-            row["sale_price"] = prev.get("sale_price", "")
-            row["sale_date"] = prev.get("sale_date", "")
-            row["notes"] = prev.get("notes", "")
-            existing_rows[duplicate_idx] = row
-            print("  [✓] Record updated (inventory fields preserved).")
-        else:
-            print("  [–] Skipped — keeping original record.")
-            return
+    run(f"umount -l {dev}* 2>/dev/null; swapoff {dev}* 2>/dev/null", timeout=20)
+    run(f"wipefs -a {dev} 2>/dev/null", timeout=20)   # kill signatures first so a failed erase still leaves no bootable OS
+    attempts = []
+    if tran == "nvme":
+        attempts.append(("nvme_format_ses1", f"nvme format {dev} --ses=1 --force", 600))
+        attempts.append(("blkdiscard", f"blkdiscard -f {dev}", 600))
+        ctrl = re.sub(r"n\d+$", "", dev)
+        attempts.append(("nvme_sanitize_block", f"nvme sanitize {ctrl} --sanact=2", 60))
     else:
-        existing_rows.append(row)
+        attempts.append(("blkdiscard", f"blkdiscard -f {dev}", 900))
+        attempts.append(("ata_security_erase",
+                         f"hdparm --user-master u --security-set-pass p {dev} && hdparm --user-master u --security-erase p {dev}", 3600))
 
-    # Write all rows with current headers
-    with open(csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=CSV_HEADERS, extrasaction="ignore")
-        writer.writeheader()
-        for r in existing_rows:
-            writer.writerow(r)
+    t0 = time.time()
+    for name, cmd, tmo in attempts:
+        print(f"  Trying {name}...", end="", flush=True)
+        rc, so, se = run(cmd, timeout=tmo)
+        if rc == 0:
+            if name == "nvme_sanitize_block":
+                # sanitize runs in the background; poll the log until it finishes
+                for _ in range(240):
+                    log = out(f"nvme sanitize-log {ctrl} 2>/dev/null")
+                    m = re.search(r"\(SSTAT\)\s*:\s*0x?([0-9a-f]+)", log, re.I)
+                    if m and (int(m.group(1), 16) & 0x7) in (1, 3):   # 1 = completed, 3 = failed
+                        break
+                    time.sleep(5)
+            print(" done")
+            result.update(performed=True, method=name)
+            break
+        print(f" failed (rc={rc}) {se.strip()[:120]}")
+    result["duration_s"] = round(time.time() - t0, 1)
+    if not result["performed"]:
+        result["error"] = "all erase methods failed"
+        print("  [!!] ALL ERASE METHODS FAILED. Do not ship this unit without a manual wipe.")
+        return result
+    run(f"blockdev --rereadpt {dev} 2>/dev/null; udevadm settle", timeout=30)
+    blank = is_blank(dev, size_bytes)
+    result["verified_blank"] = blank
+    print(f"  Zero check: {'blank' if blank else 'NOT blank (drive may not return zeros after discard)' if blank is False else 'unreadable'}")
+    return result
 
-    count = len(existing_rows)
-    print(f"\n  [✓] Results saved to {csv_path} ({count} laptop{'s' if count != 1 else ''} total)")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  PHASE 5 — REPORT
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def build_warnings(rec):
+    w = []
+    b = rec.get("battery") or {}
+    s = rec.get("storage") or {}
+    t = rec.get("tests") or {}
+    if b.get("health_pct") is not None and b["health_pct"] < 60:
+        w.append(f"battery health {b['health_pct']}%")
+    if s.get("smart_passed") is False:
+        w.append("SMART health FAILED")
+    if isinstance(s.get("percentage_used"), int) and s["percentage_used"] >= 50:
+        w.append(f"SSD wear {s['percentage_used']}% used")
+    if s.get("media_errors"):
+        w.append(f"SSD media errors: {s['media_errors']}")
+    if not (rec.get("license") or {}).get("oem_key_present"):
+        w.append("no OEM Windows key in firmware (unit will not activate)")
+    for name in ("display", "keyboard", "speaker"):
+        if (t.get(name) or {}).get("result") == "fail":
+            w.append(f"{name} test failed")
+    e = rec.get("erase") or {}
+    if not e.get("performed"):
+        w.append(f"disk NOT erased ({e.get('error')})")
+    if rec.get("preflight", {}).get("other_internal_disks"):
+        w.append("more than one internal disk")
+    return w
 
 
+def print_summary(rec):
+    i, c, m, s, b, d, g, f = (rec.get(k) or {} for k in
+                              ("identity", "cpu", "memory", "storage", "battery", "display", "gpu", "features"))
+    W = 60
+    print()
+    print("╔" + "═" * W + "╗")
+    print("║" + f"  AUDIT v{VERSION}  {i.get('service_tag') or '?'}  {i.get('model') or ''}".ljust(W) + "║")
+    print("╠" + "═" * W + "╣")
+    rows = [
+        ("CPU", f"{c.get('model') or '?'}  ({c.get('cores')}C/{c.get('threads')}T)"),
+        ("RAM", f"{m.get('total_gb')} GB {m.get('type') or ''}  ({m.get('slots_used')}/{m.get('slots_total')} slots)"),
+        ("SSD", f"{s.get('size_gb')} GB {(s.get('transport') or '').upper()}  {s.get('model') or ''}"),
+        ("SSD health", f"SMART {'ok' if s.get('smart_passed') else s.get('smart_passed')}  wear {s.get('percentage_used')}%  {s.get('power_on_hours')} h  {s.get('data_written_tb')} TB written"),
+        ("Battery", f"health {b.get('health_pct')}%  charge {b.get('charge_pct')}%  cycles {b.get('cycles')}"),
+        ("Display", f"{d.get('diagonal_in')}\"  {d.get('resolution')}  {d.get('aspect') or ''}"),
+        ("GPU", f"{g.get('discrete') or 'integrated only'}"),
+        ("Wi-Fi", f"{f.get('wifi_standard')}  BT:{f.get('bluetooth')}  cam:{f.get('webcam')}  backlit:{f.get('backlit_keyboard')}  fp:{f.get('fingerprint_reader')}"),
+        ("License", "OEM key present" if (rec.get('license') or {}).get('oem_key_present') else "NO OEM KEY"),
+        ("Tests", "  ".join(f"{k}:{(v or {}).get('result')}" for k, v in (rec.get('tests') or {}).items())),
+        ("Erase", f"{(rec.get('erase') or {}).get('method') or 'none'}  blank:{(rec.get('erase') or {}).get('verified_blank')}"),
+    ]
+    for k, v in rows:
+        print("║" + f"  {k:<11}{v}"[:W].ljust(W) + "║")
+    if rec.get("warnings"):
+        print("╠" + "═" * W + "╣")
+        for wmsg in rec["warnings"]:
+            print("║" + f"  ⚠ {wmsg}"[:W].ljust(W) + "║")
+    print("╚" + "═" * W + "╝")
 
+
+def write_record(rec, audits_dir):
+    tag = (rec.get("identity") or {}).get("service_tag") or f"UNKNOWN-{int(time.time())}"
+    path = os.path.join(audits_dir, f"{tag}.json")
+    with open(path, "w") as f:
+        json.dump(rec, f, indent=2, sort_keys=True, default=str)
+    line = (f"{rec['audited_at']}  {tag:<8} {((rec.get('identity') or {}).get('model') or '')[:18]:<18} "
+            f"batt {(rec.get('battery') or {}).get('health_pct')}%  "
+            f"ssd {(rec.get('storage') or {}).get('size_gb')}GB wear {(rec.get('storage') or {}).get('percentage_used')}%  "
+            f"erase {(rec.get('erase') or {}).get('method') or 'NONE'}  "
+            f"warn {len(rec.get('warnings') or [])}\n")
+    with open(os.path.join(audits_dir, "summary.txt"), "a") as f:
+        f.write(line)
+    return path
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def print_summary(data: dict):
-    """Print a human-readable summary of the audit."""
-    W = 58  # inner width
-    print()
-    print("╔" + "═" * W + "╗")
-    print("║" + "  AUDIT SUMMARY v2.0".center(W) + "║")
-    print("╠" + "═" * W + "╣")
-    print(f"║  Service Tag:   {data['service_tag']:<40}║")
-    print(f"║  Express Code:  {data.get('express_service_code', 'N/A'):<40}║")
-    print(f"║  Model:         {data['model']:<40}║")
-    print(f"║  Mfg Year:      {data.get('manufacture_year', 'N/A'):<40}║")
-    print(f"║  CPU:           {data['cpu'][:38]:<40}║")
-    print(f"║  Cores/Threads: {str(data['cores']):<40}║")
-    print(f"║  RAM:           {str(data['ram_gb']) + ' GB ' + data['ram_type']:<40}║")
-    storage_str = f"{data['storage_type']} {data['storage_gb']} GB (SMART: {data['smart_status']})"
-    print(f"║  Storage:       {storage_str:<40}║")
-    batt_str = f"Health: {data.get('battery_health_pct', 'N/A')}% | Cycles: {data.get('battery_cycles', 'N/A')}"
-    print(f"║  Battery:       {batt_str:<40}║")
-    print(f"║  GPU:           {data['gpu'][:38]:<40}║")
-    screen_in = data.get('screen_size_in', 'N/A')
-    res_str = f"{screen_in}\" {data['resolution']} ({data['resolution_class']})"
-    print(f"║  Display:       {res_str:<40}║")
-    print("╠" + "═" * W + "╣")
-    print("║" + "  FEATURES".center(W) + "║")
-    print("╠" + "═" * W + "╣")
-    print(f"║  Touchscreen:   {data.get('touchscreen', 'N/A'):<40}║")
-    print(f"║  Fingerprint:   {data.get('fingerprint_reader', 'N/A'):<40}║")
-    print(f"║  Backlit KB:    {data.get('backlit_keyboard', 'N/A'):<40}║")
-    print(f"║  WiFi:          {data.get('wifi_standard', 'N/A'):<40}║")
-    print(f"║  Bluetooth:     {data.get('bluetooth', 'N/A'):<40}║")
-    print(f"║  Webcam:        {data.get('webcam', 'N/A'):<40}║")
-    print("╠" + "═" * W + "╣")
-    print("║" + "  GRADING".center(W) + "║")
-    print("╠" + "═" * W + "╣")
-    print(f"║  Screen Grade:  {data['screen_grade']:<40}║")
-    print(f"║  Chassis Grade: {data['chassis_grade']:<40}║")
-    print(f"║  Color:         {data.get('color', ''):<40}║")
-    print(f"║  Charger:       {data['charger']:<40}║")
-    print("╠" + "═" * W + "╣")
-    rec = data["recommendation"]
-    print(f"║  >> {rec:<54}║")
-    print("╚" + "═" * W + "╝")
-    print()
+def parse_args():
+    ap = argparse.ArgumentParser(description="Laptop line auditor")
+    ap.add_argument("--dry-run", action="store_true", help="no erase, no poweroff")
+    ap.add_argument("--no-erase", action="store_true")
+    ap.add_argument("--no-poweroff", action="store_true")
+    ap.add_argument("--skip-tests", action="store_true", help="skip attended display/keyboard/speaker tests")
+    ap.add_argument("--outdir", help="directory for audits/ (default: the boot USB)")
+    return ap.parse_args()
 
 
 def main():
-    # Must run as root
+    args = parse_args()
     if os.geteuid() != 0:
-        print("[!] This script must be run as root (sudo).")
+        print("[!] Run as root.")
         sys.exit(1)
+    erase_allowed = not (args.dry_run or args.no_erase)
+    poweroff = not (args.dry_run or args.no_poweroff)
+    # Hard guard: the erase targets the largest internal disk. Only ever do
+    # that from the SystemRescue live USB, never on a workstation.
+    if erase_allowed and not os.path.isdir("/run/archiso"):
+        print("  [!] Not running from SystemRescue live media. Erase and poweroff disabled.")
+        erase_allowed, poweroff = False, False
 
     clear_screen()
-    print()
-    print("  ╔═══════════════════════════════════════════════════╗")
-    print("  ║       LAPTOP AUDITOR  v2.0                       ║")
-    print("  ║       20-Laptop Factory Line Toolkit              ║")
-    print("  ║       + eBay Listing Optimization                 ║")
-    print("  ╚═══════════════════════════════════════════════════╝")
-    print()
+    print(f"  ╔══════════════════════════════════════════════╗")
+    print(f"  ║   LAPTOP AUDITOR v{VERSION}   {'DRY RUN' if args.dry_run else 'LIVE   '}             ║")
+    print(f"  ╚══════════════════════════════════════════════╝")
+    save_dir = args.outdir or mount_usb_rw()
+    audits_dir = os.path.join(save_dir, "audits")
+    os.makedirs(audits_dir, exist_ok=True)
 
-    # Phase 0 — Mount USB R/W
-    save_dir = mount_usb_rw()
-
+    # Identity first so raw evidence has a home before anything else runs.
+    scratch = RawStore(os.path.join(audits_dir, "_pending", "raw"))
+    banner("PREFLIGHT")
+    ident, disks, problems = preflight(scratch)
+    tag = ident.get("service_tag") or f"UNKNOWN-{int(time.time())}"
+    unit_dir = os.path.join(audits_dir, tag)
+    raw_dir = os.path.join(unit_dir, "raw")
+    os.makedirs(raw_dir, exist_ok=True)
+    for name in os.listdir(scratch.dir):
+        os.replace(os.path.join(scratch.dir, name), os.path.join(raw_dir, name))
     try:
-        # Phase 1 — Hardware Scan
-        data = run_hardware_scan()
+        os.rmdir(scratch.dir)
+        os.rmdir(os.path.dirname(scratch.dir))
+    except OSError:
+        pass
+    raw = RawStore(raw_dir)
+    raw.files = list(scratch.files)
+    sys.stdout = Tee(os.path.join(raw_dir, "console.log"))
 
-        # Phase 2 — Interactive Grading
-        grades = run_interactive_grading(data)
-        data.update(grades)
+    rec = {
+        "schema": 3, "auditor_version": VERSION, "audited_at": now_iso(),
+        "identity": ident, "preflight": {"storage_mode": None, "other_internal_disks": [d["device"] for d in disks[1:]]},
+        "tests": {}, "erase": {"performed": False, "method": None, "error": "not attempted"},
+        "warnings": [],
+    }
+    rec["preflight"]["storage_mode"] = "rst_or_vmd" if any("RST/VMD" in p for p in problems) else "ahci"
 
-        # Phase 3 — Recommendation
-        data["recommendation"] = compute_recommendation(data)
+    if problems:
+        banner("STOP — FIX BEFORE AUDITING", char="!")
+        for p in problems:
+            print(f"  ✗ {p}")
+        rec["status"] = "blocked"
+        rec["blocked_reason"] = problems
+        write_record(rec, audits_dir)
+        run("sync")
+        wait_key("\n  Press ENTER to power off...")
+        if poweroff:
+            run("poweroff")
+        return
 
-        # Summary
-        print_summary(data)
+    disk = disks[0]
+    try:
+        # Attended tests up front. Fingerprint check is a quick lsusb, so it rides along.
+        rec["tests"] = run_attended_tests(raw, args.skip_tests)
+        fp = detect_fingerprint(raw)
+        if fp == "unknown" and not args.skip_tests:
+            ans = prompt_choice("Fingerprint reader? (sensor in the power button or next to the touchpad)",
+                                {"Y": "Yes", "N": "No"})
+            fp = "yes" if ans == "Y" else "no"
+            rec["tests"]["fingerprint_confirm"] = "operator"
+        print()
+        print("  ────────────────────────────────────────────────────────")
+        print("  Attended part is done. Scan, erase and power-off run on their own.")
+        print("  You can move to the next machine.")
+        print("  ────────────────────────────────────────────────────────")
 
-        # Phase 4 — Export
-        export_to_csv(data, save_dir)
-
-        # Sync writes
-        sync_and_unmount()
-
-        print("\n  ✓ Audit complete. Shutting down in 5 seconds...")
-        print("    (Swap to Restorer USB for Windows install)\n")
-        time.sleep(5)
-        os.system("poweroff")
-
-    except Exception as e:
-        # Save error log to USB for later review
+        scan = hardware_scan(raw, disk)
+        rec.update(scan)
+        rec.setdefault("features", {})["fingerprint_reader"] = fp
+        rec["erase"] = secure_erase(disk, erase_allowed)
+        rec["warnings"] = build_warnings(rec)
+        rec["status"] = "audited"
+        rec["raw_files"] = sorted(set(raw.files + os.listdir(raw_dir)))
+        print_summary(rec)
+        path = write_record(rec, audits_dir)
+        run("sync")
+        print(f"  [✓] Saved {path}")
+    except Exception:  # noqa: BLE001
         import traceback
-        error_log = traceback.format_exc()
-        print(f"\n  [!!] ERROR: {e}")
-        print(f"  Saving error log to {save_dir}/audit_error.log\n")
+        tb = traceback.format_exc()
+        rec["status"] = "error"
+        rec["error"] = tb
+        print(f"\n  [!!] ERROR\n{tb}")
         try:
-            log_path = os.path.join(save_dir, "audit_error.log")
-            with open(log_path, "a") as f:
-                f.write(f"\n{'='*60}\n")
-                f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                f.write(error_log)
-            sync_and_unmount()
-            print(f"  Error log saved. Retrieve USB to review.")
-        except Exception:
-            print(f"  Could not save log. Error was:\n{error_log}")
-        print("\n  Shutting down in 10 seconds...")
-        time.sleep(10)
-        os.system("poweroff")
+            write_record(rec, audits_dir)
+            with open(os.path.join(audits_dir, f"{tag}_error.log"), "a") as f:
+                f.write(f"\n{'=' * 60}\n{now_iso()}\n{tb}")
+            run("sync")
+        except OSError:
+            pass
+        if poweroff:
+            print("  Powering off in 20s so the log can be read...")
+            time.sleep(20)
+
+    if poweroff:
+        print("\n  Powering off in 5s.")
+        time.sleep(5)
+        run("sync; poweroff")
 
 
 if __name__ == "__main__":

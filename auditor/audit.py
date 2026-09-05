@@ -713,10 +713,13 @@ def scan_memory(raw):
         if "Memory Device" not in block:
             continue
         slots += 1
-        size_m = re.search(r"^\s*Size:\s*(\d+)\s*(GB|MB)", block, re.M)
+        # dmidecode prints "Size: 8 GiB" (or GB / MB / MiB); empty slots say
+        # "Size: No Module Installed" and are skipped.
+        size_m = re.search(r"^\s*Size:\s*(\d+)\s*(GB|GiB|MB|MiB)", block, re.M)
         if not size_m:
             continue
-        size_gb = int(size_m.group(1)) if size_m.group(2) == "GB" else int(size_m.group(1)) // 1024
+        val, unit = int(size_m.group(1)), size_m.group(2)
+        size_gb = val if unit in ("GB", "GiB") else val // 1024
         def field(name):
             m = re.search(rf"^\s*{name}:\s*(.+)$", block, re.M)
             v = m.group(1).strip() if m else ""
@@ -1131,6 +1134,15 @@ def main():
     if os.geteuid() != 0:
         print("[!] Run as root.")
         sys.exit(1)
+    # Stop the kernel console from blanking mid-audit (belt-and-suspenders;
+    # the boot entry also passes consoleblank=0).
+    for tty in ("/dev/tty0", "/dev/console"):
+        try:
+            with open(tty, "w") as t:
+                t.write("\033[9;0]\033[14;0]")   # disable blank + monitor powerdown
+            break
+        except OSError:
+            continue
     erase_allowed = not (args.dry_run or args.no_erase)
     poweroff = not (args.dry_run or args.no_poweroff)
     # Hard guard: the erase targets the largest internal disk. Only ever do
@@ -1235,6 +1247,10 @@ def main():
         print("\n  Powering off in 5s.")
         time.sleep(5)
         run("sync; poweroff")
+    else:
+        # Dry run / bench: hold the summary on screen instead of letting the
+        # login banner scroll it away.
+        wait_key("\n  Dry run complete (no erase, no poweroff). Press ENTER for the shell...")
 
 
 if __name__ == "__main__":

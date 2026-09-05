@@ -31,3 +31,5 @@ restorer/Dell/Reports/
 
 # Auditor scratch on the USB
 auditor/audits/_pending/
+restorer/Dell/Catalog/
+restorer/Dell/BIOS/

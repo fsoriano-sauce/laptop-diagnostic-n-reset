@@ -4,8 +4,8 @@
   public update catalog (the same feed Dell Command | Update reads).
 
 .DESCRIPTION
-  1. Fetches https://downloads.dell.com/catalog/CatalogPC.cab and expands
-     CatalogPC.xml (cached for 7 days in restorer\Dell\Catalog\).
+  1. Fetches https://downloads.dell.com/catalog/CatalogIndexPC.cab and, from it,
+     the per-model catalog cab for each model (cached 7 days in restorer\Dell\Catalog\).
   2. For each model name, selects driver packages (ComponentType DRVR) that
      list that model and Windows 11 (falls back to Windows 10), in the
      requested categories, newest release per component name.
@@ -55,22 +55,38 @@ function T($n) {
 function Safe([string]$s) { ($s -replace '[\\/:*?"<>|]', "_").Trim() }
 
 # ── 1. Catalog ────────────────────────────────────────────────────────────
-$cab = Join-Path $catDir "CatalogPC.cab"
-$xml = Join-Path $catDir "CatalogPC.xml"
-if (-not (Test-Path $xml) -or ((Get-Item $xml).LastWriteTime -lt (Get-Date).AddDays(-7))) {
-    Say "downloading CatalogPC.cab"
-    Invoke-WebRequest -Uri "https://downloads.dell.com/catalog/CatalogPC.cab" -OutFile $cab -UseBasicParsing
-    if (Test-Path $xml) { Remove-Item $xml -Force }
-    & expand.exe $cab $xml | Out-Null
-    if (-not (Test-Path $xml)) { throw "expand.exe did not produce CatalogPC.xml" }
+# CatalogPC.cab lists only commercial lines (Latitude, OptiPlex, Precision, XPS).
+# Vostro packages live in per-model catalogs that CatalogIndexPC.cab points to.
+function Get-Catalog($relPath) {
+    # download + expand one catalog cab (cached 7 days), return its XmlDocument
+    $name = [IO.Path]::GetFileNameWithoutExtension($relPath)
+    $cab  = Join-Path $catDir "$name.cab"
+    $xml  = Join-Path $catDir "$name.xml"
+    if (-not (Test-Path $xml) -or ((Get-Item $xml).LastWriteTime -lt (Get-Date).AddDays(-7))) {
+        Say "downloading $name.cab"
+        Invoke-WebRequest -Uri "https://downloads.dell.com/$relPath" -OutFile $cab -UseBasicParsing
+        if (Test-Path $xml) { Remove-Item $xml -Force }
+        & expand.exe $cab $xml | Out-Null
+        if (-not (Test-Path $xml)) { throw "expand.exe did not produce $name.xml" }
+    }
+    $doc = New-Object System.Xml.XmlDocument
+    $doc.Load($xml)
+    return $doc
 }
-Say "parsing catalog ($([math]::Round((Get-Item $xml).Length/1MB)) MB, this takes a minute)"
-$doc = New-Object System.Xml.XmlDocument
-$doc.Load($xml)
-$base = $doc.Manifest.baseLocation
-if (-not $base) { $base = "downloads.dell.com" }
-$all = @($doc.Manifest.SoftwareComponent)
-Say "catalog has $($all.Count) components"
+$index = Get-Catalog "catalog/CatalogIndexPC.cab"
+$base  = "downloads.dell.com"
+$all   = @()
+foreach ($g in @($index.ManifestIndex.GroupManifest)) {
+    $names = @(@($g.SupportedSystems.Brand) | ForEach-Object { @($_.Model) } | ForEach-Object { T $_.Display })
+    $wanted = $false
+    foreach ($model in $Models) { foreach ($n in $names) { if ($n -like "*$model*") { $wanted = $true } } }
+    if (-not $wanted) { continue }
+    $doc = Get-Catalog $g.ManifestInformation.path
+    if ($doc.Manifest.baseLocation) { $base = $doc.Manifest.baseLocation }
+    $all += @($doc.Manifest.SoftwareComponent)
+    Say "catalog for '$($names -join ', ')': $($g.ManifestInformation.path)"
+}
+Say "catalogs have $($all.Count) components"
 
 # ── 2. Select ─────────────────────────────────────────────────────────────
 function Get-Selection($model, $type) {
@@ -85,7 +101,8 @@ function Get-Selection($model, $type) {
         }
         if (-not $modelMatch) { continue }
         $osCodes = @(@($c.SupportedOperatingSystems.OperatingSystem) | ForEach-Object { $_.osCode })
-        $osRank = if ($osCodes -contains "W11") { 2 } elseif ($osCodes -contains "W10") { 1 } else { 0 }
+        # Dell osCodes: W21H4/W21P4 = Windows 11 x64, W10H4/W10P4 = Windows 10 x64 (W11xx are ARM64/SE/IoT)
+        $osRank = if ($osCodes -match '^W21[HP]4$') { 2 } elseif ($osCodes -match '^W10[HP]4$') { 1 } else { 0 }
         if ($type -eq "DRVR" -and $osRank -eq 0) { continue }
         $cat = T $c.Category.Display
         if ($type -eq "DRVR") {
@@ -95,21 +112,28 @@ function Get-Selection($model, $type) {
         }
         $when = $null
         try { $when = [datetime]$c.dateTime } catch { try { $when = [datetime]$c.releaseDate } catch { $when = [datetime]"2000-01-01" } }
+        $name = T $c.Name.Display
+        # Dell renames Wi-Fi/Bluetooth/graphics packages every release (the device list is in the
+        # name), so group by category + vendor + kind and rank by version before date.
+        $kind = if ($name -match 'Bluetooth|Wi-Fi|Ethernet|Graphics|Audio|Fingerprint') { $Matches[0] } else { $name }
+        $ver = $null; try { $ver = [version]$c.vendorVersion } catch {}
         [pscustomobject]@{
-            Name     = T $c.Name.Display
+            Name     = $name
+            Family   = "$cat|$($name.Split(' ')[0])|$kind"
             Category = $cat
             Version  = $c.vendorVersion
+            Ver      = $ver
             Date     = $when
             OsRank   = $osRank
             SizeMB   = [math]::Round([double]$c.size / 1MB, 1)
             Path     = $c.path
-            MD5      = $c.hashMD5
+            MD5      = if ($c.hashMD5) { $c.hashMD5 } else { (@($c.Cryptography.Hash) | Where-Object { $_.algorithm -eq "MD5" }).'#text' }
             File     = Split-Path $c.path -Leaf
         }
     }
-    # newest per component name, preferring Windows 11 packages
-    $hits | Group-Object Name | ForEach-Object {
-        $_.Group | Sort-Object OsRank, Date -Descending | Select-Object -First 1
+    # newest per driver family, preferring Windows 11 packages
+    $hits | Group-Object Family | ForEach-Object {
+        $_.Group | Sort-Object OsRank, Ver, Date -Descending | Select-Object -First 1
     } | Sort-Object Category, Name
 }
 
@@ -134,7 +158,7 @@ $manifest = @()
 foreach ($model in $Models) {
     Say "=== $model ==="
     $sel = @(Get-Selection $model "DRVR")
-    if (-not $sel) { Write-Warning "no driver packages matched '$model'. Check the model name against the catalog (e.g. search CatalogPC.xml for '7620')."; continue }
+    if (-not $sel) { Write-Warning "no driver packages matched '$model'. Check the model name against the catalog (e.g. search CatalogIndexPC.xml for '7620')."; continue }
     $sel | Format-Table Category, Name, Version, @{n="Date";e={$_.Date.ToString("yyyy-MM-dd")}}, SizeMB, File -AutoSize | Out-String -Width 200 | Write-Host
     Say ("{0} packages, {1} MB total" -f $sel.Count, [math]::Round(($sel | Measure-Object SizeMB -Sum).Sum))
     $bios = @()

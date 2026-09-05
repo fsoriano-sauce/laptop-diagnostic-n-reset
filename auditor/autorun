@@ -1,4 +1,12 @@
 #!/bin/bash
-# Auto-launch the laptop auditor on boot
+# SystemRescue autorun hook: launches the laptop auditor after boot.
+# Testing switch: create an empty file named DRYRUN on the USB root and the
+# auditor runs without erasing or powering off. Delete it for production.
 sleep 5
-python3 /run/archiso/bootmnt/audit.py
+USB=/run/archiso/bootmnt
+if [ -e "$USB/DRYRUN" ] || [ -e "$USB/dryrun" ]; then
+    echo "DRYRUN marker found on USB: no erase, no poweroff"
+    python3 "$USB/audit.py" --dry-run
+else
+    python3 "$USB/audit.py"
+fi

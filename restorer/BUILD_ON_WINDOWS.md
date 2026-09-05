@@ -106,7 +106,7 @@ Prints per stick: files ok, number of `.inf` drivers, free space.
 ```powershell
 $u = "E:"     # the stick
 Test-Path "$u\autounattend.xml"; Test-Path "$u\Dell\Scripts\stage.cmd"; Test-Path "$u\Dell\Scripts\stage.ps1"
-Test-Path "$u\sources\install.esd" -or (Test-Path "$u\sources\install.wim")
+(Test-Path "$u\sources\install.esd") -or (Test-Path "$u\sources\install.wim")
 Get-ChildItem "$u\Dell\Drivers" -Directory | % { "{0}: {1} inf" -f $_.Name, (Get-ChildItem $_.FullName -Recurse -Filter *.inf | Measure-Object).Count }
 # Dry-run the specialize script exactly as Setup will call it, but installing nothing:
 & "$u\Dell\Scripts\stage.cmd" $u -NoInstall

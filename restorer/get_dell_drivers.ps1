@@ -61,7 +61,7 @@ if (-not (Test-Path $xml) -or ((Get-Item $xml).LastWriteTime -lt (Get-Date).AddD
     Say "downloading CatalogPC.cab"
     Invoke-WebRequest -Uri "https://downloads.dell.com/catalog/CatalogPC.cab" -OutFile $cab -UseBasicParsing
     if (Test-Path $xml) { Remove-Item $xml -Force }
-    & expand.exe $cab -F:CatalogPC.xml $catDir | Out-Null
+    & expand.exe $cab $xml | Out-Null
     if (-not (Test-Path $xml)) { throw "expand.exe did not produce CatalogPC.xml" }
 }
 Say "parsing catalog ($([math]::Round((Get-Item $xml).Length/1MB)) MB, this takes a minute)"

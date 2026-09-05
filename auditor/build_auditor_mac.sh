@@ -83,7 +83,7 @@ cat > "$MNT/boot/grub/custom.cfg" <<EOF
 set timeout=5
 menuentry 'Laptop Auditor (SystemRescue, autorun audit.py)' --id auditor {
 	set gfxpayload=keep
-	linux /sysresccd/boot/x86_64/vmlinuz archisobasedir=sysresccd archisolabel=$LABEL iomem=relaxed modprobe.blacklist=nouveau nouveau.modeset=0
+	linux /sysresccd/boot/x86_64/vmlinuz archisobasedir=sysresccd archisolabel=$LABEL iomem=relaxed modprobe.blacklist=nouveau nouveau.modeset=0 consoleblank=0
 	initrd /sysresccd/boot/intel_ucode.img /sysresccd/boot/amd_ucode.img /sysresccd/boot/x86_64/sysresccd.img
 }
 set default=auditor

@@ -1,6 +1,6 @@
 {
   "audited_at": "2026-07-23T17:44:20+00:00",
-  "auditor_version": "3.0",
+  "auditor_version": "3.1",
   "battery": {
     "charge_pct": 100,
     "cycles": null,
@@ -34,11 +34,11 @@
     "width_px": 1920
   },
   "erase": {
-    "duration_s": null,
-    "error": "erase disabled by flag",
-    "method": null,
-    "performed": false,
-    "verified_blank": null
+    "duration_s": 10.4,
+    "error": null,
+    "method": "nvme_format_ses1",
+    "performed": true,
+    "verified_blank": true
   },
   "features": {
     "backlit_keyboard": "yes",
@@ -56,9 +56,9 @@
   "grades": {
     "charger": "Y",
     "chassis_grade": "B",
-    "chassis_note": null,
+    "chassis_note": "normal wear",
     "color": "Gray",
-    "screen_grade": "A",
+    "screen_grade": "B",
     "screen_note": null
   },
   "identity": {
@@ -146,7 +146,7 @@
     "media_errors": 0,
     "model": "PC SN530 NVMe WDC 512GB",
     "percentage_used": 13,
-    "power_cycles": 123,
+    "power_cycles": 124,
     "power_on_hours": 1388,
     "present": true,
     "rotational": false,
@@ -154,13 +154,13 @@
     "size_bytes": 512110190592,
     "size_gb": 512,
     "smart_passed": true,
-    "temperature_c": 27,
+    "temperature_c": 26,
     "transport": "nvme",
     "unsafe_shutdowns": 30
   },
   "tests": {
     "display": {
-      "grade": "A",
+      "grade": "B",
       "note": null,
       "result": "pass"
     },
@@ -171,10 +171,27 @@
         "Intel HID 5 button array"
       ],
       "finished_by": "all_required",
-      "keys_seen": 100,
+      "keys_seen": 83,
       "missing_numpad": [],
       "missing_optional": [
-        "MENU"
+        "END",
+        "ESC",
+        "F1",
+        "F10",
+        "F11",
+        "F12",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6",
+        "F7",
+        "F8",
+        "F9",
+        "HOME",
+        "INS",
+        "MENU",
+        "PRTSC"
       ],
       "missing_required": [],
       "numpad_present": true,
@@ -186,6 +203,6 @@
     }
   },
   "warnings": [
-    "disk NOT erased (erase disabled by flag)"
+    "laptop clock reads 2026-07-23 (RTC wrong, likely CMOS cell); timestamp unreliable"
   ]
 }

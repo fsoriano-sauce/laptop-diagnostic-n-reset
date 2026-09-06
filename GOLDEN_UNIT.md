@@ -35,6 +35,7 @@ Rule: while one unit installs, audit the next. Plan ~2 hours for three.
 | Setup cannot see the disk | | AHCI not set; the auditor would have refused, so check the BIOS |
 | Setup asks for a product key | | no OEM key in firmware; the audit's `oem_key_present` says so |
 | No `Dell\Reports\<TAG>.txt` | `Dell\Reports\_stage-cmd.log` | stick not found by letter; try another USB port |
+| Report stops after "Driver folders matched" | stick dropped mid-install (fixed: drivers now copy to C: first) | at the OOBE screen press **Shift+F10**, then `for %d in (D E F G H) do @if exist %d:\Dell\Scripts\stage.cmd %d:\Dell\Scripts\stage.cmd %d:` and wait for it to return |
 | A device listed under "Devices with problems" | that line | add the matching Dell package to `Dell\Drivers\<Model>\`, rebuild the stick |
 | No speakers / no camera in Windows | Device Manager | same: missing driver |
 

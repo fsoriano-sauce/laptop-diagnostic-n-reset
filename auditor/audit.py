@@ -46,7 +46,8 @@ import termios
 import time
 from datetime import datetime, timezone
 
-VERSION = "3.0"
+VERSION = "3.1"
+MIN_PLAUSIBLE_DATE = "2026-09-01"    # a system clock before this means the laptop's RTC is wrong
 MIN_INTERNAL_DISK_GB = 64            # anything smaller is a USB stick or cache module
 ERASE_ABORT_WINDOW_S = 10
 KEYBOARD_TEST_TIMEOUT_S = 240
@@ -1128,6 +1129,8 @@ def build_warnings(rec):
     s = rec.get("storage") or {}
     t = rec.get("tests") or {}
     gr = rec.get("grades") or {}
+    if (rec.get("audited_at") or "9999")[:10] < MIN_PLAUSIBLE_DATE:
+        w.append(f"laptop clock reads {rec['audited_at'][:10]} (RTC wrong, likely CMOS cell); timestamp unreliable")
     if gr.get("screen_grade") == "C":
         w.append("screen grade C (cracked/scratched/bleed)")
     if gr.get("chassis_grade") == "C":

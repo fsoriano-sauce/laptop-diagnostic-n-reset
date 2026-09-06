@@ -1,0 +1,119 @@
+{
+   "blockdevices": [
+      {
+         "name": "loop0",
+         "path": "/dev/loop0",
+         "type": "loop",
+         "rm": false,
+         "hotplug": false,
+         "size": 1154875392,
+         "tran": null,
+         "rota": true,
+         "model": null,
+         "serial": null,
+         "vendor": null,
+         "mountpoints": [
+             "/run/archiso/sfs/airootfs"
+         ]
+      },{
+         "name": "sda",
+         "path": "/dev/sda",
+         "type": "disk",
+         "rm": true,
+         "hotplug": true,
+         "size": 62914560000,
+         "tran": "usb",
+         "rota": true,
+         "model": "Flash Disk",
+         "serial": "6960671046535575823",
+         "vendor": "Generic ",
+         "mountpoints": [],
+         "children": [
+            {
+               "name": "sda1",
+               "path": "/dev/sda1",
+               "type": "part",
+               "rm": true,
+               "hotplug": true,
+               "size": 62913511424,
+               "tran": null,
+               "rota": true,
+               "model": null,
+               "serial": null,
+               "vendor": null,
+               "mountpoints": [
+                   "/run/archiso/bootmnt"
+               ]
+            }
+         ]
+      },{
+         "name": "nvme0n1",
+         "path": "/dev/nvme0n1",
+         "type": "disk",
+         "rm": false,
+         "hotplug": false,
+         "size": 512110190592,
+         "tran": "nvme",
+         "rota": false,
+         "model": "PC SN530 NVMe WDC 512GB",
+         "serial": "21025Y802762",
+         "vendor": null,
+         "mountpoints": [],
+         "children": [
+            {
+               "name": "nvme0n1p1",
+               "path": "/dev/nvme0n1p1",
+               "type": "part",
+               "rm": false,
+               "hotplug": false,
+               "size": 104857600,
+               "tran": "nvme",
+               "rota": false,
+               "model": null,
+               "serial": null,
+               "vendor": null,
+               "mountpoints": []
+            },{
+               "name": "nvme0n1p2",
+               "path": "/dev/nvme0n1p2",
+               "type": "part",
+               "rm": false,
+               "hotplug": false,
+               "size": 16777216,
+               "tran": "nvme",
+               "rota": false,
+               "model": null,
+               "serial": null,
+               "vendor": null,
+               "mountpoints": []
+            },{
+               "name": "nvme0n1p3",
+               "path": "/dev/nvme0n1p3",
+               "type": "part",
+               "rm": false,
+               "hotplug": false,
+               "size": 511279366144,
+               "tran": "nvme",
+               "rota": false,
+               "model": null,
+               "serial": null,
+               "vendor": null,
+               "mountpoints": []
+            },{
+               "name": "nvme0n1p4",
+               "path": "/dev/nvme0n1p4",
+               "type": "part",
+               "rm": false,
+               "hotplug": false,
+               "size": 706740224,
+               "tran": "nvme",
+               "rota": false,
+               "model": null,
+               "serial": null,
+               "vendor": null,
+               "mountpoints": []
+            }
+         ]
+      }
+   ]
+}

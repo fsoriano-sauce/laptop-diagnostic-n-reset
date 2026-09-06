@@ -1,0 +1,74 @@
+# dmidecode 3.7
+Getting SMBIOS data from sysfs.
+SMBIOS 3.2 present.
+
+Handle 0x1100, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x1000
+	Error Information Handle: Not Provided
+	Total Width: 64 bits
+	Data Width: 64 bits
+	Size: 8 GiB
+	Form Factor: SODIMM
+	Set: None
+	Locator: Motherboard
+	Bank Locator: Not Specified
+	Type: DDR4
+	Type Detail: Synchronous
+	Speed: 3200 MT/s
+	Manufacturer: 000000003180
+	Serial Number: 00000000
+	Asset Tag: 00000000
+	Part Number:                     
+	Rank: 1
+	Configured Memory Speed: 2933 MT/s
+	Minimum Voltage: Unknown
+	Maximum Voltage: Unknown
+	Configured Voltage: 1.2 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Unknown
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 8 GiB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x1101, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x1000
+	Error Information Handle: Not Provided
+	Total Width: 64 bits
+	Data Width: 64 bits
+	Size: 8 GiB
+	Form Factor: SODIMM
+	Set: None
+	Locator: DIMM B
+	Bank Locator: Not Specified
+	Type: DDR4
+	Type Detail: Synchronous
+	Speed: 3200 MT/s
+	Manufacturer: 80AD00000000
+	Serial Number: 232811D6
+	Asset Tag: 02210600
+	Part Number: HMAA1GS6CJR6N-XN    
+	Rank: 1
+	Configured Memory Speed: 2933 MT/s
+	Minimum Voltage: Unknown
+	Maximum Voltage: Unknown
+	Configured Voltage: 1.2 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 8 GiB
+	Cache Size: None
+	Logical Size: None
+

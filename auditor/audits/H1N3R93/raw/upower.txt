@@ -1,0 +1,83 @@
+Device: /org/freedesktop/UPower/devices/battery_BAT0
+  native-path:          BAT0
+  vendor:               SMP
+  model:                DELL NYD3W95
+  serial:               315
+  power supply:         yes
+  updated:              Thu 23 Jul 2026 05:46:03 PM UTC (0 seconds ago)
+  has history:          yes
+  has statistics:       yes
+  battery
+    present:             yes
+    rechargeable:        yes
+    state:               fully-charged
+    warning-level:       none
+    energy:              38.4978 Wh
+    energy-empty:        0 Wh
+    energy-full:         38.4978 Wh
+    energy-full-design:  56.0082 Wh
+    voltage-min-design:  11.4 V
+    capacity-level:      Full
+    energy-rate:         0.0114 W
+    voltage:             12.101 V
+    charge-cycles:       N/A
+    time to empty:       140.7 days
+    percentage:          100%
+    capacity:            68.736%
+    technology:          lithium-polymer
+    charge-start-threshold:        75%
+    charge-end-threshold:          80%
+    charge-threshold-supported:    yes
+    icon-name:          'battery-full-charged-symbolic'
+  History (charge):
+    1784828763	100.000	fully-charged
+  History (rate):
+    1784828763	0.011	fully-charged
+  History (voltage):
+    1784828763	12.101	fully-charged
+
+Device: /org/freedesktop/UPower/devices/line_power_AC
+  native-path:          AC
+  power supply:         yes
+  updated:              Thu 23 Jul 2026 05:46:03 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  line-power
+    warning-level:       none
+    online:              yes
+    icon-name:          'ac-adapter-symbolic'
+
+Device: /org/freedesktop/UPower/devices/line_power_ucsi_source_psy_USBC000o001
+  native-path:          ucsi-source-psy-USBC000:001
+  power supply:         yes
+  updated:              Thu 23 Jul 2026 05:46:03 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  line-power
+    warning-level:       none
+    online:              no
+    icon-name:          'ac-adapter-symbolic'
+
+Device: /org/freedesktop/UPower/devices/DisplayDevice
+  power supply:         yes
+  updated:              Thu 23 Jul 2026 05:46:03 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  battery
+    present:             yes
+    state:               fully-charged
+    warning-level:       none
+    energy:              38.4978 Wh
+    energy-full:         38.4978 Wh
+    energy-rate:         0.0114 W
+    charge-cycles:       N/A
+    time to empty:       140.7 days
+    percentage:          100%
+    icon-name:          'battery-full-charged-symbolic'
+
+Daemon:
+  daemon-version:  1.91.3
+  on-battery:      no
+  lid-is-closed:   no
+  lid-is-present:  yes
+  critical-action: Sleep

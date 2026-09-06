@@ -48,7 +48,7 @@ Design rules, in order of importance:
 Three attended visits, each under two minutes. Run Restorer installs three
 wide with three sticks; the auditor is never the bottleneck.
 
-**Before the first batch, run one unit of each model end to end**, then
+**Before the first batch, run one unit of each model end to end** (checklist in [GOLDEN_UNIT.md](GOLDEN_UNIT.md)), then
 finish OOBE on it with a throwaway Microsoft account and check: activation
 (Settings → System → Activation), Wi-Fi, Bluetooth, fingerprint enrolment,
 camera, speakers, GPU in Device Manager. Read `Dell\Reports\<TAG>.txt` on the

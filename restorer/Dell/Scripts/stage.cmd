@@ -18,4 +18,6 @@ echo %DATE% %TIME% stage.cmd end rc=%ERRORLEVEL% >> "%LOGDIR%\_stage-cmd.log"
 rem stage.ps1 already copied the reports to the USB; append the end line there too if the stick is reachable
 for %%d in (D E F G H I J K L M N) do @if exist "%%d:\Dell\Scripts\stage.cmd" (echo %DATE% %TIME% stage.cmd end rc=%ERRORLEVEL% >> "%%d:\Dell\Reports\_stage-cmd.log" & goto :done)
 :done
+rem cmd's >> redirect kept the local log open while stage.ps1 ran, so its Remove-Item could not empty C:\Dell; finish that here (live runs that delivered their report only)
+if /I not "%~2"=="-NoInstall" if not errorlevel 1 if not exist "%LOGDIR%\*.txt" (del /q "%LOGDIR%\_stage-cmd.log" 2>nul & rd "%LOGDIR%" 2>nul & rd "%SystemDrive%\Dell" 2>nul)
 exit /b 0

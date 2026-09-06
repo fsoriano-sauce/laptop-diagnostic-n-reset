@@ -30,7 +30,8 @@
 param(
     [switch]$ExtractDups,
     [switch]$ExtractOnly,
-    [string]$Drive
+    [string]$Drive,
+    [switch]$AllowSingleEdition   # build onto a one-edition (injected) image anyway
 )
 $ErrorActionPreference = "Stop"
 $root      = $PSScriptRoot
@@ -40,6 +41,16 @@ $driversSrc= Join-Path $root "Dell\Drivers"
 $dupsSrc   = Join-Path $root "Dell\Downloads"
 
 function Say($m) { Write-Host "[$(Get-Date -Format HH:mm:ss)] $m" }
+
+function Get-WimImageCount([string]$path) {
+    # WIM and ESD share the header: "MSWIM" magic, image count as UInt32 at 0x2C.
+    try {
+        $fs = [IO.File]::OpenRead($path); $b = New-Object byte[] 0x30
+        $null = $fs.Read($b, 0, 0x30); $fs.Close()
+        if ([Text.Encoding]::ASCII.GetString($b, 0, 5) -ne "MSWIM") { return $null }
+        return [BitConverter]::ToUInt32($b, 0x2C)
+    } catch { return $null }
+}
 
 foreach ($p in @($xmlSrc, $scriptsSrc)) {
     if (-not (Test-Path $p)) { throw "Missing $p (run from the repo's restorer folder)" }
@@ -107,6 +118,14 @@ foreach ($t in $targets) {
     if ((Test-Path "$t\sources\install.esd.bak") -or (Test-Path "$t\drivers")) {
         Write-Warning "$t still carries the old injected-image layout (install.esd.bak / \drivers). It will work, but re-flash from the stock ISO so Setup can match the edition to the OEM key."
     }
+    # A stock ISO flash carries 8+ editions; the April injected image carries exactly one (Pro).
+    $img = if (Test-Path "$t\sources\install.wim") { "$t\sources\install.wim" } else { "$t\sources\install.esd" }
+    $editions = Get-WimImageCount $img
+    if ($editions -eq 1 -and -not $AllowSingleEdition) {
+        Write-Warning "$t : $(Split-Path $img -Leaf) holds a SINGLE edition ($([math]::Round((Get-Item $img).Length/1GB,2)) GB, $((Get-Item $img).LastWriteTime.ToString('yyyy-MM-dd'))). This stick was not re-flashed from the stock ISO; Setup would install that one edition regardless of the OEM key. Re-flash with Rufus (BUILD_ON_WINDOWS.md section 4) and rerun. Use -AllowSingleEdition to build anyway."
+        continue
+    }
+    if ($editions) { Say "  install image: $editions edition(s) in $(Split-Path $img -Leaf)" }
     Copy-Item $xmlSrc "$t\autounattend.xml" -Force
     Say "  autounattend.xml copied"
     & robocopy $scriptsSrc "$t\Dell\Scripts" /MIR /NFL /NDL /NJH /NJS /R:2 /W:2 | Out-Null
@@ -114,13 +133,13 @@ foreach ($t in $targets) {
     & robocopy $driversSrc "$t\Dell\Drivers" /MIR /NFL /NDL /NJH /NJS /R:2 /W:2 /XF README.md | Out-Null
     Say "  Dell\Drivers mirrored"
     New-Item -ItemType Directory -Force -Path "$t\Dell\Reports" | Out-Null
-    foreach ($stale in @("$t\drivers", "$t\sources\install.esd.bak", "$t\sources\install.wim.bak")) {
+    foreach ($stale in @("$t\drivers", "$t\sources\install.esd.bak", "$t\sources\install.wim.bak", "$t\autounattend.xml.bak", "$t\`$WinPEDriver`$")) {
         if (Test-Path $stale) { Remove-Item $stale -Recurse -Force -ErrorAction SilentlyContinue; Say "  removed stale $stale" }
     }
     # verify
     $ok = (Test-Path "$t\autounattend.xml") -and (Test-Path "$t\Dell\Scripts\stage.cmd") -and (Test-Path "$t\Dell\Scripts\stage.ps1")
     $free = [math]::Round((Get-Volume -DriveLetter $t.TrimEnd(':')).SizeRemaining / 1GB, 1)
     $inf = (Get-ChildItem "$t\Dell\Drivers" -Recurse -Filter *.inf -ErrorAction SilentlyContinue | Measure-Object).Count
-    Say ("  verify: files={0}  drivers={1} inf  free={2} GB" -f $(if ($ok) {'ok'} else {'MISSING'}), $inf, $free)
+    Say ("  verify: files={0}  editions={1}  drivers={2} inf  free={3} GB" -f $(if ($ok) {'ok'} else {'MISSING'}), $editions, $inf, $free)
 }
 Say "Done. Eject the sticks safely."

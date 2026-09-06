@@ -107,6 +107,8 @@ Prints per stick: files ok, number of `.inf` drivers, free space.
 $u = "E:"     # the stick
 Test-Path "$u\autounattend.xml"; Test-Path "$u\Dell\Scripts\stage.cmd"; Test-Path "$u\Dell\Scripts\stage.ps1"
 (Test-Path "$u\sources\install.esd") -or (Test-Path "$u\sources\install.wim")
+# Stock media carries 8+ editions. Exactly 1 means an old injected image: re-flash with Rufus.
+$img = Get-Item "$u\sources\install.*" | Select-Object -First 1; $fs=[IO.File]::OpenRead($img.FullName); $b=New-Object byte[] 48; $null=$fs.Read($b,0,48); $fs.Close(); "editions: $([BitConverter]::ToUInt32($b,0x2C))  size: $([math]::Round($img.Length/1GB,2)) GB  dated: $($img.LastWriteTime.ToString('yyyy-MM-dd'))"
 Get-ChildItem "$u\Dell\Drivers" -Directory | % { "{0}: {1} inf" -f $_.Name, (Get-ChildItem $_.FullName -Recurse -Filter *.inf | Measure-Object).Count }
 # Dry-run the specialize script exactly as Setup will call it, but installing nothing:
 & "$u\Dell\Scripts\stage.cmd" $u -NoInstall
@@ -147,4 +149,5 @@ missing, add packages and re-run steps 3, 5, 6.
 | No `Dell\Reports\<TAG>.txt` after install | specialize command did not find the stick | check `Dell\Reports\_stage-cmd.log`; if absent, the `for` loop in autounattend.xml did not see the drive letter. Plug the stick into a different port and retry. |
 | OOBE has no Wi-Fi networks | Wi-Fi driver not staged | add the Intel Wi-Fi package to `Dell\Drivers\Common\` and rebuild. |
 | Rufus: "revoked UEFI bootloader" | Microsoft's own boot files | OK, expected. |
+| build script says `SINGLE edition` and skips the stick | stick was not re-flashed; it still carries the April injected Pro-only image | Rufus from `C:\Temp\Win11.iso` (section 4), then rerun the build. Drivers are already extracted, so it is copy-only. |
 | `get_dell_drivers.ps1` parse takes minutes or runs out of memory | CatalogPC.xml is ~100 MB | normal on a small PC; wait, or run with `-Models "Vostro 7620"` alone. |

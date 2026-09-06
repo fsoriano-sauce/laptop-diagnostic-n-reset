@@ -1,0 +1,74 @@
+# dmidecode 3.7
+Getting SMBIOS data from sysfs.
+SMBIOS 3.4 present.
+
+Handle 0x1100, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x1000
+	Error Information Handle: Not Provided
+	Total Width: 64 bits
+	Data Width: 64 bits
+	Size: 8 GiB
+	Form Factor: SODIMM
+	Set: None
+	Locator: DIMM 1
+	Bank Locator: BANK 0
+	Type: DDR5
+	Type Detail: Synchronous
+	Speed: 4800 MT/s
+	Manufacturer: 802C0000802C
+	Serial Number: 38ECCDC3
+	Asset Tag: 0F222600
+	Part Number: MTC4C10163S1SC48BA1 
+	Rank: 1
+	Configured Memory Speed: 4800 MT/s
+	Minimum Voltage: Unknown
+	Maximum Voltage: Unknown
+	Configured Voltage: 1.1 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Bank 1, Hex 0x2C
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 8 GiB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x1101, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x1000
+	Error Information Handle: Not Provided
+	Total Width: 64 bits
+	Data Width: 64 bits
+	Size: 8 GiB
+	Form Factor: SODIMM
+	Set: None
+	Locator: Motherboard
+	Bank Locator: Not Specified
+	Type: DDR5
+	Type Detail: Synchronous
+	Speed: 4800 MT/s
+	Manufacturer: Not Specified
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Rank: 1
+	Configured Memory Speed: 4800 MT/s
+	Minimum Voltage: Unknown
+	Maximum Voltage: Unknown
+	Configured Voltage: 1.1 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Unknown
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 8 GiB
+	Cache Size: None
+	Logical Size: None
+

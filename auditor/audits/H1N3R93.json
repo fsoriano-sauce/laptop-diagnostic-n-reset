@@ -1,0 +1,191 @@
+{
+  "audited_at": "2026-07-23T17:44:20+00:00",
+  "auditor_version": "3.0",
+  "battery": {
+    "charge_pct": 100,
+    "cycles": null,
+    "design_wh": null,
+    "full_wh": null,
+    "health_pct": 69,
+    "manufacturer": "SMP",
+    "model": "DELL NYD3W95",
+    "present": true,
+    "serial": "315",
+    "status": "Full"
+  },
+  "cpu": {
+    "cores": 6,
+    "generation": 10,
+    "model": "Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz",
+    "threads": 12
+  },
+  "display": {
+    "aspect": "16:9",
+    "connector": "card1-eDP-1",
+    "diagonal_in": 15.6,
+    "height_px": 1080,
+    "panel_name": null,
+    "physical_mm": [
+      344,
+      194
+    ],
+    "resolution": "1920x1080",
+    "resolution_class": "Standard",
+    "width_px": 1920
+  },
+  "erase": {
+    "duration_s": null,
+    "error": "erase disabled by flag",
+    "method": null,
+    "performed": false,
+    "verified_blank": null
+  },
+  "features": {
+    "backlit_keyboard": "yes",
+    "bluetooth": "yes",
+    "fingerprint_reader": "yes",
+    "touchscreen": "no",
+    "webcam": "yes",
+    "wifi_card": "Intel Corporation 400 Series Chipset Family CNVi Wi-Fi [8086:06f0]",
+    "wifi_standard": "Wi-Fi 6 (802.11ax)"
+  },
+  "gpu": {
+    "discrete": "NVIDIA Corporation TU117M [GeForce GTX 1650 Ti Mobile] [10de:1f95] (rev a1)",
+    "integrated": "Intel Corporation CometLake-H GT2 [UHD Graphics] [8086:9bc4] (rev 05)"
+  },
+  "grades": {
+    "charger": "Y",
+    "chassis_grade": "B",
+    "chassis_note": null,
+    "color": "Gray",
+    "screen_grade": "A",
+    "screen_note": null
+  },
+  "identity": {
+    "bios_date": "07/06/2023",
+    "bios_version": "1.24.0",
+    "chassis_type": "10",
+    "express_service_code": "37104572343",
+    "family": "Vostro",
+    "manufacturer": "Dell Inc.",
+    "model": "Vostro 7500",
+    "service_tag": "H1N3R93",
+    "sku": "09F0"
+  },
+  "license": {
+    "oem_key_present": true,
+    "oem_key_suffix": "BDWXC"
+  },
+  "memory": {
+    "modules": [
+      {
+        "form_factor": "SODIMM",
+        "manufacturer": "000000003180",
+        "part_number": "Rank: 1",
+        "size_gb": 8,
+        "speed_mts": 2933,
+        "type": "DDR4"
+      },
+      {
+        "form_factor": "SODIMM",
+        "manufacturer": "80AD00000000",
+        "part_number": "HMAA1GS6CJR6N-XN",
+        "size_gb": 8,
+        "speed_mts": 2933,
+        "type": "DDR4"
+      }
+    ],
+    "slots_total": 2,
+    "slots_used": 2,
+    "total_gb": 16,
+    "type": "DDR4"
+  },
+  "preflight": {
+    "other_internal_disks": [],
+    "storage_mode": "ahci"
+  },
+  "raw_files": [
+    "amixer.txt",
+    "bluetoothctl.txt",
+    "console.log",
+    "dmesg.txt",
+    "dmidecode-memory.txt",
+    "dmidecode.txt",
+    "edid-card1-eDP-1.bin",
+    "iw-list.txt",
+    "lsblk.json",
+    "lscpu.txt",
+    "lspci-n.txt",
+    "lspci-nn.txt",
+    "lspci-vga.txt",
+    "lspci-vvv.txt",
+    "lsusb.txt",
+    "msdm.txt",
+    "nvme-id-ctrl.json",
+    "nvme-smart-log.txt",
+    "proc_asound_cards.txt",
+    "proc_bus_input_devices.txt",
+    "proc_cpuinfo.txt",
+    "proc_meminfo.txt",
+    "rfkill.txt",
+    "smartctl.json",
+    "sys-class-leds.txt",
+    "sysfs-BAT0.txt",
+    "udev-input.txt",
+    "uname.txt",
+    "upower.txt",
+    "xrandr.txt"
+  ],
+  "schema": 3,
+  "status": "audited",
+  "storage": {
+    "critical_warning": 0,
+    "data_written_tb": 22.78,
+    "device": "/dev/nvme0n1",
+    "firmware": "21113012",
+    "media_errors": 0,
+    "model": "PC SN530 NVMe WDC 512GB",
+    "percentage_used": 13,
+    "power_cycles": 123,
+    "power_on_hours": 1388,
+    "present": true,
+    "rotational": false,
+    "serial": "21025Y802762",
+    "size_bytes": 512110190592,
+    "size_gb": 512,
+    "smart_passed": true,
+    "temperature_c": 27,
+    "transport": "nvme",
+    "unsafe_shutdowns": 30
+  },
+  "tests": {
+    "display": {
+      "grade": "A",
+      "note": null,
+      "result": "pass"
+    },
+    "keyboard": {
+      "devices": [
+        "AT Translated Set 2 keyboard",
+        "Intel HID events",
+        "Intel HID 5 button array"
+      ],
+      "finished_by": "all_required",
+      "keys_seen": 100,
+      "missing_numpad": [],
+      "missing_optional": [
+        "MENU"
+      ],
+      "missing_required": [],
+      "numpad_present": true,
+      "result": "pass"
+    },
+    "speaker": {
+      "reason": "no playback device",
+      "result": "not_tested"
+    }
+  },
+  "warnings": [
+    "disk NOT erased (erase disabled by flag)"
+  ]
+}

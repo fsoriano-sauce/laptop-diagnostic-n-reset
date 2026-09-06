@@ -1,0 +1,167 @@
+{
+  "audited_at": "2026-09-05T11:04:12+00:00",
+  "auditor_version": "3.0",
+  "battery": {
+    "charge_pct": 100,
+    "cycles": null,
+    "design_wh": null,
+    "full_wh": null,
+    "health_pct": 100,
+    "manufacturer": "SMP",
+    "model": "DELL P8P1P2A",
+    "present": true,
+    "serial": "1229",
+    "status": "Full"
+  },
+  "cpu": {
+    "cores": 14,
+    "generation": 12,
+    "model": "12th Gen Intel(R) Core(TM) i7-12700H",
+    "threads": 20
+  },
+  "display": {
+    "aspect": "16:10",
+    "connector": "card1-eDP-1",
+    "diagonal_in": 16.0,
+    "height_px": 1200,
+    "panel_name": null,
+    "physical_mm": [
+      345,
+      215
+    ],
+    "resolution": "1920x1200",
+    "resolution_class": "Standard",
+    "width_px": 1920
+  },
+  "erase": {
+    "duration_s": 1.9,
+    "error": null,
+    "method": "nvme_format_ses1",
+    "performed": true,
+    "verified_blank": true
+  },
+  "features": {
+    "backlit_keyboard": "yes",
+    "bluetooth": "yes",
+    "fingerprint_reader": "yes",
+    "touchscreen": "no",
+    "webcam": "yes",
+    "wifi_card": "Intel Corporation Alder Lake-P PCH CNVi WiFi [8086:51f0] (rev 01)",
+    "wifi_standard": "Wi-Fi 6 (802.11ax)"
+  },
+  "gpu": {
+    "discrete": "NVIDIA Corporation GA107M [GeForce RTX 3050 Ti Mobile] [10de:25a0] (rev a1)",
+    "integrated": "Intel Corporation Alder Lake-P GT2 [Iris Xe Graphics] [8086:46a6] (rev 0c)"
+  },
+  "identity": {
+    "bios_date": "09/05/2024",
+    "bios_version": "1.26.0",
+    "chassis_type": "10",
+    "express_service_code": "43236930099",
+    "family": "Vostro",
+    "manufacturer": "Dell Inc.",
+    "model": "Vostro 7620",
+    "service_tag": "JV25GS3",
+    "sku": "0B3F"
+  },
+  "license": {
+    "oem_key_present": true,
+    "oem_key_suffix": "KD8GG"
+  },
+  "memory": {
+    "modules": [],
+    "slots_total": 2,
+    "slots_used": null,
+    "total_gb": 16,
+    "type": null
+  },
+  "preflight": {
+    "other_internal_disks": [],
+    "storage_mode": "ahci"
+  },
+  "raw_files": [
+    "bluetoothctl.txt",
+    "console.log",
+    "dmesg.txt",
+    "dmidecode-memory.txt",
+    "dmidecode.txt",
+    "edid-card1-eDP-1.bin",
+    "iw-list.txt",
+    "lsblk.json",
+    "lscpu.txt",
+    "lspci-n.txt",
+    "lspci-nn.txt",
+    "lspci-vga.txt",
+    "lspci-vvv.txt",
+    "lsusb.txt",
+    "msdm.txt",
+    "nvme-id-ctrl.json",
+    "nvme-smart-log.txt",
+    "proc_asound_cards.txt",
+    "proc_bus_input_devices.txt",
+    "proc_cpuinfo.txt",
+    "proc_meminfo.txt",
+    "rfkill.txt",
+    "smartctl.json",
+    "sys-class-leds.txt",
+    "sysfs-BAT0.txt",
+    "udev-input.txt",
+    "uname.txt",
+    "upower.txt",
+    "xrandr.txt"
+  ],
+  "schema": 3,
+  "status": "audited",
+  "storage": {
+    "critical_warning": 0,
+    "data_written_tb": 64.27,
+    "device": "/dev/nvme0n1",
+    "firmware": "51005151",
+    "media_errors": 0,
+    "model": "BC901 NVMe SK hynix 512GB",
+    "percentage_used": 6,
+    "power_cycles": 744,
+    "power_on_hours": 8086,
+    "present": true,
+    "rotational": false,
+    "serial": "4YBBN01281320BH6L",
+    "size_bytes": 512110190592,
+    "size_gb": 512,
+    "smart_passed": true,
+    "temperature_c": 36,
+    "transport": "nvme",
+    "unsafe_shutdowns": 24
+  },
+  "tests": {
+    "display": {
+      "note": null,
+      "result": "pass"
+    },
+    "keyboard": {
+      "devices": [
+        "AT Translated Set 2 keyboard",
+        "Intel HID events",
+        "Intel HID 5 button array",
+        "Dell Privacy Driver"
+      ],
+      "finished_by": "all_required",
+      "keys_seen": 96,
+      "missing_numpad": [],
+      "missing_optional": [
+        "END",
+        "HOME",
+        "MENU",
+        "PGDN",
+        "PGUP"
+      ],
+      "missing_required": [],
+      "numpad_present": true,
+      "result": "pass"
+    },
+    "speaker": {
+      "reason": "no sound card exposed in live environment",
+      "result": "not_tested"
+    }
+  },
+  "warnings": []
+}

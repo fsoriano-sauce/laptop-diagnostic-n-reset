@@ -53,7 +53,7 @@ if ($ExtractDups) {
     foreach ($modelDir in Get-ChildItem -Directory $dupsSrc) {
         foreach ($exe in Get-ChildItem -Path $modelDir.FullName -Filter *.exe) {
             $dest = Join-Path $driversSrc "$($modelDir.Name)\$($exe.BaseName)"
-            if ((Test-Path $dest) -and (Get-ChildItem $dest -Recurse -Filter *.inf | Measure-Object).Count -gt 0) {
+            if ((Test-Path $dest) -and (Get-ChildItem $dest -Recurse -Filter *.inf -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0) {
                 Say "skip (already extracted): $($modelDir.Name)\$($exe.Name)"; continue
             }
             New-Item -ItemType Directory -Force -Path $dest | Out-Null

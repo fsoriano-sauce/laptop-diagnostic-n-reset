@@ -49,13 +49,13 @@ New-Item -ItemType Directory -Force -Path $reports | Out-Null
 $report = Join-Path $reports "$tag.txt"
 $pnpLog = Join-Path $reports "$tag-pnputil.log"
 
-function R($line) { $line | Add-Content $report }
+function Rpt($line) { $line | Add-Content $report }
 
 "=== Restorer stage report  $stamp ===" | Set-Content $report
-R "Service tag : $tag"
-R "Model       : $model"
-R "USB         : $Usb"
-R "Work dir    : $work$(if ($NoInstall) {'  [NoInstall test mode]'})"
+Rpt "Service tag : $tag"
+Rpt "Model       : $model"
+Rpt "USB         : $Usb"
+Rpt "Work dir    : $work$(if ($NoInstall) {'  [NoInstall test mode]'})"
 
 # ── 1. Match + copy driver folders ───────────────────────────────────────────
 $srcRoot = Join-Path $Usb "Dell\Drivers"
@@ -67,14 +67,14 @@ if (Test-Path $srcRoot) {
         if ($nd -eq "common" -or ($nd -and ($nm -like "*$nd*" -or $nd -like "*$nm*"))) { $matched += $d }
     }
 }
-R ""
-R "Driver folders matched for this model:"
-if (-not $matched) { R "  (none)  -> Windows Update will supply drivers after the buyer connects" }
+Rpt ""
+Rpt "Driver folders matched for this model:"
+if (-not $matched) { Rpt "  (none)  -> Windows Update will supply drivers after the buyer connects" }
 $packages = @()
 foreach ($d in $matched) {
     $infs = @(Get-ChildItem -Path $d.FullName -Recurse -Filter *.inf -ErrorAction SilentlyContinue)
     if ($NoInstall) {
-        R "  $($d.FullName)  ($($infs.Count) .inf)  [NoInstall: not copied, not installed]"
+        Rpt "  $($d.FullName)  ($($infs.Count) .inf)  [NoInstall: not copied, not installed]"
         continue
     }
     $dest = Join-Path $localDrv $d.Name
@@ -82,8 +82,8 @@ foreach ($d in $matched) {
     & robocopy.exe $d.FullName $dest /E /R:2 /W:2 /NFL /NDL /NJH /NJS /NP | Out-Null
     $rc = $LASTEXITCODE   # robocopy: <8 = success
     $copied = @(Get-ChildItem -Path $dest -Recurse -Filter *.inf -ErrorAction SilentlyContinue).Count
-    R ("  {0}  ({1} .inf) -> copied {2} .inf to {3} in {4:N0}s (robocopy rc {5})" -f $d.FullName, $infs.Count, $copied, $dest, ((Get-Date) - $t0).TotalSeconds, $rc)
-    if ($copied -eq 0) { R "  !! copy produced no .inf files; skipping install for this folder"; continue }
+    Rpt ("  {0}  ({1} .inf) -> copied {2} .inf to {3} in {4:N0}s (robocopy rc {5})" -f $d.FullName, $infs.Count, $copied, $dest, ((Get-Date) - $t0).TotalSeconds, $rc)
+    if ($copied -eq 0) { Rpt "  !! copy produced no .inf files; skipping install for this folder"; continue }
     # one package per sub-folder; a bare .inf directly in the folder counts as its own package
     $subs = @(Get-ChildItem -Directory $dest -ErrorAction SilentlyContinue)
     if ($subs) { $packages += $subs } else { $packages += Get-Item $dest }
@@ -91,8 +91,8 @@ foreach ($d in $matched) {
 
 # ── 2. Install per package ───────────────────────────────────────────────────
 if (-not $NoInstall -and $packages) {
-    R ""
-    R "Driver install (pnputil, per package; 0 = installed, 259 = no matching device, 3010 = installed + reboot pending):"
+    Rpt ""
+    Rpt "Driver install (pnputil, per package; 0 = installed, 259 = no matching device, 3010 = installed + reboot pending):"
     "=== pnputil run $stamp  tag $tag  model $model ===" | Set-Content $pnpLog
     foreach ($p in $packages) {
         $n = @(Get-ChildItem -Path $p.FullName -Recurse -Filter *.inf -ErrorAction SilentlyContinue).Count
@@ -104,57 +104,57 @@ if (-not $NoInstall -and $packages) {
         $out | ForEach-Object { "$_" } | Add-Content $pnpLog
         "exit code: $rc" | Add-Content $pnpLog
         $added = @($out | Where-Object { "$_" -match "Driver package added successfully|Total driver packages:\s*\d+" }).Count
-        R ("  rc {0,4}  {1,3} inf  {2,5:N0}s  {3}" -f $rc, $n, ((Get-Date) - $t0).TotalSeconds, $p.Name)
+        Rpt ("  rc {0,4}  {1,3} inf  {2,5:N0}s  {3}" -f $rc, $n, ((Get-Date) - $t0).TotalSeconds, $p.Name)
     }
 }
 
 # ── 3. System report ─────────────────────────────────────────────────────────
-R ""
+Rpt ""
 try {
     $os = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
     $cv = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -ErrorAction Stop
-    R "Windows     : $($os.Caption)  $($cv.DisplayVersion)  build $($cv.CurrentBuild).$($cv.UBR)  edition $($cv.EditionID)"
-} catch { R "Windows     : (query failed: $_)" }
+    Rpt "Windows     : $($os.Caption)  $($cv.DisplayVersion)  build $($cv.CurrentBuild).$($cv.UBR)  edition $($cv.EditionID)"
+} catch { Rpt "Windows     : (query failed: $_)" }
 
 try {
     $oa3 = (Get-CimInstance SoftwareLicensingService -ErrorAction Stop).OA3xOriginalProductKey
-    if ($oa3) { R "OEM key     : present, ends ...$($oa3.Substring($oa3.Length-5))  (activates on first internet connection)" }
-    else      { R "OEM key     : NONE IN FIRMWARE - this unit will not activate" }
-} catch { R "OEM key     : (query failed: $_)" }
+    if ($oa3) { Rpt "OEM key     : present, ends ...$($oa3.Substring($oa3.Length-5))  (activates on first internet connection)" }
+    else      { Rpt "OEM key     : NONE IN FIRMWARE - this unit will not activate" }
+} catch { Rpt "OEM key     : (query failed: $_)" }
 
-try { R "Secure Boot : $(if (Confirm-SecureBootUEFI -ErrorAction Stop) {'ON'} else {'OFF - turn on in BIOS before shipping'})" }
-catch { R "Secure Boot : unknown ($_)" }
+try { Rpt "Secure Boot : $(if (Confirm-SecureBootUEFI -ErrorAction Stop) {'ON'} else {'OFF - turn on in BIOS before shipping'})" }
+catch { Rpt "Secure Boot : unknown ($_)" }
 
 try {
     $tpm = Get-CimInstance -Namespace root\cimv2\security\microsofttpm -ClassName Win32_Tpm -ErrorAction Stop
-    R "TPM         : present=$($tpm.IsEnabled_InitialValue) spec=$($tpm.SpecVersion)"
-} catch { R "TPM         : unknown" }
+    Rpt "TPM         : present=$($tpm.IsEnabled_InitialValue) spec=$($tpm.SpecVersion)"
+} catch { Rpt "TPM         : unknown" }
 
 try {
-    R "Disks       :"
-    Get-PhysicalDisk -ErrorAction Stop | ForEach-Object { R "  $($_.FriendlyName)  $([math]::Round($_.Size/1GB)) GB  bus=$($_.BusType)  media=$($_.MediaType)" }
-} catch { R "Disks       : unknown" }
+    Rpt "Disks       :"
+    Get-PhysicalDisk -ErrorAction Stop | ForEach-Object { Rpt "  $($_.FriendlyName)  $([math]::Round($_.Size/1GB)) GB  bus=$($_.BusType)  media=$($_.MediaType)" }
+} catch { Rpt "Disks       : unknown" }
 
-R ""
-R "Devices with problems (empty = driver set complete):"
+Rpt ""
+Rpt "Devices with problems (empty = driver set complete):"
 try {
     $bad = Get-PnpDevice -PresentOnly -ErrorAction Stop | Where-Object { $_.Status -ne "OK" -and $_.Class -notin @("SoftwareDevice","Volume","VolumeSnapshot") }
-    if ($bad) { $bad | ForEach-Object { R "  [$($_.Status)] $($_.Class): $($_.FriendlyName)  ($($_.InstanceId))" } }
-    else { R "  (none)" }
-} catch { R "  (query failed: $_)" }
+    if ($bad) { $bad | ForEach-Object { Rpt "  [$($_.Status)] $($_.Class): $($_.FriendlyName)  ($($_.InstanceId))" } }
+    else { Rpt "  (none)" }
+} catch { Rpt "  (query failed: $_)" }
 
-R ""
-R "Key devices:"
+Rpt ""
+Rpt "Key devices:"
 try {
     foreach ($cls in @("Net","Bluetooth","Biometric","Camera","Image","MEDIA","Display","HIDClass")) {
         Get-PnpDevice -PresentOnly -Class $cls -ErrorAction SilentlyContinue |
             Where-Object { $_.FriendlyName -notmatch "Miniport|Virtual|Microsoft|WAN|Root Hub|Generic" } |
-            ForEach-Object { R "  [$($_.Status)] $($cls): $($_.FriendlyName)" }
+            ForEach-Object { Rpt "  [$($_.Status)] $($cls): $($_.FriendlyName)" }
     }
 } catch {}
 
-R ""
-R "=== end $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') ==="
+Rpt ""
+Rpt "=== end $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') ==="
 
 # ── 4. Hand the reports back to the USB, clean up ────────────────────────────
 if (-not $NoInstall) {

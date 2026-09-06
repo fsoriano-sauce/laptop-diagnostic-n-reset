@@ -1,6 +1,6 @@
 {
-  "audited_at": "2026-09-05T11:04:12+00:00",
-  "auditor_version": "3.0",
+  "audited_at": "2026-09-06T10:14:37+00:00",
+  "auditor_version": "3.1",
   "battery": {
     "charge_pct": 100,
     "cycles": null,
@@ -53,6 +53,14 @@
     "discrete": "NVIDIA Corporation GA107M [GeForce RTX 3050 Ti Mobile] [10de:25a0] (rev a1)",
     "integrated": "Intel Corporation Alder Lake-P GT2 [Iris Xe Graphics] [8086:46a6] (rev 0c)"
   },
+  "grades": {
+    "charger": "Y",
+    "chassis_grade": "B",
+    "chassis_note": "normal wer",
+    "color": "Gray",
+    "screen_grade": "A",
+    "screen_note": null
+  },
   "identity": {
     "bios_date": "09/05/2024",
     "bios_version": "1.26.0",
@@ -69,11 +77,28 @@
     "oem_key_suffix": "KD8GG"
   },
   "memory": {
-    "modules": [],
+    "modules": [
+      {
+        "form_factor": "SODIMM",
+        "manufacturer": "802C0000802C",
+        "part_number": "MTC4C10163S1SC48BA1",
+        "size_gb": 8,
+        "speed_mts": 4800,
+        "type": "DDR5"
+      },
+      {
+        "form_factor": "SODIMM",
+        "manufacturer": null,
+        "part_number": null,
+        "size_gb": 8,
+        "speed_mts": 4800,
+        "type": "DDR5"
+      }
+    ],
     "slots_total": 2,
-    "slots_used": null,
+    "slots_used": 2,
     "total_gb": 16,
-    "type": null
+    "type": "DDR5"
   },
   "preflight": {
     "other_internal_disks": [],
@@ -120,7 +145,7 @@
     "media_errors": 0,
     "model": "BC901 NVMe SK hynix 512GB",
     "percentage_used": 6,
-    "power_cycles": 744,
+    "power_cycles": 746,
     "power_on_hours": 8086,
     "present": true,
     "rotational": false,
@@ -128,12 +153,13 @@
     "size_bytes": 512110190592,
     "size_gb": 512,
     "smart_passed": true,
-    "temperature_c": 36,
+    "temperature_c": 27,
     "transport": "nvme",
-    "unsafe_shutdowns": 24
+    "unsafe_shutdowns": 25
   },
   "tests": {
     "display": {
+      "grade": "A",
       "note": null,
       "result": "pass"
     },
@@ -145,14 +171,29 @@
         "Dell Privacy Driver"
       ],
       "finished_by": "all_required",
-      "keys_seen": 96,
+      "keys_seen": 81,
       "missing_numpad": [],
       "missing_optional": [
         "END",
+        "ESC",
+        "F1",
+        "F10",
+        "F11",
+        "F12",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6",
+        "F7",
+        "F8",
+        "F9",
         "HOME",
+        "INS",
         "MENU",
         "PGDN",
-        "PGUP"
+        "PGUP",
+        "PRTSC"
       ],
       "missing_required": [],
       "numpad_present": true,

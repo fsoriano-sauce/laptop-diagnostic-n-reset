@@ -13,7 +13,7 @@ Core(s) per socket:                      14
 Socket(s):                               1
 Stepping:                                3
 Microcode version:                       0x43b
-CPU(s) scaling MHz:                      15%
+CPU(s) scaling MHz:                      17%
 CPU max MHz:                             4700.0000
 CPU min MHz:                             400.0000
 BogoMIPS:                                5378.00

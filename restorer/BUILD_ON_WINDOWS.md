@@ -147,6 +147,7 @@ missing, add packages and re-run steps 3, 5, 6.
 | Setup stops at a product-key or edition prompt | no OEM key in firmware | expected on volume-licensed units; the audit JSON shows `oem_key_present: false`. Buy a key or list as unactivated. |
 | Setup wiped the wrong disk | a second internal disk enumerated as Disk 0 | unlikely on this fleet (one SSD); check the audit's `other_internal_disks`. |
 | No `Dell\Reports\<TAG>.txt` after install | specialize command did not find the stick | check `Dell\Reports\_stage-cmd.log`; if absent, the `for` loop in autounattend.xml did not see the drive letter. Plug the stick into a different port and retry. |
+| Report ends right after "Driver folders matched" | USB re-enumerated during a chipset/USB driver install and the stick vanished mid-run | fixed in stage.ps1 (drivers copy to `C:\Dell` first, reports written locally and copied back). Recover a unit at its OOBE screen with Shift+F10 and run `<usb>\Dell\Scripts\stage.cmd <usb>` by hand. |
 | OOBE has no Wi-Fi networks | Wi-Fi driver not staged | add the Intel Wi-Fi package to `Dell\Drivers\Common\` and rebuild. |
 | Rufus: "revoked UEFI bootloader" | Microsoft's own boot files | OK, expected. |
 | build script says `SINGLE edition` and skips the stick | stick was not re-flashed; it still carries the April injected Pro-only image | Rufus from `C:\Temp\Win11.iso` (section 4), then rerun the build. Drivers are already extracted, so it is copy-only. |

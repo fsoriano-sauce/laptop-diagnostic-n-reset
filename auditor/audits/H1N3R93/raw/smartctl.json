@@ -21,8 +21,8 @@
     "exit_status": 0
   },
   "local_time": {
-    "time_t": 1784828763,
-    "asctime": "Thu Jul 23 17:46:03 2026 UTC"
+    "time_t": 1784828724,
+    "asctime": "Thu Jul 23 17:45:24 2026 UTC"
   },
   "device": {
     "name": "/dev/nvme0n1",
@@ -155,7 +155,7 @@
   "temperature": {
     "op_limit_max": 83,
     "critical_limit_max": 85,
-    "current": 27
+    "current": 26
   },
   "nvme_power_states": [
     {
@@ -253,16 +253,16 @@
   "nvme_smart_health_information_log": {
     "nsid": -1,
     "critical_warning": 0,
-    "temperature": 27,
+    "temperature": 26,
     "available_spare": 100,
     "available_spare_threshold": 50,
     "percentage_used": 13,
-    "data_units_read": 41252328,
+    "data_units_read": 41252343,
     "data_units_written": 44491989,
-    "host_reads": 699375390,
+    "host_reads": 699375669,
     "host_writes": 914362208,
     "controller_busy_time": 5588,
-    "power_cycles": 123,
+    "power_cycles": 124,
     "power_on_hours": 1388,
     "unsafe_shutdowns": 30,
     "media_errors": 0,
@@ -277,7 +277,7 @@
   "endurance_used": {
     "current_percent": 13
   },
-  "power_cycle_count": 123,
+  "power_cycle_count": 124,
   "power_on_time": {
     "hours": 1388
   },

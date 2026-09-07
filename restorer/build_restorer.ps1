@@ -23,6 +23,7 @@
   .\build_restorer.ps1
   .\build_restorer.ps1 -ExtractDups
   .\build_restorer.ps1 -ExtractDups -ExtractOnly    # no stick needed yet
+  .\build_restorer.ps1 -ValidateDrivers -ExtractOnly # pre-flight every package on this PC
   .\build_restorer.ps1 -Drive E:
 #>
 #Requires -RunAsAdministrator
@@ -31,7 +32,8 @@ param(
     [switch]$ExtractDups,
     [switch]$ExtractOnly,
     [string]$Drive,
-    [switch]$AllowSingleEdition   # build onto a one-edition (injected) image anyway
+    [switch]$AllowSingleEdition,  # build onto a one-edition (injected) image anyway
+    [switch]$ValidateDrivers      # stage every package into this PC's driver store (no install), report failures, remove again
 )
 $ErrorActionPreference = "Stop"
 $root      = $PSScriptRoot
@@ -41,6 +43,54 @@ $driversSrc= Join-Path $root "Dell\Drivers"
 $dupsSrc   = Join-Path $root "Dell\Downloads"
 
 function Say($m) { Write-Host "[$(Get-Date -Format HH:mm:ss)] $m" }
+
+function Expand-Stubs([string]$root) {
+    # Dell MUP packages ship makecab stubs (nvlddmkm.sy_, nvapi64.dl_, mcu.ex_). Newer
+    # NVIDIA packages fail to stage from stubs ('cannot find the file specified'), so
+    # restore the originals. expand -r takes the real name from the cab header.
+    # Idempotent: a stub is removed only once its expanded twin exists.
+    $stubs = @(Get-ChildItem -Path $root -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '\.[A-Za-z0-9]{2}_$' })
+    if (-not $stubs) { return }
+    $n = 0
+    foreach ($st in $stubs) {
+        & expand.exe -r $st.FullName $st.DirectoryName 2>&1 | Out-Null
+        $stem = [IO.Path]::GetFileNameWithoutExtension($st.Name)
+        $twin = Get-ChildItem -Path $st.DirectoryName -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -ne $st.Name -and [IO.Path]::GetFileNameWithoutExtension($_.Name) -ieq $stem }
+        if ($twin) { Remove-Item $st.FullName -Force -ErrorAction SilentlyContinue; $n++ }
+    }
+    Say "expanded $n of $($stubs.Count) compressed driver files"
+}
+
+function Test-DriverPackages([string]$root) {
+    # Pre-flight without a laptop: pnputil /add-driver (no /install) per package into
+    # this PC's driver store, then /delete-driver what it added. A package pnputil
+    # refuses here will fail on the laptop too.
+    $skip = 'Rapid-Storage|Rapid_Storage|RapidStorage|-RST-|_RST_|VMD|iaStor|Optane'
+    $failed = @()
+    foreach ($model in Get-ChildItem -Directory $root -ErrorAction SilentlyContinue) {
+        foreach ($pkg in Get-ChildItem -Directory $model.FullName -ErrorAction SilentlyContinue) {
+            if ($pkg.Name -match $skip) { Say ("  skip  {0}\{1}" -f $model.Name, $pkg.Name); continue }
+            $infs = @(Get-ChildItem -Path $pkg.FullName -Recurse -Filter *.inf -ErrorAction SilentlyContinue)
+            if (-not $infs) { continue }
+            $out = @(& pnputil.exe /add-driver "$($pkg.FullName)\*.inf" /subdirs 2>&1 | ForEach-Object { "$_" })
+            $rc = $LASTEXITCODE
+            $added = @(); $bad = 0
+            foreach ($line in $out) {
+                if ($line -match 'Published Name:\s*(oem\d+\.inf)') { $added += $Matches[1] }
+                if ($line -match 'Failed to add driver package') { $bad++ }
+            }
+            $ok = ($bad -eq 0) -and ($rc -in 0, 259)
+            Say ("  {0}  {1}\{2}  ({3} inf, {4} staged, {5} failed, rc {6})" -f $(if ($ok) {'ok  '} else {'FAIL'}), $model.Name, $pkg.Name, $infs.Count, $added.Count, $bad, $rc)
+            if (-not $ok) {
+                $failed += "$($model.Name)\$($pkg.Name)"
+                $out | Where-Object { $_ -match 'Adding driver package|Failed' } | ForEach-Object { Write-Host "          $_" }
+            }
+            foreach ($o in $added) { & pnputil.exe /delete-driver $o /force 2>&1 | Out-Null }
+        }
+    }
+    return $failed
+}
 
 function Get-WimImageCount([string]$path) {
     # WIM and ESD share the header: "MSWIM" magic, image count as UInt32 at 0x2C.
@@ -84,6 +134,17 @@ if ($ExtractDups) {
         Write-Warning "These packages did not extract with /s /e=. Open each with 7-Zip and copy the folder containing the .inf files into Dell\Drivers\<Model>\:"
         $manual | ForEach-Object { Write-Warning "   $_" }
     }
+}
+Expand-Stubs $driversSrc
+if ($ValidateDrivers) {
+    Say "validating every driver package against this PC's driver store (no install)..."
+    $bad = @(Test-DriverPackages $driversSrc)
+    if ($bad) {
+        Write-Warning ("{0} package(s) pnputil refuses; they will fail on the laptop too. Re-extract with 7-Zip, then rerun -ValidateDrivers:" -f $bad.Count)
+        $bad | ForEach-Object { Write-Warning "   $_" }
+        return
+    }
+    Say "all driver packages stage cleanly"
 }
 if ($ExtractOnly) {
     Get-ChildItem -Directory $driversSrc -ErrorAction SilentlyContinue | ForEach-Object {

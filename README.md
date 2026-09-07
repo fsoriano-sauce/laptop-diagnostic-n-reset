@@ -66,6 +66,7 @@ auditor/
 ├── audits/                <TAG>.json + <TAG>/raw/*  copied back from the USB
 ├── inventory.csv          per-unit status, sale price, notes; can override a grade
 ├── build_master_csv.py    audits/ + inventory.csv + legacy -> audit_master_local.csv
+├── photos_mac.py          iPhone album per unit via Photos; export to listing-photos/ (macOS)
 ├── audit_master_local.csv generated; what the eBay generator reads
 ├── legacy/                v2 audit rows for the first 14 units (frozen)
 ├── generate_ebay_drafts_v2.py, generate_ebay_drafts.py, verify_listings.py
@@ -226,9 +227,35 @@ python3 auditor/verify_listings.py
 The master CSV keeps the v2 column names first so the generator needs no
 changes, and appends evidence columns (`ssd_wear_pct`, `ssd_power_on_hours`,
 `oem_key_present`, `erase_method`, `warnings`, …) for the description
-template to use later. Photos, pricing tiers and upload steps are as before:
-photos in `listing-photos/<TAG>/` served from GitHub raw URLs, first photo
-alphabetically is the gallery image, reorder in Seller Hub after upload.
+template to use later. Pricing tiers and upload steps are as before.
+
+### Photos: one iPhone album per unit, exported by script
+
+Photos on the Mac and the iPhone share the iCloud library, so albums made
+here appear on the phone and shots taken there come back here.
+
+```bash
+python3 auditor/photos_mac.py albums    # one album "<TAG> <model>" per audited unit, in the Photos folder "Laptop Line"
+python3 auditor/photos_mac.py status    # photos per album vs. photos exported
+python3 auditor/photos_mac.py export    # -> listing-photos/<TAG>/01.jpg … in capture order, 2000 px, ready for the generator
+```
+
+Line rhythm: audit three units, hand over the Auditor stick, `albums` runs,
+and by the time each unit reaches the region screen its album is on the
+phone. **Take the hero shot first** (open laptop at the region screen); it
+becomes the eBay gallery image. Then the usual set: closed lid, keyboard,
+ports each side, bottom label, any wear you graded B or C.
+
+Shooting into an album on the iPhone, two ways:
+- **Shortcut (fastest):** one Shortcut with two actions, *Take Photo* (set
+  the number of photos, e.g. 12, camera preview on) then *Save to Photo
+  Album* with the album set to *Ask Each Time*. Run it, shoot, pick the
+  unit's album from the list.
+- **Manual:** shoot with the Camera as normal, then in Photos select the
+  shots → share → *Add to Album* → the unit's album.
+
+After a unit's photos are in its album: `export`, then commit and push
+`listing-photos/` and regenerate the listings.
 
 ---
 

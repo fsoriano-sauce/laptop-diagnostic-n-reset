@@ -1130,7 +1130,7 @@ def build_warnings(rec):
     t = rec.get("tests") or {}
     gr = rec.get("grades") or {}
     if (rec.get("audited_at") or "9999")[:10] < MIN_PLAUSIBLE_DATE:
-        w.append(f"laptop clock reads {rec['audited_at'][:10]} (RTC wrong, likely CMOS cell); timestamp unreliable")
+        w.append(f"laptop clock reads {rec['audited_at'][:10]}: RTC not holding time (CMOS cell / flat battery). FIX BEFORE SHIPPING: Windows setup and updates fail on a wrong clock")
     if gr.get("screen_grade") == "C":
         w.append("screen grade C (cracked/scratched/bleed)")
     if gr.get("chassis_grade") == "C":

@@ -73,6 +73,11 @@ say "adding audit.py and autorun hook"
 tr -d '\r' < "$REPO/auditor/audit.py" > "$MNT/audit.py"
 mkdir -p "$MNT/autorun"
 tr -d '\r' < "$REPO/auditor/autorun" > "$MNT/autorun/autorun"
+# remembered colour/charger answers so the first unit on a new stick is ENTER, ENTER
+if [ -f "$REPO/auditor/batch_defaults.cfg" ]; then
+    mkdir -p "$MNT/audits"
+    cp "$REPO/auditor/batch_defaults.cfg" "$MNT/audits/batch_defaults.cfg"
+fi
 
 # ── 5. boot entry ────────────────────────────────────────────────────────
 cat > "$MNT/boot/grub/custom.cfg" <<EOF
@@ -103,6 +108,7 @@ check "audit.py matches repo"     "[ \"\$(tr -d '\r' < '$REPO/auditor/audit.py' 
 check "audit.py compiles"         "python3 -m py_compile '$MNT/audit.py' && rm -rf '$MNT/__pycache__'"
 check "autorun is LF"             "! grep -q \$'\r' '$MNT/autorun/autorun'"
 check "no AppleDouble files"      "[ -z \"\$(find '$MNT' -name '._*' 2>/dev/null | head -1)\" ]"
+check "batch defaults seeded"     "[ -f '$MNT/audits/batch_defaults.cfg' ]"
 if [ "$DRY" = 0 ]; then
     check "volume is FAT32 $LABEL" "diskutil info '$MNT' | grep -q 'File System Personality: *MS-DOS FAT32' && diskutil info '$MNT' | grep -q 'Volume Name: *$LABEL'"
 fi

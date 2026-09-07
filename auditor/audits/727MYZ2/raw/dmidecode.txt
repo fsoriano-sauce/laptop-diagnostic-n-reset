@@ -409,7 +409,7 @@ System Information
 	Version: Not Specified
 	Serial Number: 727MYZ2
 	UUID: 4c4c4544-0032-3710-804d-b7c04f595a32
-	Wake-up Type: Other
+	Wake-up Type: Power Switch
 	SKU Number: 09F0
 	Family: Vostro
 
@@ -484,7 +484,7 @@ Processor Information
 		TM (Thermal monitor supported)
 		PBE (Pending break enabled)
 	Version: Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz
-	Voltage: 0.8 V
+	Voltage: 0.9 V
 	External Clock: 100 MHz
 	Max Speed: 2600 MHz
 	Current Speed: 2772 MHz
@@ -1046,7 +1046,7 @@ Dell Hotkeys
 Handle 0xCB00, DMI type 203, 106 bytes
 OEM-specific Type
 	Header and Data:
-		CB 6A 00 CB 01 04 01 45 02 00 90 06 01 10 82 20
+		CB 6A 00 CB 01 04 01 45 02 00 90 06 01 10 80 20
 		00 00 00 00 40 00 00 01 1F 00 00 C9 03 C0 47 02
 		FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
 		FF FF FF FF FF FF FF FF 03 00 00 00 80 00 00 00

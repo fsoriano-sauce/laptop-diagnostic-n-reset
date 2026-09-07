@@ -4,7 +4,7 @@ Device: /org/freedesktop/UPower/devices/battery_BAT0
   model:                DELL GPM0365
   serial:               1514
   power supply:         yes
-  updated:              Mon 07 Sep 2026 11:45:58 AM UTC (0 seconds ago)
+  updated:              Mon 07 Sep 2026 01:19:37 PM UTC (0 seconds ago)
   has history:          yes
   has statistics:       yes
   battery
@@ -19,7 +19,7 @@ Device: /org/freedesktop/UPower/devices/battery_BAT0
     voltage-min-design:  11.4 V
     capacity-level:      Full
     energy-rate:         0.0114 W
-    voltage:             12.685 V
+    voltage:             12.698 V
     charge-cycles:       N/A
     time to empty:       284.4 days
     percentage:          100%
@@ -30,16 +30,16 @@ Device: /org/freedesktop/UPower/devices/battery_BAT0
     charge-threshold-supported:    yes
     icon-name:          'battery-full-charged-symbolic'
   History (charge):
-    1788781558	100.000	fully-charged
+    1788787177	100.000	fully-charged
   History (rate):
-    1788781558	0.011	fully-charged
+    1788787177	0.011	fully-charged
   History (voltage):
-    1788781558	12.685	fully-charged
+    1788787177	12.698	fully-charged
 
 Device: /org/freedesktop/UPower/devices/line_power_AC
   native-path:          AC
   power supply:         yes
-  updated:              Mon 07 Sep 2026 11:45:58 AM UTC (0 seconds ago)
+  updated:              Mon 07 Sep 2026 01:19:37 PM UTC (0 seconds ago)
   has history:          no
   has statistics:       no
   line-power
@@ -50,7 +50,7 @@ Device: /org/freedesktop/UPower/devices/line_power_AC
 Device: /org/freedesktop/UPower/devices/line_power_ucsi_source_psy_USBC000o001
   native-path:          ucsi-source-psy-USBC000:001
   power supply:         yes
-  updated:              Mon 07 Sep 2026 11:45:58 AM UTC (0 seconds ago)
+  updated:              Mon 07 Sep 2026 01:19:37 PM UTC (0 seconds ago)
   has history:          no
   has statistics:       no
   line-power
@@ -60,7 +60,7 @@ Device: /org/freedesktop/UPower/devices/line_power_ucsi_source_psy_USBC000o001
 
 Device: /org/freedesktop/UPower/devices/DisplayDevice
   power supply:         yes
-  updated:              Mon 07 Sep 2026 11:45:58 AM UTC (0 seconds ago)
+  updated:              Mon 07 Sep 2026 01:19:37 PM UTC (0 seconds ago)
   has history:          no
   has statistics:       no
   battery

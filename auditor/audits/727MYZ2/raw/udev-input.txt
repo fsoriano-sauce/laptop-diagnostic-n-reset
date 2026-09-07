@@ -29,10 +29,10 @@ N: bus/usb/001/003
 N: bus/usb/002/001
 N: ptp0
 N: hidraw0
-N: input/event7
+N: input/event8
 N: input/mouse1
 E: ID_INPUT_TOUCHPAD=1
-N: input/event8
+N: input/event9
 E: ID_INPUT_TOUCHPAD=1
 N: input/mouse2
 E: ID_INPUT_TOUCHPAD=1
@@ -47,10 +47,6 @@ N: sg0
 N: nvme0
 N: ng0n1
 N: nvme0n1
-N: nvme0n1p1
-N: nvme0n1p2
-N: nvme0n1p3
-N: nvme0n1p4
 N: watchdog
 N: watchdog0
 N: watchdog1
@@ -67,7 +63,7 @@ N: input/event5
 N: input/event6
 N: tpm0
 N: tpmrm0
-N: input/event9
+N: input/event7
 E: ID_INPUT_KEYBOARD=1
 N: input/event2
 E: ID_INPUT_KEYBOARD=1

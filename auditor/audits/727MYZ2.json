@@ -1,5 +1,5 @@
 {
-  "audited_at": "2026-09-07T11:44:32+00:00",
+  "audited_at": "2026-09-07T13:16:13+00:00",
   "auditor_version": "3.1",
   "battery": {
     "charge_pct": 100,
@@ -34,7 +34,7 @@
     "width_px": 1920
   },
   "erase": {
-    "duration_s": 15.6,
+    "duration_s": 9.6,
     "error": null,
     "method": "nvme_format_ses1",
     "performed": true,
@@ -56,7 +56,7 @@
   "grades": {
     "charger": "Y",
     "chassis_grade": "B",
-    "chassis_note": "normal wear",
+    "chassis_note": "norma",
     "color": "Gray",
     "screen_grade": "A",
     "screen_note": null
@@ -146,7 +146,7 @@
     "media_errors": 0,
     "model": "Micron 2200S NVMe 1024GB",
     "percentage_used": 7,
-    "power_cycles": 117,
+    "power_cycles": 118,
     "power_on_hours": 934,
     "present": true,
     "rotational": false,
@@ -154,7 +154,7 @@
     "size_bytes": 1024209543168,
     "size_gb": 1024,
     "smart_passed": true,
-    "temperature_c": 42,
+    "temperature_c": 28,
     "transport": "nvme",
     "unsafe_shutdowns": 98
   },

@@ -26,6 +26,11 @@ param(
 
 $ErrorActionPreference = "Continue"
 $Usb = $Usb.TrimEnd("\")
+# Never install storage-controller drivers. In AHCI mode Windows' inbox driver runs
+# the SSD; Intel RST/VMD tries to take over the controller that holds the boot
+# volume, the PnP operation can never finish, and the PnP watchdog bugchecks
+# (0x1D5 DRIVER_PNP_WATCHDOG, seen on H1N3R93 during specialize).
+$SkipPackages = 'Rapid-Storage|Rapid_Storage|RapidStorage|-RST-|_RST_|VMD|iaStor|Optane'
 
 function Get-Model { try { (Get-CimInstance Win32_ComputerSystem -ErrorAction Stop).Model.Trim() } catch { "" } }
 function Get-Tag   { try { (Get-CimInstance Win32_BIOS -ErrorAction Stop).SerialNumber.Trim() } catch { "UNKNOWN" } }
@@ -97,6 +102,11 @@ if (-not $NoInstall -and $packages) {
     foreach ($p in $packages) {
         $n = @(Get-ChildItem -Path $p.FullName -Recurse -Filter *.inf -ErrorAction SilentlyContinue).Count
         if ($n -eq 0) { continue }
+        if ($p.Name -match $SkipPackages) {
+            Rpt ("  skip      {0,3} inf         {1}  (storage-controller driver: not for AHCI mode, hangs PnP during Setup)" -f $n, $p.Name)
+            "--- $($p.Name) SKIPPED (storage-controller driver) ---" | Add-Content $pnpLog
+            continue
+        }
         "--- $($p.Name) ($n .inf) ---" | Add-Content $pnpLog
         $t0 = Get-Date
         $out = & pnputil.exe /add-driver "$($p.FullName)\*.inf" /subdirs /install 2>&1

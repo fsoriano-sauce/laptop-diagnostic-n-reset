@@ -39,6 +39,7 @@ Windows Update once the buyer connects, so it is optional.
 | should | Chipset: Intel Serial IO, Intel Chipset Device Software | touchpad and sensors without "unknown device" entries |
 | nice | Video: Intel Iris Xe/UHD, NVIDIA GeForce | correct resolution and GPU at first boot (large downloads) |
 | nice | Chipset: Intel Management Engine, Thunderbolt | clean Device Manager |
+| **never** | Storage: Intel Rapid Storage Technology / VMD / Optane | the laptops run in AHCI mode on Windows' inbox driver. RST tries to claim the boot controller during Setup and blue-screens it (0x1D5). `stage.ps1` skips these by name; delete them from `Dell\Drivers\<Model>\` anyway |
 
 The `Dell\Reports\<ServiceTag>.txt` file written to the USB after each
 install lists every device still lacking a driver. Add packages until that

@@ -1,0 +1,69 @@
+=== Restorer stage report  2026-09-07 17:30:08 ===
+Service tag : 7Q25GS3
+Model       : Vostro 7620
+USB         : D:
+Work dir    : C:\Dell
+
+Driver folders matched for this model:
+  D:\Dell\Drivers\Common  (4 .inf) -> copied 4 .inf to C:\Dell\Drivers\Common in 56s (robocopy rc 1)
+  D:\Dell\Drivers\Vostro 7620  (175 .inf) -> copied 175 .inf to C:\Dell\Drivers\Vostro 7620 in 195s (robocopy rc 1)
+
+Driver install (pnputil, per package; 0 = installed, 259 = added, some INFs had no matching device here (normal for multi-model packages), 3010 = installed + reboot pending):
+  rc    0    4 inf    157s  NVIDIA-GeForce-MXxx0-GTX-16x0-RTX-30x0-Graphics-Driver_N8F67_WIN64_32.0.15.7283_A21
+  rc    0    4 inf      1s  Fingerprint-Sensor-Driver_3MGD4_WIN64_24.0.0.205_A07_01
+  rc    0    1 inf      0s  Genesys-Memory-Card-Reader-Driver_5RXJ7_WIN64_4.5.15.0_A08
+  rc    0    4 inf      1s  Goodix-and-ELAN-Fingerprint-Sensor-Driver_C83DY_WIN64_25.0.0.3_A08_01
+  rc    0    9 inf      5s  Intel-BE2xx-AX4xx-AX2xx-9xxx-and-Killer-BE17xx-AX16xx_V7DPV_WIN64_24.40.0.3_A74
+  rc    0    2 inf      5s  Intel-BE2xx-AX4xx-AX2xx-9xxx-Wi-Fi-Driver_KGD8K_WIN64_24.40.0.4_A74
+  rc  259    4 inf      2s  Intel-Dynamic-Tuning-Driver_34HGT_WIN64_9.1.10009.1745_A07
+  rc  259   23 inf    100s  Intel-Graphics-Arc-UHD-Iris-Xe-Graphics-Driver_53PFX_WIN64_32.0.101.8724_A13
+  rc    0    1 inf      0s  Intel-HID-Event-Filter-Driver_HT0DM_WIN64_2.2.2.18_A05
+  rc 3010   17 inf     17s  Intel-Innovation-Platform-Framework-and-Provider_25MJ5_WIN64_2.3.20303.50582_A10
+  rc  259    3 inf      1s  Intel-Innovation-Platform-Framework-Driver_965D0_WIN64_2.2.10203.4_A02_01
+  rc    0    3 inf      0s  Intel-Integrated-Sensor-Solution-Driver_VGR1M_WIN_3.10.100.4589_A02
+  rc    0    3 inf      1s  Intel-Management-Engine-Interface-Driver_84XDF_WIN64_2613.9.28.0_A07_01
+  rc    0    4 inf      1s  Intel-PPM-Provisioning-Package_8DG2H_WIN64_13.0.4_A13
+  rc    0   23 inf      3s  Intel-Serial-IO-Driver_DHPVC_WIN64_30.100.2531.33_A02_01
+  rc  259    5 inf      0s  Intel-Thunderbolt-Controller-Driver_TBTC2_WIN_1.41.1325.0_A13_02
+  rc  259   11 inf      4s  Killer-BE1750-AX1690-AX1675-AX1650-and-Intel-BE202-BE201-BE200-AX411-AX211-AX210-AX201-AX200-9560-9462-9260_P766C_WIN64_23.90.0.8_A51_03
+  rc  259   49 inf     51s  Realtek-High-Definition-Audio-Driver_62GHM_WIN64_6.0.9954.2_A82
+  rc    0    9 inf     49s  Realtek-PCIe-Ethernet-Controller-Driver_9RPNJ_WIN64_1168.29.202.2026_A04
+
+Windows     : Microsoft Windows 11 Pro  25H2  build 26200.8037  edition Professional
+OEM key     : present, ends ...GVKCT  (activates on first internet connection)
+Secure Boot : ON
+TPM         : present=True spec=2.0, 0, 1.38
+Disks       :
+  ASolid USB  59 GB  bus=USB  media=Unspecified
+  BC901 NVMe SK hynix 512GB  477 GB  bus=NVMe  media=SSD
+
+Devices with problems (snapshot before the first restart; chipset/ME/thermal entries here are filled by Windows Update):
+  [Error] : SM Bus Controller  (PCI\VEN_8086&DEV_51A3&SUBSYS_0B3F1028&REV_01\3&11583659&0&FC)
+  [Degraded] SoftwareComponent: Intel(R) PerfMon IPF Extension Provider  (SWD\DRIVERENUM\{F7BC2682-70EB-4557-B9E0-86B069B3709C}#IPFEFPROVIDERCOMPONENT&5&2BDB4325&0)
+  [Error] : PCI Device  (PCI\VEN_8086&DEV_51A4&SUBSYS_0B3F1028&REV_01\3&11583659&0&FD)
+
+Key devices:
+  [OK] Net: Bluetooth Device (Personal Area Network)
+  [OK] Net: Intel(R) Wi-Fi 6E AX211 160MHz
+  [OK] Net: Realtek PCIe GbE Family Controller
+  [OK] Bluetooth: Bluetooth Device (RFCOMM Protocol TDI)
+  [OK] Bluetooth: Intel(R) Wireless Bluetooth(R)
+  [OK] Biometric: Goodix MOC Fingerprint
+  [OK] Camera: Integrated Webcam
+  [OK] MEDIA: Realtek(R) Audio
+  [OK] MEDIA: Intel® Smart Sound Technology for Digital Microphones
+  [OK] MEDIA: Intel® Smart Sound Technology for USB Audio
+  [OK] MEDIA: Intel® Smart Sound Technology for Bluetooth® Audio
+  [OK] Display: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+  [OK] Display: Intel(R) Iris(R) Xe Graphics
+  [OK] HIDClass: Intel(R) HID Event Filter
+  [OK] HIDClass: HID PCI Minidriver for ISS
+  [OK] HIDClass: HID-compliant touch pad
+  [OK] HIDClass: Converted Portable Device Control device
+  [OK] HIDClass: Portable Device Control device
+  [OK] HIDClass: HID-compliant consumer control device
+  [OK] HIDClass: I2C HID Device
+  [OK] HIDClass: HID-compliant vendor-defined device
+  [OK] HIDClass: HID-compliant system controller
+
+=== end 2026-09-07 17:41:14 ===

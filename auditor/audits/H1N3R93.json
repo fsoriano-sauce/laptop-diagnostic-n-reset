@@ -1,5 +1,5 @@
 {
-  "audited_at": "2026-09-07T11:17:51+00:00",
+  "audited_at": "2026-09-07T12:28:28+00:00",
   "auditor_version": "3.1",
   "battery": {
     "charge_pct": 100,
@@ -140,23 +140,23 @@
   "status": "audited",
   "storage": {
     "critical_warning": 0,
-    "data_written_tb": 22.91,
+    "data_written_tb": 22.99,
     "device": "/dev/nvme0n1",
     "firmware": "21113012",
     "media_errors": 0,
     "model": "PC SN530 NVMe WDC 512GB",
     "percentage_used": 13,
-    "power_cycles": 133,
-    "power_on_hours": 1389,
+    "power_cycles": 137,
+    "power_on_hours": 1390,
     "present": true,
     "rotational": false,
     "serial": "21025Y802762",
     "size_bytes": 512110190592,
     "size_gb": 512,
     "smart_passed": true,
-    "temperature_c": 35,
+    "temperature_c": 42,
     "transport": "nvme",
-    "unsafe_shutdowns": 34
+    "unsafe_shutdowns": 36
   },
   "tests": {
     "display": {
@@ -170,15 +170,12 @@
         "Intel HID events",
         "Intel HID 5 button array"
       ],
-      "finished_by": "all_required",
-      "keys_seen": 82,
+      "finished_by": "esc",
+      "keys_seen": 101,
       "missing_numpad": [],
-      "missing_optional": [
-        "END",
-        "MENU"
-      ],
+      "missing_optional": [],
       "missing_required": [],
-      "numpad_present": false,
+      "numpad_present": true,
       "result": "pass"
     },
     "speaker": {

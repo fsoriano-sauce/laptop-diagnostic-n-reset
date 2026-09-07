@@ -1,0 +1,106 @@
+{
+   "blockdevices": [
+      {
+         "name": "loop0",
+         "path": "/dev/loop0",
+         "type": "loop",
+         "rm": false,
+         "hotplug": false,
+         "size": 1154875392,
+         "tran": null,
+         "rota": true,
+         "model": null,
+         "serial": null,
+         "vendor": null,
+         "mountpoints": [
+             "/run/archiso/sfs/airootfs"
+         ]
+      },{
+         "name": "sda",
+         "path": "/dev/sda",
+         "type": "disk",
+         "rm": true,
+         "hotplug": true,
+         "size": 30765219840,
+         "tran": "usb",
+         "rota": true,
+         "model": "SanDisk 3.2Gen1",
+         "serial": "04014db91babdf4f56c538e3eb10c15bc3ff918ee67bb273cf56d60192ffc7ba622d00000000000000000000ea87e648000c6e18a9558107b42e7b80",
+         "vendor": " USB    ",
+         "mountpoints": [],
+         "children": [
+            {
+               "name": "sda1",
+               "path": "/dev/sda1",
+               "type": "part",
+               "rm": true,
+               "hotplug": true,
+               "size": 30764171264,
+               "tran": null,
+               "rota": true,
+               "model": null,
+               "serial": null,
+               "vendor": null,
+               "mountpoints": [
+                   "/run/archiso/bootmnt"
+               ]
+            }
+         ]
+      },{
+         "name": "nvme0n1",
+         "path": "/dev/nvme0n1",
+         "type": "disk",
+         "rm": false,
+         "hotplug": false,
+         "size": 512110190592,
+         "tran": "nvme",
+         "rota": false,
+         "model": "BC901 NVMe SK hynix 512GB",
+         "serial": "4YBCN01691820CQ3M",
+         "vendor": null,
+         "mountpoints": [],
+         "children": [
+            {
+               "name": "nvme0n1p1",
+               "path": "/dev/nvme0n1p1",
+               "type": "part",
+               "rm": false,
+               "hotplug": false,
+               "size": 209715200,
+               "tran": "nvme",
+               "rota": false,
+               "model": null,
+               "serial": null,
+               "vendor": null,
+               "mountpoints": []
+            },{
+               "name": "nvme0n1p2",
+               "path": "/dev/nvme0n1p2",
+               "type": "part",
+               "rm": false,
+               "hotplug": false,
+               "size": 16777216,
+               "tran": "nvme",
+               "rota": false,
+               "model": null,
+               "serial": null,
+               "vendor": null,
+               "mountpoints": []
+            },{
+               "name": "nvme0n1p3",
+               "path": "/dev/nvme0n1p3",
+               "type": "part",
+               "rm": false,
+               "hotplug": false,
+               "size": 511882297344,
+               "tran": "nvme",
+               "rota": false,
+               "model": null,
+               "serial": null,
+               "vendor": null,
+               "mountpoints": []
+            }
+         ]
+      }
+   ]
+}

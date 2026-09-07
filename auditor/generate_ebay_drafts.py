@@ -111,7 +111,10 @@ def build_title(row: dict) -> str:
     title = " ".join(parts)
     if len(title) > 80:
         title = " ".join(p for p in parts if p != gpu_short)
-    for tail in ("Win 11 Pro Laptop", "Win 11 Pro", "Laptop"):
+    tails = ("Win 11 Pro Laptop", "Win 11 Pro", "Laptop")
+    if row.get("charger", "Y") != "Y":
+        tails = ("Win 11 Pro No Charger", "No Charger")
+    for tail in tails:
         if len(title) + 1 + len(tail) <= 80:
             title = f"{title} {tail}"
             break
@@ -141,6 +144,11 @@ def build_condition_notes(row: dict) -> str:
     cg = row.get("chassis_grade", "")
     if cg in chassis_map:
         parts.append(chassis_map[cg])
+
+    # What the photos show, written after looking at every photo of the unit
+    pn = (row.get("photo_notes") or "").strip()
+    if pn:
+        parts.append(pn if pn.endswith(".") else pn + ".")
 
     # Battery
     bh = row.get("battery_health_pct", "N/A")
@@ -178,12 +186,16 @@ def build_html_description(row: dict) -> str:
     smart = row.get("smart_status", "N/A")
     screen_grade = row.get("screen_grade", "N/A")
     chassis_grade = row.get("chassis_grade", "N/A")
-    charger = "Yes — OEM charger included" if row.get("charger") == "Y" else "No"
+    charger = "Yes — OEM charger included" if row.get("charger") == "Y" else "No — charger NOT included"
     wear = row.get("ssd_wear_pct", "")
     hours = row.get("ssd_power_on_hours", "")
     drive_health = ""
     if wear not in ("", "N/A") and hours not in ("", "N/A"):
         drive_health = f'<tr><td style="padding:4px 0;"><strong>SSD Health:</strong></td><td>{wear}% worn, {hours} hours on</td></tr>\n'
+    pn = (row.get("photo_notes") or "").strip()
+    photo_row = ""
+    if pn:
+        photo_row = f'<tr><td style="padding:4px 0;"><strong>Cosmetics (from the photos):</strong></td><td>{pn if pn.endswith(".") else pn + "."}</td></tr>\n'
     erased = ""
     if row.get("erase_verified") == "Yes":
         erased = '<tr><td style="padding:4px 0;"><strong>Data:</strong></td><td>Previous data securely erased (NVMe format, verified blank)</td></tr>\n'
@@ -225,7 +237,7 @@ def build_html_description(row: dict) -> str:
 <table style="width:100%;font-size:14px;">
 <tr><td style="padding:4px 0;"><strong>Screen:</strong></td><td>{grade_map.get(screen_grade, screen_grade)}</td></tr>
 <tr><td style="padding:4px 0;"><strong>Chassis:</strong></td><td>{grade_map.get(chassis_grade, chassis_grade)}</td></tr>
-<tr><td style="padding:4px 0;"><strong>Battery Health:</strong></td><td>{battery}%</td></tr>
+{photo_row}<tr><td style="padding:4px 0;"><strong>Battery Health:</strong></td><td>{battery}%</td></tr>
 <tr><td style="padding:4px 0;"><strong>SMART Status:</strong></td><td>{smart}</td></tr>
 {drive_health}{erased}</table>
 </div>

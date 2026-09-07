@@ -52,10 +52,10 @@ NEW_COLUMNS = [
     "ram_config", "ssd_model", "ssd_wear_pct", "ssd_power_on_hours", "ssd_data_written_tb",
     "battery_design_wh", "battery_full_wh", "display_aspect", "wifi_card",
     "oem_key_present", "test_display", "test_keyboard", "test_speaker",
-    "erase_method", "erase_verified", "condition_notes", "warnings", "list_price",
+    "erase_method", "erase_verified", "condition_notes", "warnings", "list_price", "photo_notes",
 ]
 INVENTORY_COLUMNS = ["screen_grade", "chassis_grade", "color", "charger",
-                     "status", "sale_price", "sale_date", "notes", "list_price"]
+                     "status", "sale_price", "sale_date", "notes", "list_price", "photo_notes"]
 
 
 def yn(v):

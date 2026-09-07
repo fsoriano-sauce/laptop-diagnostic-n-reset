@@ -118,12 +118,23 @@ def cmd_status():
         name = next((n for n in have if n.startswith(tag)), None)
         count = have.get(name, 0) if name else None
         local = len(glob.glob(os.path.join(PHOTOS_DIR, tag, "*.jpg")))
-        state = "no album" if name is None else f"{count} in album, {local} exported" + ("" if count == local else "  <- run export")
+        want = (count or 0) - len(dropped(tag))
+        state = "no album" if name is None else f"{count} in album, {local} exported" + ("" if want == local else "  <- run export")
         print(f"  {tag:8} {model:16} {state}")
+
+
+def dropped(tag):
+    """Album shots to leave out of the listing (wrong unit, blurred, crash screen):
+    one iPhone filename per line in listing-photos/<TAG>/.drop."""
+    path = os.path.join(PHOTOS_DIR, tag, ".drop")
+    if not os.path.isfile(path):
+        return set()
+    return {os.path.splitext(l.strip())[0] for l in open(path) if l.strip()}
 
 
 def export_album(tag, name, count):
     dest = os.path.join(PHOTOS_DIR, tag)
+    skip = dropped(tag)
     tmp = tempfile.mkdtemp(prefix=f"photos-{tag}-")
     # Ordered filenames straight from Photos (iPhone names are sequential = capture order)
     order = osa(f'''
@@ -142,14 +153,17 @@ end tell''', timeout=1800)
     if not exported:
         print(f"  {tag}: export produced no files")
         return 0
+    keep_drop = open(os.path.join(dest, ".drop")).read() if os.path.isfile(os.path.join(dest, ".drop")) else None
     if os.path.isdir(dest):
         shutil.rmtree(dest)
     os.makedirs(dest)
+    if keep_drop is not None:
+        open(os.path.join(dest, ".drop"), "w").write(keep_drop)
     n = 0
     seq = [os.path.splitext(o)[0] for o in order] + [k for k in exported if k not in {os.path.splitext(o)[0] for o in order}]
     for key in seq:
         src = exported.get(key)
-        if not src:
+        if not src or key in skip:
             continue
         n += 1
         out = os.path.join(dest, f"{n:02d}.jpg")
@@ -175,7 +189,7 @@ def cmd_export(only):
         if not name or not have[name]:
             continue
         local = len(glob.glob(os.path.join(PHOTOS_DIR, tag, "*.jpg")))
-        if local == have[name] and not only:
+        if local == have[name] - len(dropped(tag)) and not only:
             continue
         total += export_album(tag, name, have[name])
     print(f"exported {total} photos. Next: git add listing-photos && commit && push, then regenerate listings.")

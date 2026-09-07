@@ -68,7 +68,12 @@ function Test-DriverPackages([string]$root) {
     # refuses here will fail on the laptop too.
     $skip = 'Rapid-Storage|Rapid_Storage|RapidStorage|-RST-|_RST_|VMD|iaStor|Optane'
     $failed = @()
-    foreach ($model in Get-ChildItem -Directory $root -ErrorAction SilentlyContinue) {
+    # Stage through a short junction: the repo path plus Dell's package names pushes the Killer
+    # Bluetooth INFs past MAX_PATH here (pnputil rc 87), while C:\Dell\Drivers on the laptop is fine.
+    $short = Join-Path $env:SystemDrive "_dv"
+    if (Test-Path $short) { [IO.Directory]::Delete($short) }
+    New-Item -ItemType Junction -Path $short -Target $root | Out-Null
+    foreach ($model in Get-ChildItem -Directory $short -ErrorAction SilentlyContinue) {
         foreach ($pkg in Get-ChildItem -Directory $model.FullName -ErrorAction SilentlyContinue) {
             if ($pkg.Name -match $skip) { Say ("  skip  {0}\{1}" -f $model.Name, $pkg.Name); continue }
             $infs = @(Get-ChildItem -Path $pkg.FullName -Recurse -Filter *.inf -ErrorAction SilentlyContinue)
@@ -89,6 +94,7 @@ function Test-DriverPackages([string]$root) {
             foreach ($o in $added) { & pnputil.exe /delete-driver $o /force 2>&1 | Out-Null }
         }
     }
+    [IO.Directory]::Delete($short)   # drops the junction only, never its target
     return $failed
 }
 

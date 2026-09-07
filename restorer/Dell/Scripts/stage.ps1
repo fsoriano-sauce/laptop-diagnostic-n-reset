@@ -92,7 +92,7 @@ foreach ($d in $matched) {
 # ── 2. Install per package ───────────────────────────────────────────────────
 if (-not $NoInstall -and $packages) {
     Rpt ""
-    Rpt "Driver install (pnputil, per package; 0 = installed, 259 = no matching device, 3010 = installed + reboot pending):"
+    Rpt "Driver install (pnputil, per package; 0 = installed, 259 = added, some INFs had no matching device here (normal for multi-model packages), 3010 = installed + reboot pending):"
     "=== pnputil run $stamp  tag $tag  model $model ===" | Set-Content $pnpLog
     foreach ($p in $packages) {
         $n = @(Get-ChildItem -Path $p.FullName -Recurse -Filter *.inf -ErrorAction SilentlyContinue).Count
@@ -136,7 +136,7 @@ try {
 } catch { Rpt "Disks       : unknown" }
 
 Rpt ""
-Rpt "Devices with problems (empty = driver set complete):"
+Rpt "Devices with problems (snapshot before the first restart; chipset/ME/thermal entries here are filled by Windows Update):"
 try {
     $bad = Get-PnpDevice -PresentOnly -ErrorAction Stop | Where-Object { $_.Status -ne "OK" -and $_.Class -notin @("SoftwareDevice","Volume","VolumeSnapshot") }
     if ($bad) { $bad | ForEach-Object { Rpt "  [$($_.Status)] $($_.Class): $($_.FriendlyName)  ($($_.InstanceId))" } }

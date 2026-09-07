@@ -16,10 +16,11 @@ Output:
     ebay_listings_upload.csv — ready to upload via Seller Hub > Reports > Upload
 """
 
+import argparse
 import csv
 import os
+import subprocess
 import sys
-from datetime import datetime
 
 # Add parent dir so we can import from generate_ebay_drafts
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -206,6 +207,17 @@ def get_connectivity(row: dict) -> str:
     return "|".join(connectivity)
 
 
+def get_capacity(row: dict) -> str:
+    """512 -> '512 GB', 1024 -> '1 TB' (eBay's accepted capacity values)."""
+    try:
+        n = int(float(row.get("storage_gb", "") or 0))
+    except ValueError:
+        return ""
+    if n <= 0:
+        return ""
+    return f"{round(n / 1000)} TB" if n >= 1000 else f"{n} GB"
+
+
 def get_screen_size(row: dict) -> str:
     """Map screen_size_in to eBay's accepted values."""
     size = row.get("screen_size_in", "")
@@ -293,8 +305,39 @@ def condition_id_for(row: dict) -> str:
     return "7000" if failed else "3000"
 
 
-# GitHub raw URL base for listing photos
-GITHUB_PHOTOS_BASE = "https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/master/listing-photos"
+# ─── Listing policy (decided 2026-09-07) ─────────────────────────────────────
+# Free shipping with the label cost in the asking price; eBay label at sale.
+# Best Offer: the listing accepts 92% of the ask by itself and declines under
+# 85%, so lowball offers never wait for a reply. Returns stay off.
+SHIPPING_SERVICE_1 = ("USPSParcel", "0.00")
+SHIPPING_SERVICE_2 = ("UPSGround", "0.00")
+BEST_OFFER_AUTO_ACCEPT = 0.92
+BEST_OFFER_MINIMUM = 0.85
+DISPATCH_DAYS = "3"
+RETURNS = "ReturnsNotAccepted"
+
+
+def photo_branch() -> str:
+    """Photos are fetched by eBay from GitHub; point at the branch they are on."""
+    try:
+        out = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True,
+                             cwd=os.path.dirname(os.path.abspath(__file__)), timeout=5)
+        b = out.stdout.strip()
+        return b if out.returncode == 0 and b and b != "HEAD" else "master"
+    except (OSError, subprocess.SubprocessError):
+        return "master"
+
+
+# GitHub raw URL base for listing photos (the current branch; master after a merge)
+GITHUB_PHOTOS_BASE = f"https://raw.githubusercontent.com/fsoriano-sauce/laptop-diagnostic-n-reset/{photo_branch()}/listing-photos"
+
+
+def asking_price(row: dict) -> str:
+    """inventory.csv list_price wins; otherwise the comps-based estimate."""
+    lp = (row.get("list_price") or "").strip()
+    if lp:
+        return f"{float(lp):.2f}"
+    return estimate_price(row)
 
 
 def build_photo_urls(service_tag: str, script_dir: str) -> str:
@@ -318,12 +361,14 @@ def build_photo_urls(service_tag: str, script_dir: str) -> str:
 
 # ─── Main Generator ─────────────────────────────────────────────────────────
 
-def generate_ebay_csv(input_path: str, output_path: str):
-    """Generate eBay-compatible full listing CSV from audit_master.csv."""
+def generate_ebay_csv(input_path: str, output_path: str, only=None):
+    """Generate eBay-compatible full listing CSV from audit_master.csv.
+    only: optional set of service tags; everything else is skipped."""
 
     with open(input_path, "r", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        rows = [r for r in reader if r.get("status", "") == "audited"]
+        rows = [r for r in reader if r.get("status", "") == "audited"
+                and (not only or r.get("service_tag", "").upper() in only)]
 
     if not rows:
         print("[!] No audited laptops found in the CSV.")
@@ -335,13 +380,12 @@ def generate_ebay_csv(input_path: str, output_path: str):
         sg = row.get("screen_grade", "A")
         cg = row.get("chassis_grade", "A")
         condition_id = condition_id_for(row)
-        price = estimate_price(row)
+        price = asking_price(row)
 
-        # Auto-accept best offer at 90% of price, minimum at 80%
         try:
             price_f = float(price)
-            auto_accept = f"{price_f * 0.90:.2f}"
-            min_offer = f"{price_f * 0.80:.2f}"
+            auto_accept = f"{price_f * BEST_OFFER_AUTO_ACCEPT:.2f}"
+            min_offer = f"{price_f * BEST_OFFER_MINIMUM:.2f}"
         except ValueError:
             auto_accept = ""
             min_offer = ""
@@ -364,8 +408,8 @@ def generate_ebay_csv(input_path: str, output_path: str):
             # Item Specifics (Additional)
             "C:Model": get_model_value(row),
             "C:Operating System": "Windows 11 Pro",
-            "C:SSD Capacity": f"{row.get('storage_gb', '512')} GB",
-            "C:Hard Drive Capacity": f"{row.get('storage_gb', '512')} GB",
+            "C:SSD Capacity": get_capacity(row),
+            "C:Hard Drive Capacity": get_capacity(row),
             "C:Features": get_features(row),
             "C:Type": "Notebook/Laptop",
             "C:GPU": get_gpu_ebay_value(row),
@@ -412,15 +456,15 @@ def generate_ebay_csv(input_path: str, output_path: str):
             # Location & Shipping — buyer pays
             "*Location": "Boca Raton, FL",
             "ShippingType": "Flat",
-            "ShippingService-1:Option": "USPSParcel",
-            "ShippingService-1:Cost": "14.99",
-            "ShippingService-2:Option": "UPSGround",
-            "ShippingService-2:Cost": "18.99",
-            "*DispatchTimeMax": "3",
+            "ShippingService-1:Option": SHIPPING_SERVICE_1[0],
+            "ShippingService-1:Cost": SHIPPING_SERVICE_1[1],
+            "ShippingService-2:Option": SHIPPING_SERVICE_2[0],
+            "ShippingService-2:Cost": SHIPPING_SERVICE_2[1],
+            "*DispatchTimeMax": DISPATCH_DAYS,
             "PromotionalShippingDiscount": "",
             "ShippingDiscountProfileID": "",
             # Returns — not accepted
-            "*ReturnsAcceptedOption": "ReturnsNotAccepted",
+            "*ReturnsAcceptedOption": RETURNS,
             "ReturnsWithinOption": "",
             "RefundOption": "",
             "ShippingCostPaidByOption": "",
@@ -461,18 +505,16 @@ def generate_ebay_csv(input_path: str, output_path: str):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python generate_ebay_drafts_v2.py <path_to_audit_master.csv>")
-        print("       python generate_ebay_drafts_v2.py L:\\audit_master.csv")
+    ap = argparse.ArgumentParser(description="audit_master_local.csv -> eBay Seller Hub upload CSV")
+    ap.add_argument("input_csv")
+    ap.add_argument("--only", help="comma-separated service tags to include (default: every audited unit)")
+    ap.add_argument("--out", help="output path (default: ebay_listings_upload.csv in the repo root)")
+    args = ap.parse_args()
+    if not os.path.isfile(args.input_csv):
+        print(f"[!] File not found: {args.input_csv}")
         sys.exit(1)
-
-    input_csv = sys.argv[1]
-    if not os.path.isfile(input_csv):
-        print(f"[!] File not found: {input_csv}")
-        sys.exit(1)
-
-    output_csv = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(input_csv))) or ".",
-        "ebay_listings_upload.csv"
-    )
-    generate_ebay_csv(input_csv, output_csv)
+    only = {t.strip().upper() for t in args.only.split(",") if t.strip()} if args.only else None
+    output_csv = args.out or os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(args.input_csv))) or ".",
+        "ebay_listings_upload.csv")
+    generate_ebay_csv(args.input_csv, output_csv, only)

@@ -7,7 +7,8 @@ Inputs (all relative to this file):
     audits/<TAG>.json          measured facts written by audit.py v3 (copy the
                                audits/ folder from the Auditor USB into here)
     inventory.csv              hand-entered per-unit state: cosmetic grades,
-                               colour, charger, status, sale price, notes
+                               colour, charger, status, sale price, notes,
+                               list_price (asking price; blank = generator estimate)
     legacy/audit_master_v2.csv rows for units audited before v3 (frozen)
 
 Output:
@@ -51,10 +52,10 @@ NEW_COLUMNS = [
     "ram_config", "ssd_model", "ssd_wear_pct", "ssd_power_on_hours", "ssd_data_written_tb",
     "battery_design_wh", "battery_full_wh", "display_aspect", "wifi_card",
     "oem_key_present", "test_display", "test_keyboard", "test_speaker",
-    "erase_method", "erase_verified", "condition_notes", "warnings",
+    "erase_method", "erase_verified", "condition_notes", "warnings", "list_price",
 ]
 INVENTORY_COLUMNS = ["screen_grade", "chassis_grade", "color", "charger",
-                     "status", "sale_price", "sale_date", "notes"]
+                     "status", "sale_price", "sale_date", "notes", "list_price"]
 
 
 def yn(v):

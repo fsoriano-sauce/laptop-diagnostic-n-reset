@@ -41,6 +41,9 @@ def clean_cpu_name(raw_cpu: str) -> str:
     # Remove trailing " @ X.XXGHz"
     if " @ " in cpu:
         cpu = cpu[:cpu.index(" @ ")]
+    cpu = cpu.strip()
+    if cpu.endswith(" CPU"):
+        cpu = cpu[:-4]
     return cpu.strip()
 
 
@@ -176,6 +179,14 @@ def build_html_description(row: dict) -> str:
     screen_grade = row.get("screen_grade", "N/A")
     chassis_grade = row.get("chassis_grade", "N/A")
     charger = "Yes — OEM charger included" if row.get("charger") == "Y" else "No"
+    wear = row.get("ssd_wear_pct", "")
+    hours = row.get("ssd_power_on_hours", "")
+    drive_health = ""
+    if wear not in ("", "N/A") and hours not in ("", "N/A"):
+        drive_health = f'<tr><td style="padding:4px 0;"><strong>SSD Health:</strong></td><td>{wear}% worn, {hours} hours on</td></tr>\n'
+    erased = ""
+    if row.get("erase_verified") == "Yes":
+        erased = '<tr><td style="padding:4px 0;"><strong>Data:</strong></td><td>Previous data securely erased (NVMe format, verified blank)</td></tr>\n'
 
     # Feature badges
     features = []
@@ -216,7 +227,7 @@ def build_html_description(row: dict) -> str:
 <tr><td style="padding:4px 0;"><strong>Chassis:</strong></td><td>{grade_map.get(chassis_grade, chassis_grade)}</td></tr>
 <tr><td style="padding:4px 0;"><strong>Battery Health:</strong></td><td>{battery}%</td></tr>
 <tr><td style="padding:4px 0;"><strong>SMART Status:</strong></td><td>{smart}</td></tr>
-</table>
+{drive_health}{erased}</table>
 </div>
 <div style="margin-top:15px;padding:15px;background:#f8f8fc;border-radius:4px;">
 <h2 style="margin:0 0 8px;font-size:16px;">&boxbox; What's Included</h2>
@@ -227,7 +238,7 @@ def build_html_description(row: dict) -> str:
 </ul>
 </div>
 <div style="margin-top:15px;padding:12px;background:#1a1a2e;color:#a0a0c0;border-radius:0 0 8px 8px;text-align:center;font-size:12px;">
-Professionally audited, securely wiped, and restored. Ships within 3 business days.
+Professionally audited, securely wiped, and restored. Ships within 3 business days in a laptop shipping box with corner protection.
 </div>
 </div>"""
 

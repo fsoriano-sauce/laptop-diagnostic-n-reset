@@ -1,15 +1,16 @@
-service_tag,model,screen_grade,chassis_grade,color,charger,status,sale_price,sale_date,notes
-JW3X9S3,Vostro 7620,A,B,Gray,Y,sold,420.99,2026-04-13,eBay 147257219187 full price 2h48m after listing
-9P81KL3,Vostro 15 7510,A,B,Gray,Y,sold,420.99,2026-04-25,eBay 147257219201 full price
-343GCS3,Vostro 7620,A,B,Gray,Y,sold,370.00,2026-04-21,eBay 147257219202 Best Offer (asked 445.99)
-977F9S3,Vostro 7620,A,B,Gray,Y,sold,380.00,2026-04-16,eBay 147257219196 Best Offer (asked 420.99)
-8YR9LS3,Vostro 7620,A,B,Gray,Y,sold,370.00,2026-04-20,eBay 147257219205 Best Offer (asked 445.99)
-2ZR9LS3,Vostro 7620,A,B,Gray,Y,sold,425.00,2026-04-13,eBay 147257219200 Best Offer (asked 455.99)
-HWR9LS3,Vostro 7620,A,B,Gray,Y,audited,,,
-78ZSFS3,Vostro 7620,A,B,Gray,Y,audited,,,
-51WBXL3,Vostro 7620,A,B,Gray,Y,audited,,,
-DXJ6JS3,Vostro 7620,A,B,Gray,Y,audited,,,
-4ZJ6JS3,Vostro 7620,A,B,Gray,Y,audited,,,
-D70SVG3,Vostro 15 7510,A,B,Gray,Y,audited,,,
-727MYZ2,Vostro 7500,A,B,Gray,Y,audited,,,
-7LCTF63,Vostro 7500,A,B,Gray,Y,audited,,,
+service_tag,model,screen_grade,chassis_grade,color,charger,status,sale_price,sale_date,notes,list_price
+JW3X9S3,Vostro 7620,A,B,Gray,Y,sold,420.99,2026-04-13,eBay 147257219187 full price 2h48m after listing,
+9P81KL3,Vostro 15 7510,A,B,Gray,Y,sold,420.99,2026-04-25,eBay 147257219201 full price,
+343GCS3,Vostro 7620,A,B,Gray,Y,sold,370.00,2026-04-21,eBay 147257219202 Best Offer (asked 445.99),
+977F9S3,Vostro 7620,A,B,Gray,Y,sold,380.00,2026-04-16,eBay 147257219196 Best Offer (asked 420.99),
+8YR9LS3,Vostro 7620,A,B,Gray,Y,sold,370.00,2026-04-20,eBay 147257219205 Best Offer (asked 445.99),
+2ZR9LS3,Vostro 7620,A,B,Gray,Y,sold,425.00,2026-04-13,eBay 147257219200 Best Offer (asked 455.99),
+HWR9LS3,Vostro 7620,A,B,Gray,Y,audited,,,,
+78ZSFS3,Vostro 7620,A,B,Gray,Y,audited,,,,
+51WBXL3,Vostro 7620,A,B,Gray,Y,audited,,,,
+DXJ6JS3,Vostro 7620,A,B,Gray,Y,audited,,,,
+4ZJ6JS3,Vostro 7620,A,B,Gray,Y,audited,,,,
+D70SVG3,Vostro 15 7510,A,B,Gray,Y,audited,,,,
+727MYZ2,Vostro 7500,A,B,Gray,Y,audited,,,,349.00
+7LCTF63,Vostro 7500,A,B,Gray,Y,audited,,,,
+H1N3R93,Vostro 7500,,,,,audited,,,,329.00

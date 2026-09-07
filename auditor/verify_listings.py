@@ -139,10 +139,9 @@ for tag in sorted(audit.keys()):
     bo_min = e.get("MinimumBestOfferPrice", "")
     print(f"  Price: ${price}")
     if bo_accept:
-        expected_accept = round(float(price) * 0.9, 2)
-        actual_accept = float(bo_accept)
-        print(f"  Best Offer: Accept=${bo_accept} (expected ~${expected_accept:.2f})")
-        print(f"  Best Offer: Min=${bo_min} (expected ~${float(price)*0.8:.2f})")
+        check(tag, "Best Offer auto-accept 92%", f"{float(price) * 0.92:.2f}", bo_accept)
+        check(tag, "Best Offer minimum 85%", f"{float(price) * 0.85:.2f}", bo_min)
+        print(f"  Best Offer: Accept=${bo_accept} Min=${bo_min}")
 
     # 9. SHIPPING
     ship1 = e.get("ShippingService-1:Option", "")
@@ -152,8 +151,8 @@ for tag in sorted(audit.keys()):
     print(f"  Shipping: {ship1} @ ${ship1_cost}, {ship2} @ ${ship2_cost}")
     check(tag, "USPS shipping", "USPSParcel", ship1)
     check(tag, "UPS shipping", "UPSGround", ship2)
-    check(tag, "USPS cost", "14.99", ship1_cost)
-    check(tag, "UPS cost", "18.99", ship2_cost)
+    check(tag, "USPS free shipping", "0.00", ship1_cost)
+    check(tag, "UPS free shipping", "0.00", ship2_cost)
 
     # 10. RETURNS & LOCATION
     returns = e.get("*ReturnsAcceptedOption", "")

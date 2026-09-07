@@ -1,5 +1,5 @@
 {
-  "audited_at": "2026-07-23T17:44:20+00:00",
+  "audited_at": "2026-09-07T11:17:51+00:00",
   "auditor_version": "3.1",
   "battery": {
     "charge_pct": 100,
@@ -34,7 +34,7 @@
     "width_px": 1920
   },
   "erase": {
-    "duration_s": 10.4,
+    "duration_s": 9.9,
     "error": null,
     "method": "nvme_format_ses1",
     "performed": true,
@@ -58,7 +58,7 @@
     "chassis_grade": "B",
     "chassis_note": "normal wear",
     "color": "Gray",
-    "screen_grade": "B",
+    "screen_grade": "A",
     "screen_note": null
   },
   "identity": {
@@ -140,27 +140,27 @@
   "status": "audited",
   "storage": {
     "critical_warning": 0,
-    "data_written_tb": 22.78,
+    "data_written_tb": 22.91,
     "device": "/dev/nvme0n1",
     "firmware": "21113012",
     "media_errors": 0,
     "model": "PC SN530 NVMe WDC 512GB",
     "percentage_used": 13,
-    "power_cycles": 124,
-    "power_on_hours": 1388,
+    "power_cycles": 133,
+    "power_on_hours": 1389,
     "present": true,
     "rotational": false,
     "serial": "21025Y802762",
     "size_bytes": 512110190592,
     "size_gb": 512,
     "smart_passed": true,
-    "temperature_c": 26,
+    "temperature_c": 35,
     "transport": "nvme",
-    "unsafe_shutdowns": 30
+    "unsafe_shutdowns": 34
   },
   "tests": {
     "display": {
-      "grade": "B",
+      "grade": "A",
       "note": null,
       "result": "pass"
     },
@@ -171,30 +171,14 @@
         "Intel HID 5 button array"
       ],
       "finished_by": "all_required",
-      "keys_seen": 83,
+      "keys_seen": 82,
       "missing_numpad": [],
       "missing_optional": [
         "END",
-        "ESC",
-        "F1",
-        "F10",
-        "F11",
-        "F12",
-        "F2",
-        "F3",
-        "F4",
-        "F5",
-        "F6",
-        "F7",
-        "F8",
-        "F9",
-        "HOME",
-        "INS",
-        "MENU",
-        "PRTSC"
+        "MENU"
       ],
       "missing_required": [],
-      "numpad_present": true,
+      "numpad_present": false,
       "result": "pass"
     },
     "speaker": {
@@ -202,7 +186,5 @@
       "result": "not_tested"
     }
   },
-  "warnings": [
-    "laptop clock reads 2026-07-23 (RTC wrong, likely CMOS cell); timestamp unreliable"
-  ]
+  "warnings": []
 }

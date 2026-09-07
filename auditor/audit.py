@@ -501,9 +501,11 @@ def find_keyboard_devices(raw):
 
 def _draw_keyboard(pressed, remaining_req, elapsed):
     scr = sys.__stdout__          # screen only; redraws stay out of console.log
+    status = (f"{ANSI_GREEN} all required keys seen {ANSI_RESET} finish the numpad / F-row if present, then ESC ESC ESC"
+              if remaining_req == 0 else f"{remaining_req} required keys left")
     buf = ["\033[H",
-           f"{ANSI_BOLD}  KEYBOARD TEST{ANSI_RESET}  press every key · ESC×3 to finish · "
-           f"{remaining_req} required keys left · {int(elapsed)}s   \n\n"]
+           f"{ANSI_BOLD}  KEYBOARD TEST{ANSI_RESET}  press every key · ESC×3 when done · {int(elapsed)}s   \n"
+           f"  {status}   \n\n"]
     for row in KEY_ROWS:
         line = "  "
         for label, code, group in row:
@@ -529,8 +531,8 @@ def keyboard_test(raw):
         print("  [!] No keyboard input device found. Test skipped.")
         return {"result": "not_tested", "reason": "no evdev keyboard device"}
     print("  Reading: " + "; ".join(f"{n} ({p})" for n, p in devs))
-    print("  Press every key, including Shift/Ctrl/Alt on both sides and the arrows.")
-    print("  Numpad keys count only if you press any of them. Finish with ESC three times.")
+    print("  Press every key, including Shift/Ctrl/Alt on both sides, the arrows, the numpad and the F-row.")
+    print("  The test does NOT end on its own: when you have pressed everything, press ESC three times.")
     wait_key("  Press ENTER to start...")
 
     required = {code for row in KEY_ROWS for _, code, g in row if g == "req"}
@@ -576,11 +578,8 @@ def keyboard_test(raw):
                 _draw_keyboard(pressed, len(required - pressed), time.time() - start)
             if esc_streak >= 3:
                 break
-            if required <= pressed and (not (pad & pressed) or pad <= pressed):
-                finished_reason = "all_required"
-                _draw_keyboard(pressed, 0, time.time() - start)
-                time.sleep(1.0)
-                break
+            # No auto-finish: the operator decides when every key has been
+            # pressed (numpad and F-row included) and ends with ESC x3.
             if time.time() - last_event > KEYBOARD_TEST_TIMEOUT_S:
                 finished_reason = "timeout"
                 break

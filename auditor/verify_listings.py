@@ -34,7 +34,8 @@ def check(tag, field, expected, actual, exact=True):
 
 # Load audit source
 with open(AUDIT_PATH, "r", encoding="utf-8") as f:
-    audit = {r["service_tag"]: r for r in csv.DictReader(f)}
+    # only units still for sale are expected in the upload file
+    audit = {r["service_tag"]: r for r in csv.DictReader(f) if r.get("status") == "audited"}
 
 # Load generated CSV (skip header comment line)
 with open(EBAY_PATH, "r", encoding="utf-8") as f:

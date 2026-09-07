@@ -280,18 +280,17 @@ def get_release_year(row: dict) -> str:
 
 
 # ─── eBay Condition ID ────────────────────────────────────────────────────────
+# eBay condition IDs: 3000 = Used, 7000 = For parts or not working.
+# "Seller refurbished" (2500) was withdrawn from the laptop categories in
+# Aug 2025; the tiered "- Refurbished" grades need the eBay Refurbished
+# program. Cosmetic grades go into the condition description, never into
+# the condition ID: a scuffed but working laptop is "Used", not "For parts".
 
-CONDITION_ID_MAP = {
-    ("A", "A"): "3000",
-    ("A", "B"): "3000",
-    ("B", "A"): "3000",
-    ("B", "B"): "3000",
-    ("A", "C"): "7000",
-    ("B", "C"): "7000",
-    ("C", "A"): "7000",
-    ("C", "B"): "7000",
-    ("C", "C"): "7000",
-}
+def condition_id_for(row: dict) -> str:
+    failed = row.get("smart_status", "") == "FAILED" or any(
+        row.get(k, "").lower() == "fail"
+        for k in ("test_display", "test_keyboard", "test_speaker"))
+    return "7000" if failed else "3000"
 
 
 # GitHub raw URL base for listing photos
@@ -335,7 +334,7 @@ def generate_ebay_csv(input_path: str, output_path: str):
     for row in rows:
         sg = row.get("screen_grade", "A")
         cg = row.get("chassis_grade", "A")
-        condition_id = CONDITION_ID_MAP.get((sg, cg), "3000")
+        condition_id = condition_id_for(row)
         price = estimate_price(row)
 
         # Auto-accept best offer at 90% of price, minimum at 80%

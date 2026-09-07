@@ -65,6 +65,20 @@ Optional, stronger: install the Windows ADK "Deployment Tools" and open
 .\build_restorer.ps1 -ExtractDups -ExtractOnly   # extracts .exe packages into Dell\Drivers\<Model>\
 ```
 
+Then pre-flight the whole set on this PC, no laptop needed. Every package is
+staged into this PC's driver store with `pnputil /add-driver` (never
+installed on a device) and removed again; anything pnputil refuses here
+would fail on the laptop:
+
+```powershell
+.\build_restorer.ps1 -ValidateDrivers -ExtractOnly
+```
+
+A package that fails with "cannot find the file specified" was extracted
+incompletely (seen with NVIDIA's Dell "MUP" packages): delete its folder
+under `Dell\Drivers\<Model>\`, extract the `.exe` from `Dell\Downloads` with
+7-Zip into a folder of the same name, and rerun the validation.
+
 Expect a few packages to refuse `/s /e=`; the script names them. Open those
 in 7-Zip and copy the folder holding the `.inf` files into
 `Dell\Drivers\<Model>\<name>\`. Priorities are in `Dell\Drivers\README.md`:

@@ -1,10 +1,10 @@
 Device: /org/freedesktop/UPower/devices/battery_BAT0
   native-path:          BAT0
   vendor:               SMP
-  model:                DELL GPM0365
-  serial:               1514
+  model:                DELL P8P1P33
+  serial:               3913
   power supply:         yes
-  updated:              Mon 07 Sep 2026 03:18:09 PM UTC (0 seconds ago)
+  updated:              Mon 07 Sep 2026 02:08:12 PM UTC (0 seconds ago)
   has history:          yes
   has statistics:       yes
   battery
@@ -12,34 +12,35 @@ Device: /org/freedesktop/UPower/devices/battery_BAT0
     rechargeable:        yes
     state:               discharging
     warning-level:       none
-    energy:              76.5282 Wh
+    energy:              51.8928 Wh
     energy-empty:        0 Wh
-    energy-full:         77.8164 Wh
-    energy-full-design:  97.0026 Wh
+    energy-full:         53.2722 Wh
+    energy-full-design:  54.8796 Wh
     voltage-min-design:  11.4 V
     capacity-level:      Normal
-    energy-rate:         26.277 W
-    voltage:             11.327 V
+    energy-rate:         23.0166 W
+    voltage:             11.229 V
     charge-cycles:       N/A
-    time to empty:       2.9 hours
-    percentage:          98%
-    capacity:            80.2209%
-    technology:          lithium-ion
+    time to empty:       2.3 hours
+    percentage:          97%
+    temperature:         26.2 degrees C
+    capacity:            97.071%
+    technology:          lithium-polymer
     charge-start-threshold:        75%
     charge-end-threshold:          80%
     charge-threshold-supported:    yes
     icon-name:          'battery-full-symbolic'
   History (charge):
-    1788794289	98.000	discharging
+    1788790092	97.000	discharging
   History (rate):
-    1788794289	26.277	discharging
+    1788790092	23.017	discharging
   History (voltage):
-    1788794289	11.327	discharging
+    1788790092	11.229	discharging
 
 Device: /org/freedesktop/UPower/devices/line_power_AC
   native-path:          AC
   power supply:         yes
-  updated:              Mon 07 Sep 2026 03:18:09 PM UTC (0 seconds ago)
+  updated:              Mon 07 Sep 2026 02:08:12 PM UTC (0 seconds ago)
   has history:          no
   has statistics:       no
   line-power
@@ -50,7 +51,7 @@ Device: /org/freedesktop/UPower/devices/line_power_AC
 Device: /org/freedesktop/UPower/devices/line_power_ucsi_source_psy_USBC000o001
   native-path:          ucsi-source-psy-USBC000:001
   power supply:         yes
-  updated:              Mon 07 Sep 2026 03:18:09 PM UTC (0 seconds ago)
+  updated:              Mon 07 Sep 2026 02:08:12 PM UTC (0 seconds ago)
   has history:          no
   has statistics:       no
   line-power
@@ -60,19 +61,19 @@ Device: /org/freedesktop/UPower/devices/line_power_ucsi_source_psy_USBC000o001
 
 Device: /org/freedesktop/UPower/devices/DisplayDevice
   power supply:         yes
-  updated:              Mon 07 Sep 2026 03:18:09 PM UTC (0 seconds ago)
+  updated:              Mon 07 Sep 2026 02:08:12 PM UTC (0 seconds ago)
   has history:          no
   has statistics:       no
   battery
     present:             yes
     state:               discharging
     warning-level:       none
-    energy:              76.5282 Wh
-    energy-full:         77.8164 Wh
-    energy-rate:         26.277 W
+    energy:              51.8928 Wh
+    energy-full:         53.2722 Wh
+    energy-rate:         23.0166 W
     charge-cycles:       N/A
-    time to empty:       2.9 hours
-    percentage:          98%
+    time to empty:       2.3 hours
+    percentage:          97%
     icon-name:          'battery-full-symbolic'
 
 Daemon:

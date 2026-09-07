@@ -117,7 +117,7 @@ model		: 154
 model name	: 12th Gen Intel(R) Core(TM) i7-12700H
 stepping	: 3
 microcode	: 0x43b
-cpu MHz		: 400.000
+cpu MHz		: 477.019
 cache size	: 24576 KB
 physical id	: 0
 siblings	: 20
@@ -285,7 +285,7 @@ model		: 154
 model name	: 12th Gen Intel(R) Core(TM) i7-12700H
 stepping	: 3
 microcode	: 0x43b
-cpu MHz		: 400.000
+cpu MHz		: 496.110
 cache size	: 24576 KB
 physical id	: 0
 siblings	: 20
@@ -397,7 +397,7 @@ model		: 154
 model name	: 12th Gen Intel(R) Core(TM) i7-12700H
 stepping	: 3
 microcode	: 0x43b
-cpu MHz		: 400.000
+cpu MHz		: 399.910
 cache size	: 24576 KB
 physical id	: 0
 siblings	: 20
@@ -509,7 +509,7 @@ model		: 154
 model name	: 12th Gen Intel(R) Core(TM) i7-12700H
 stepping	: 3
 microcode	: 0x43b
-cpu MHz		: 399.990
+cpu MHz		: 400.048
 cache size	: 24576 KB
 physical id	: 0
 siblings	: 20
@@ -537,7 +537,7 @@ model		: 154
 model name	: 12th Gen Intel(R) Core(TM) i7-12700H
 stepping	: 3
 microcode	: 0x43b
-cpu MHz		: 400.000
+cpu MHz		: 399.973
 cache size	: 24576 KB
 physical id	: 0
 siblings	: 20

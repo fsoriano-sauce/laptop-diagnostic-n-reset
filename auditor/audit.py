@@ -905,11 +905,18 @@ def scan_battery(raw):
         unit = "wh" if rd("energy_full") else "ah"
         health = round(100 * full / design) if full and design else None
         cycles = to_int(rd("cycle_count"))
+        # Dell reports charge in uAh; convert to Wh with the design voltage so
+        # the listing can say "97 Wh battery, 80% health" on every model.
+        volts = (to_int(rd("voltage_min_design")) or 0) / 1e6
+        def wh(v):
+            if not v:
+                return None
+            return round(v / 1e6, 1) if unit == "wh" else (round(v / 1e6 * volts, 1) if volts else None)
         return {
             "present": True, "health_pct": health, "charge_pct": to_int(rd("capacity")),
             "cycles": cycles if cycles else None,
-            "design_wh": round(design / 1e6, 1) if design and unit == "wh" else None,
-            "full_wh": round(full / 1e6, 1) if full and unit == "wh" else None,
+            "design_wh": wh(design),
+            "full_wh": wh(full),
             "status": rd("status"), "manufacturer": rd("manufacturer"),
             "model": rd("model_name"), "serial": rd("serial_number"),
         }

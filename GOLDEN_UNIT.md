@@ -6,6 +6,7 @@ are step 5 (finish Windows and check it) and step 6 (restore again).
 Units: JV25GS3 (Vostro 7620), H1N3R93 (Vostro 7500), any Vostro 15 7510.
 Sticks: the Auditor (RESCUE1302, **DRYRUN file removed**) and one Restorer (ESD-ISO).
 Rule: while one unit installs, audit the next. Plan ~2 hours for three.
+Power: keep the AC adapter plugged in for both the audit and the install. Battery health is measured from the pack's own capacity figures and reads the same on or off the adapter (verified on 727MYZ2: 80% both ways); the adapter only guards against losing power mid-erase or mid-install.
 
 ## Per unit
 

@@ -840,7 +840,7 @@
 		PriDiscTmr- SecDiscTmr- DiscTmrStat- DiscTmrSERREn-
 	Capabilities: [80] Power Management version 3
 		Flags: PMEClk- DSI- D1+ D2+ AuxCurrent=375mA PME(D0+,D1+,D2+,D3hot+,D3cold+)
-		Status: D0 NoSoftRst+ PME-Enable- DSel=0 DScale=0 PME-
+		Status: D3 NoSoftRst+ PME-Enable+ DSel=0 DScale=0 PME-
 	Capabilities: [88] MSI: Enable- Count=1/1 Maskable- 64bit+
 		Address: 0000000000000000  Data: 0000
 	Capabilities: [ac] Subsystem: Dell Device 09ee
@@ -1328,10 +1328,10 @@
 		CEMsk:	RxErr- BadTLP- BadDLLP- Rollover- Timeout- AdvNonFatalErr+ CorrIntErr- HeaderOF-
 		AERCap:	First Error Pointer: 00, ECRCGenCap+ ECRCGenEn- ECRCChkCap+ ECRCChkEn-
 			MultHdrRecCap- MultHdrRecEn- TLPPfxPres- HdrLogCap-
-		HeaderLog: 04000001 0000000f 3a070000 e7b1fe75
+		HeaderLog: 04000001 0000000f 3a070000 e388dc48
 	Capabilities: [300 v1] Secondary PCI Express
 		LnkCtl3: LnkEquIntrruptEn- PerformEqu-
-		LaneErrStat: LaneErr at lane: 1 2
+		LaneErrStat: LaneErr at lane: 1
 	Kernel driver in use: nvme
 	Kernel modules: nvme
 

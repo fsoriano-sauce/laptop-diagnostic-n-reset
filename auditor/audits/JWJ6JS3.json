@@ -1,0 +1,187 @@
+{
+  "audited_at": "2026-09-07T16:17:25+00:00",
+  "auditor_version": "3.1",
+  "battery": {
+    "charge_pct": 49,
+    "cycles": null,
+    "design_wh": 54.9,
+    "full_wh": 46.1,
+    "health_pct": 84,
+    "manufacturer": "BYD",
+    "model": "DELL DVG8M33",
+    "present": true,
+    "serial": "6508",
+    "status": "Discharging"
+  },
+  "cpu": {
+    "cores": 14,
+    "generation": 12,
+    "model": "12th Gen Intel(R) Core(TM) i7-12700H",
+    "threads": 20
+  },
+  "display": {
+    "aspect": "16:10",
+    "connector": "card1-eDP-1",
+    "diagonal_in": 16.0,
+    "height_px": 1200,
+    "panel_name": null,
+    "physical_mm": [
+      345,
+      215
+    ],
+    "resolution": "1920x1200",
+    "resolution_class": "Standard",
+    "width_px": 1920
+  },
+  "erase": {
+    "duration_s": 2.0,
+    "error": null,
+    "method": "nvme_format_ses1",
+    "performed": true,
+    "verified_blank": true
+  },
+  "features": {
+    "backlit_keyboard": "yes",
+    "bluetooth": "yes",
+    "fingerprint_reader": "yes",
+    "touchscreen": "no",
+    "webcam": "yes",
+    "wifi_card": "Intel Corporation Alder Lake-P PCH CNVi WiFi [8086:51f0] (rev 01)",
+    "wifi_standard": "Wi-Fi 6 (802.11ax)"
+  },
+  "gpu": {
+    "discrete": "NVIDIA Corporation GA107M [GeForce RTX 3050 Ti Mobile] [10de:25a0] (rev a1)",
+    "integrated": "Intel Corporation Alder Lake-P GT2 [Iris Xe Graphics] [8086:46a6] (rev 0c)"
+  },
+  "grades": {
+    "charger": "Y",
+    "chassis_grade": "B",
+    "chassis_note": "normal",
+    "color": "Gray",
+    "screen_grade": "A",
+    "screen_note": null
+  },
+  "identity": {
+    "bios_date": "02/06/2025",
+    "bios_version": "1.28.0",
+    "chassis_type": "10",
+    "express_service_code": "43326000291",
+    "family": "Vostro",
+    "manufacturer": "Dell Inc.",
+    "model": "Vostro 7620",
+    "service_tag": "JWJ6JS3",
+    "sku": "0B3F"
+  },
+  "license": {
+    "oem_key_present": true,
+    "oem_key_suffix": "YKM6G"
+  },
+  "memory": {
+    "modules": [
+      {
+        "form_factor": "SODIMM",
+        "manufacturer": "80CE000080CE",
+        "part_number": "M425R1GB4BB0-CQKOL",
+        "size_gb": 8,
+        "speed_mts": 4800,
+        "type": "DDR5"
+      },
+      {
+        "form_factor": "SODIMM",
+        "manufacturer": null,
+        "part_number": null,
+        "size_gb": 8,
+        "speed_mts": 4800,
+        "type": "DDR5"
+      }
+    ],
+    "slots_total": 2,
+    "slots_used": 2,
+    "total_gb": 16,
+    "type": "DDR5"
+  },
+  "preflight": {
+    "other_internal_disks": [],
+    "storage_mode": "ahci"
+  },
+  "raw_files": [
+    "bluetoothctl.txt",
+    "console.log",
+    "dmesg.txt",
+    "dmidecode-memory.txt",
+    "dmidecode.txt",
+    "edid-card1-eDP-1.bin",
+    "iw-list.txt",
+    "lsblk.json",
+    "lscpu.txt",
+    "lspci-n.txt",
+    "lspci-nn.txt",
+    "lspci-vga.txt",
+    "lspci-vvv.txt",
+    "lsusb.txt",
+    "msdm.txt",
+    "nvme-id-ctrl.json",
+    "nvme-smart-log.txt",
+    "proc_asound_cards.txt",
+    "proc_bus_input_devices.txt",
+    "proc_cpuinfo.txt",
+    "proc_meminfo.txt",
+    "rfkill.txt",
+    "smartctl.json",
+    "sys-class-leds.txt",
+    "sysfs-BAT0.txt",
+    "udev-input.txt",
+    "uname.txt",
+    "upower.txt",
+    "xrandr.txt"
+  ],
+  "schema": 3,
+  "status": "audited",
+  "storage": {
+    "critical_warning": 0,
+    "data_written_tb": 69.05,
+    "device": "/dev/nvme0n1",
+    "firmware": "51005151",
+    "media_errors": 0,
+    "model": "BC901 NVMe SK hynix 512GB",
+    "percentage_used": 6,
+    "power_cycles": 78,
+    "power_on_hours": 12975,
+    "present": true,
+    "rotational": false,
+    "serial": "4YBCN01691820CQ2H",
+    "size_bytes": 512110190592,
+    "size_gb": 512,
+    "smart_passed": true,
+    "temperature_c": 37,
+    "transport": "nvme",
+    "unsafe_shutdowns": 24
+  },
+  "tests": {
+    "display": {
+      "grade": "A",
+      "note": null,
+      "result": "pass"
+    },
+    "keyboard": {
+      "devices": [
+        "AT Translated Set 2 keyboard",
+        "Intel HID events",
+        "Intel HID 5 button array",
+        "Dell Privacy Driver"
+      ],
+      "finished_by": "esc",
+      "keys_seen": 101,
+      "missing_numpad": [],
+      "missing_optional": [],
+      "missing_required": [],
+      "numpad_present": true,
+      "result": "pass"
+    },
+    "speaker": {
+      "reason": "no sound card exposed in live environment",
+      "result": "not_tested"
+    }
+  },
+  "warnings": []
+}

@@ -38,5 +38,7 @@ Rule: while one unit installs, audit the next. Plan ~2 hours for three.
 | Report stops after "Driver folders matched" | stick dropped mid-install (fixed: drivers now copy to C: first) | at the OOBE screen press **Shift+F10**, then `for %d in (D E F G H) do @if exist %d:\Dell\Scripts\stage.cmd %d:\Dell\Scripts\stage.cmd %d:` and wait for it to return |
 | A device listed under "Devices with problems" | that line | add the matching Dell package to `Dell\Drivers\<Model>\`, rebuild the stick |
 | No speakers / no camera in Windows | Device Manager | same: missing driver |
+| Setup keeps saying "internet connection lost"; Windows Update says certification expired; taskbar date is years off | the unit's real-time clock (the auditor warns `laptop clock reads …`) | set the date/time by hand, Sync now. If it is wrong again after a night powered off, replace the CMOS coin cell before shipping: a buyer would hit the same bounce at setup |
+| Almost every device yellow, Wi-Fi works | drivers never staged (stick dropped, or Shift+F10 step skipped) and a wrong clock stopped Windows Update from backfilling | from the desktop, elevated cmd: `<usb>\Dell\Scripts\stage.cmd <usb>` then fix the clock, restart |
 
 When all three pass, delete nothing and change nothing: that is production.

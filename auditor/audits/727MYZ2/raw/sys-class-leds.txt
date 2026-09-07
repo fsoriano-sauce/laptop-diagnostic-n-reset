@@ -1,0 +1,5 @@
+dell::kbd_backlight
+input2::capslock
+input2::numlock
+input2::scrolllock
+phy0-led

@@ -457,7 +457,7 @@
 	Region 0: Memory at 6133180000 (64-bit, non-prefetchable) [size=64K]
 	Capabilities: [70] Power Management version 2
 		Flags: PMEClk- DSI- D1- D2- AuxCurrent=375mA PME(D0-,D1-,D2-,D3hot+,D3cold+)
-		Status: D0 NoSoftRst- PME-Enable- DSel=0 DScale=0 PME-
+		Status: D0 NoSoftRst+ PME-Enable- DSel=0 DScale=0 PME-
 	Capabilities: [80] MSI: Enable+ Count=8/8 Maskable- 64bit+
 		Address: 00000000fee00318  Data: 0000
 	Capabilities: [90] Vendor Specific Information: Intel <unknown>
@@ -502,15 +502,14 @@
 
 00:14.0 USB controller: Intel Corporation Alder Lake PCH USB 3.2 xHCI Host Controller (rev 01) (prog-if 30 [XHCI])
 	Subsystem: Dell Device 0b3f
-	Control: I/O- Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
+	Control: I/O- Mem+ BusMaster- SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
 	Status: Cap+ 66MHz- UDF- FastB2B+ ParErr- DEVSEL=medium >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
-	Latency: 0
 	Interrupts: pin B disabled, MSI(X) routed to IRQ 134-141
 	IOMMU group: 9
 	Region 0: Memory at 6133160000 (64-bit, non-prefetchable) [size=64K]
 	Capabilities: [70] Power Management version 2
 		Flags: PMEClk- DSI- D1- D2- AuxCurrent=375mA PME(D0-,D1-,D2-,D3hot+,D3cold+)
-		Status: D0 NoSoftRst+ PME-Enable- DSel=0 DScale=0 PME-
+		Status: D3 NoSoftRst+ PME-Enable+ DSel=0 DScale=0 PME-
 	Capabilities: [80] MSI: Enable+ Count=8/8 Maskable- 64bit+
 		Address: 00000000fee00418  Data: 0000
 	Capabilities: [90] Vendor Specific Information: Intel <unknown>
@@ -859,7 +858,7 @@
 	Control: I/O- Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
 	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
 	Latency: 0
-	Interrupts: pin B disabled, MSI(X) routed to IRQ 158-174
+	Interrupts: pin B disabled, MSI(X) routed to IRQ 158, 160-175
 	IOMMU group: 16
 	Region 0: Memory at 8c100000 (64-bit, non-prefetchable) [size=16K]
 	Capabilities: [40] Power Management version 3
@@ -945,7 +944,7 @@
 	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
 	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
 	Latency: 0, Cache Line Size: 64 bytes
-	Interrupts: pin B disabled, MSI(X) routed to IRQ 175
+	Interrupts: pin B disabled, MSI(X) routed to IRQ 159
 	IOMMU group: 17
 	Region 0: I/O ports at 3000 [size=256]
 	Region 2: Memory at 8c004000 (64-bit, non-prefetchable) [size=4K]

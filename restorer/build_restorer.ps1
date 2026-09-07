@@ -141,7 +141,10 @@ if ($ExtractDups) {
         $manual | ForEach-Object { Write-Warning "   $_" }
     }
 }
-Expand-Stubs $driversSrc
+# Expand-Stubs is deliberately NOT run. Dell/NVIDIA stubs (nvlddmkm.sy_) are handled
+# natively by Windows driver setup and installed cleanly on three laptops; expanding
+# them yields underscore-stripped names (nvlddmkm.sy) that stage on a build PC but are
+# unproven during Setup. Keep the packages exactly as Dell extracts them.
 if ($ValidateDrivers) {
     Say "validating every driver package against this PC's driver store (no install)..."
     $bad = @(Test-DriverPackages $driversSrc)

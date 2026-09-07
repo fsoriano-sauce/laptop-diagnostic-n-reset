@@ -37,7 +37,8 @@ Windows Update once the buyer connects, so it is optional.
 | should | Security: Goodix / Synaptics fingerprint | Windows Hello enrolment during OOBE |
 | should | Audio: Realtek High Definition Audio | Speakers work before Windows Update runs |
 | should | Chipset: Intel Serial IO, Intel Chipset Device Software | touchpad and sensors without "unknown device" entries |
-| nice | Video: Intel Iris Xe/UHD, NVIDIA GeForce | correct resolution and GPU at first boot (large downloads) |
+| nice | Video: Intel Iris Xe/UHD | correct resolution at first boot |
+| should | Video: NVIDIA GeForce, **one package in `Common/`** (Dell N8F67, 32.0.15.7283, the older `Display.Driver\` layout) | covers GTX 1650 Ti and RTX 3050/3050 Ti for all three models and has installed cleanly during Setup. Dell's newer MUP-layout NVIDIA packages (a `14393\Drivers\NV\` tree) fail to stage during Setup with "cannot find the file specified" even though they stage on a build PC; do not use them |
 | nice | Chipset: Intel Management Engine, Thunderbolt | clean Device Manager |
 | **never** | Storage: Intel Rapid Storage Technology / VMD / Optane | the laptops run in AHCI mode on Windows' inbox driver. RST tries to claim the boot controller during Setup and blue-screens it (0x1D5). `stage.ps1` skips these by name; delete them from `Dell\Drivers\<Model>\` anyway |
 

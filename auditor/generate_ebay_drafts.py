@@ -22,19 +22,11 @@ from datetime import datetime
 
 EBAY_CATEGORY_ID = "177"  # PC Laptops & Netbooks
 
-# eBay condition IDs
-CONDITION_MAP = {
-    # screen_grade + chassis_grade → eBay condition
-    ("A", "A"): ("3000", "Seller refurbished"),   # Like New
-    ("A", "B"): ("3000", "Seller refurbished"),   # Minor cosmetic
-    ("B", "A"): ("3000", "Seller refurbished"),
-    ("B", "B"): ("7000", "Good - Refurbished"),   # Noticeable wear
-    ("A", "C"): ("7000", "Good - Refurbished"),
-    ("B", "C"): ("7000", "Good - Refurbished"),
-    ("C", "A"): ("7000", "Good - Refurbished"),
-    ("C", "B"): ("7000", "Good - Refurbished"),
-    ("C", "C"): ("7000", "Good - Refurbished"),
-}
+# eBay condition IDs: 3000 = Used, 7000 = For parts or not working.
+# Cosmetic grades belong in the condition description; a working laptop is
+# never "For parts". (2500 "Seller refurbished" left the laptop categories in
+# Aug 2025.)
+CONDITION_MAP = {(sg, cg): ("3000", "Used") for sg in "ABC" for cg in "ABC"}
 
 # ─── Title Builder ───────────────────────────────────────────────────────────
 
@@ -68,43 +60,60 @@ def clean_gpu_name(raw_gpu: str) -> str:
     return ""
 
 
+def format_screen(size) -> str:
+    """15.6 -> '15.6', 16.0 -> '16'; empty for N/A."""
+    try:
+        s = float(size)
+    except (TypeError, ValueError):
+        return ""
+    return str(int(s)) if s == int(s) else f"{s:g}"
+
+
+def format_storage(gb, storage_type: str) -> str:
+    """512 -> '512GB SSD', 1024 -> '1TB SSD'."""
+    try:
+        n = int(float(gb))
+    except (TypeError, ValueError):
+        return ""
+    size = f"{round(n / 1000)}TB" if n >= 1000 else f"{n}GB"
+    st = "SSD" if ("nvme" in storage_type.lower() or "ssd" in storage_type.lower()) else storage_type
+    return f"{size} {st}".strip()
+
+
 def build_title(row: dict) -> str:
     """
-    Build an eBay-optimized listing title (max 80 chars).
-    Template: Dell {Model} {Screen}" {CPU} {RAM}GB {Storage}GB {GPU} Laptop
+    eBay title, max 80 chars, built from measured values only:
+    Dell {Model} {Screen}" {CPU} {RAM}GB {Storage} {GPU} Win 11 Pro Laptop
+    Buyers search "16GB", "1TB", "Win 11", "Laptop"; keep those tokens.
     """
     model = row.get("model", "Laptop")
     cpu = clean_cpu_name(row.get("cpu", ""))
     gpu_short = clean_gpu_name(row.get("gpu", ""))
     ram = row.get("ram_gb", "")
-    storage = row.get("storage_gb", "")
-    storage_type = row.get("storage_type", "")
-    screen = row.get("screen_size_in", "")
+    screen = format_screen(row.get("screen_size_in", ""))
+    storage = format_storage(row.get("storage_gb", ""), row.get("storage_type", ""))
 
-    # Build parts
     parts = [f"Dell {model}"]
-    if screen and screen != "N/A":
+    if screen:
         parts.append(f'{screen}"')
     if cpu:
         parts.append(cpu)
-    if ram:
-        parts.append(f"{ram}GB RAM")
+    if ram and ram != "N/A":
+        parts.append(f"{ram}GB")
     if storage:
-        st = "SSD" if "nvme" in storage_type.lower() or "ssd" in storage_type.lower() else storage_type
-        parts.append(f"{storage}GB {st}")
+        parts.append(storage)
     if gpu_short:
         parts.append(gpu_short)
 
     title = " ".join(parts)
-
-    # Trim to 80 chars
     if len(title) > 80:
-        # Drop GPU if too long
-        parts_no_gpu = [p for p in parts if p != gpu_short]
-        title = " ".join(parts_no_gpu)
+        title = " ".join(p for p in parts if p != gpu_short)
+    for tail in ("Win 11 Pro Laptop", "Win 11 Pro", "Laptop"):
+        if len(title) + 1 + len(tail) <= 80:
+            title = f"{title} {tail}"
+            break
     if len(title) > 80:
         title = title[:77] + "..."
-
     return title
 
 

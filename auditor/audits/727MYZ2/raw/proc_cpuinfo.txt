@@ -33,7 +33,7 @@ model		: 165
 model name	: Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz
 stepping	: 2
 microcode	: 0x100
-cpu MHz		: 900.119
+cpu MHz		: 800.000
 cache size	: 12288 KB
 physical id	: 0
 siblings	: 12
@@ -117,7 +117,7 @@ model		: 165
 model name	: Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz
 stepping	: 2
 microcode	: 0x100
-cpu MHz		: 900.057
+cpu MHz		: 800.000
 cache size	: 12288 KB
 physical id	: 0
 siblings	: 12
@@ -145,7 +145,7 @@ model		: 165
 model name	: Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz
 stepping	: 2
 microcode	: 0x100
-cpu MHz		: 900.017
+cpu MHz		: 800.000
 cache size	: 12288 KB
 physical id	: 0
 siblings	: 12
@@ -285,7 +285,7 @@ model		: 165
 model name	: Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz
 stepping	: 2
 microcode	: 0x100
-cpu MHz		: 899.967
+cpu MHz		: 800.000
 cache size	: 12288 KB
 physical id	: 0
 siblings	: 12

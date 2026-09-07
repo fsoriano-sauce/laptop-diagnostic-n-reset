@@ -5,6 +5,9 @@ to verify every field matches accurately."""
 import csv
 import os
 import re
+import sys
+
+ONLY = {a.strip().upper() for a in sys.argv[1:] if a.strip()}   # verify_listings.py TAG [TAG ...]
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPT_DIR)
@@ -35,7 +38,8 @@ def check(tag, field, expected, actual, exact=True):
 # Load audit source
 with open(AUDIT_PATH, "r", encoding="utf-8") as f:
     # only units still for sale are expected in the upload file
-    audit = {r["service_tag"]: r for r in csv.DictReader(f) if r.get("status") == "audited"}
+    audit = {r["service_tag"]: r for r in csv.DictReader(f)
+             if r.get("status") == "audited" and (not ONLY or r["service_tag"].upper() in ONLY)}
 
 # Load generated CSV (skip header comment line)
 with open(EBAY_PATH, "r", encoding="utf-8") as f:
@@ -66,11 +70,13 @@ for tag in sorted(audit.keys()):
     print(f"  Title: {title}")
     check(tag, "Title contains model", model, title, exact=False)
     check(tag, "Title contains RAM", f"{a['ram_gb']}GB", title.replace(" ", ""), exact=False)
-    check(tag, "Title contains SSD", f"{a['storage_gb']}GB", title.replace(" ", ""), exact=False)
+    gb = int(float(a["storage_gb"])) if a["storage_gb"] not in ("", "N/A") else 0
+    storage_word = f"{round(gb / 1000)}TB" if gb >= 1000 else f"{gb}GB"
+    check(tag, "Title contains SSD", storage_word, title.replace(" ", ""), exact=False)
 
     # 2. CPU
     cpu_audit = a["cpu"]
-    cpu_ebay = e.get("C:Processor", "")
+    cpu_ebay = e.get("*C:Processor") or e.get("C:Processor", "")
     print(f"  CPU audit:  {cpu_audit}")
     print(f"  CPU eBay:   {cpu_ebay}")
     # Check generation is correct
@@ -96,7 +102,7 @@ for tag in sorted(audit.keys()):
     storage_type_ebay = e.get("C:Storage Type", "")
     print(f"  Storage audit: {storage_audit} GB {a['storage_type']}")
     print(f"  Storage eBay:  SSD={ssd_ebay}, HDD={hdd_ebay}, Type={storage_type_ebay}")
-    check(tag, "SSD capacity", f"{storage_audit} GB", ssd_ebay)
+    check(tag, "SSD capacity", f"{round(gb / 1000)} TB" if gb >= 1000 else f"{gb} GB", ssd_ebay)
     if a["storage_type"] == "NVMe":
         check(tag, "Storage type", "SSD", storage_type_ebay, exact=False)
 
@@ -113,8 +119,8 @@ for tag in sorted(audit.keys()):
     # 6. SCREEN
     screen_audit = a["screen_size_in"]
     res_audit = a["resolution"]
-    screen_ebay = e.get("C:Screen Size", "")
-    res_ebay = e.get("C:Max. Resolution", "")
+    screen_ebay = e.get("*C:Screen Size") or e.get("C:Screen Size", "")
+    res_ebay = e.get("C:Maximum Resolution") or e.get("C:Max. Resolution", "")
     print(f"  Screen audit: {screen_audit} in, {res_audit}")
     print(f"  Screen eBay:  {screen_ebay}, {res_ebay}")
     # Check screen size number is in the value
@@ -213,7 +219,7 @@ for tag in sorted(audit.keys()):
     print(f"  OS: {os_ebay}")
     check(tag, "OS contains Windows 11", "Windows 11", os_ebay, exact=False)
 
-    brand = e.get("C:Brand", "")
+    brand = e.get("*C:Brand") or e.get("C:Brand", "")
     check(tag, "Brand is Dell", "Dell", brand)
 
     color = e.get("C:Color", "")

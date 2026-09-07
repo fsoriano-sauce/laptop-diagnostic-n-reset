@@ -21,8 +21,8 @@
     "exit_status": 0
   },
   "local_time": {
-    "time_t": 1788782868,
-    "asctime": "Mon Sep  7 12:07:48 2026 UTC"
+    "time_t": 1788790092,
+    "asctime": "Mon Sep  7 14:08:12 2026 UTC"
   },
   "device": {
     "name": "/dev/nvme0n1",
@@ -30,15 +30,17 @@
     "type": "nvme",
     "protocol": "NVMe"
   },
-  "model_name": "BC901 NVMe SK hynix 512GB",
-  "serial_number": "4YBBN01281320BH6L",
-  "firmware_version": "51005151",
+  "model_name": "KBG50ZNS512G NVMe KIOXIA 512GB",
+  "serial_number": "Z2KC14VJE6CK",
+  "firmware_version": "11200109",
   "nvme_pci_vendor": {
-    "id": 7260,
-    "subsystem_id": 7260
+    "id": 7695,
+    "subsystem_id": 7695
   },
-  "nvme_ieee_oui_identifier": 11330606,
-  "nvme_controller_id": 1,
+  "nvme_ieee_oui_identifier": 9233294,
+  "nvme_total_capacity": 512110190592,
+  "nvme_unallocated_capacity": 0,
+  "nvme_controller_id": 0,
   "nvme_version": {
     "string": "1.4",
     "value": 66560
@@ -61,13 +63,13 @@
       },
       "formatted_lba_size": 512,
       "eui64": {
-        "oui": 11330606,
-        "ext_id": 723245039
+        "oui": 9233294,
+        "ext_id": 68737717598
       },
       "features": {
-        "value": 0,
+        "value": 2,
         "thin_provisioning": false,
-        "na_fields": false,
+        "na_fields": true,
         "dealloc_or_unwritten_block_error": false,
         "uid_reuse": false,
         "np_fields": false,
@@ -78,7 +80,13 @@
           "formatted": true,
           "data_bytes": 512,
           "metadata_bytes": 0,
-          "relative_performance": 0
+          "relative_performance": 2
+        },
+        {
+          "formatted": false,
+          "data_bytes": 4096,
+          "metadata_bytes": 0,
+          "relative_performance": 1
         }
       ]
     }
@@ -93,8 +101,8 @@
     "enabled": true
   },
   "nvme_firmware_update_capabilities": {
-    "value": 22,
-    "slots": 3,
+    "value": 20,
+    "slots": 2,
     "first_slot_is_read_only": false,
     "activiation_without_reset": true,
     "multiple_update_detection": false,
@@ -139,7 +147,7 @@
     "telemetry_data_area_4": false,
     "other": 0
   },
-  "nvme_maximum_data_transfer_pages": 64,
+  "nvme_maximum_data_transfer_pages": 512,
   "nvme_composite_temperature_threshold": {
     "warning": 83,
     "critical": 85
@@ -147,7 +155,7 @@
   "temperature": {
     "op_limit_max": 83,
     "critical_limit_max": 85,
-    "current": 33
+    "current": 26
   },
   "nvme_power_states": [
     {
@@ -156,12 +164,12 @@
       "relative_read_throughput": 0,
       "relative_write_latency": 0,
       "relative_write_throughput": 0,
-      "entry_latency_us": 100,
-      "exit_latency_us": 100,
+      "entry_latency_us": 1,
+      "exit_latency_us": 1,
       "max_power": {
-        "value": 45000,
-        "scale": 1,
-        "units_per_watt": 10000
+        "value": 410,
+        "scale": 2,
+        "units_per_watt": 100
       }
     },
     {
@@ -170,12 +178,12 @@
       "relative_read_throughput": 1,
       "relative_write_latency": 1,
       "relative_write_throughput": 1,
-      "entry_latency_us": 200,
-      "exit_latency_us": 200,
+      "entry_latency_us": 1,
+      "exit_latency_us": 1,
       "max_power": {
-        "value": 30000,
-        "scale": 1,
-        "units_per_watt": 10000
+        "value": 260,
+        "scale": 2,
+        "units_per_watt": 100
       }
     },
     {
@@ -184,12 +192,12 @@
       "relative_read_throughput": 2,
       "relative_write_latency": 2,
       "relative_write_throughput": 2,
-      "entry_latency_us": 400,
-      "exit_latency_us": 400,
+      "entry_latency_us": 1,
+      "exit_latency_us": 1,
       "max_power": {
-        "value": 6000,
-        "scale": 1,
-        "units_per_watt": 10000
+        "value": 130,
+        "scale": 2,
+        "units_per_watt": 100
       }
     },
     {
@@ -198,10 +206,10 @@
       "relative_read_throughput": 3,
       "relative_write_latency": 3,
       "relative_write_throughput": 3,
-      "entry_latency_us": 2000,
-      "exit_latency_us": 2000,
+      "entry_latency_us": 800,
+      "exit_latency_us": 1000,
       "max_power": {
-        "value": 150,
+        "value": 500,
         "scale": 1,
         "units_per_watt": 10000
       }
@@ -212,8 +220,8 @@
       "relative_read_throughput": 4,
       "relative_write_latency": 4,
       "relative_write_throughput": 4,
-      "entry_latency_us": 5000,
-      "exit_latency_us": 10000,
+      "entry_latency_us": 3000,
+      "exit_latency_us": 44900,
       "max_power": {
         "value": 30,
         "scale": 1,
@@ -230,25 +238,24 @@
   "nvme_smart_health_information_log": {
     "nsid": -1,
     "critical_warning": 0,
-    "temperature": 33,
+    "temperature": 26,
     "available_spare": 100,
     "available_spare_threshold": 50,
-    "percentage_used": 7,
-    "data_units_read": 89368067,
-    "data_units_written": 125610783,
-    "host_reads": 1367662738,
-    "host_writes": 2699766195,
-    "controller_busy_time": 39166,
-    "power_cycles": 757,
-    "power_on_hours": 8087,
-    "unsafe_shutdowns": 26,
+    "percentage_used": 12,
+    "data_units_read": 53669975,
+    "data_units_written": 107348416,
+    "host_reads": 793282595,
+    "host_writes": 2823134318,
+    "controller_busy_time": 3340,
+    "power_cycles": 179,
+    "power_on_hours": 16355,
+    "unsafe_shutdowns": 33,
     "media_errors": 0,
     "num_err_log_entries": 0,
     "warning_temp_time": 0,
     "critical_comp_time": 0,
     "temperature_sensors": [
-      33,
-      35
+      26
     ]
   },
   "spare_available": {
@@ -256,11 +263,11 @@
     "threshold_percent": 50
   },
   "endurance_used": {
-    "current_percent": 7
+    "current_percent": 12
   },
-  "power_cycle_count": 757,
+  "power_cycle_count": 179,
   "power_on_time": {
-    "hours": 8087
+    "hours": 16355
   },
   "nvme_error_information_log": {
     "size": 256,
@@ -283,7 +290,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 7041
+        "power_on_hours": 16259
       },
       {
         "self_test_code": {
@@ -294,7 +301,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 6832
+        "power_on_hours": 16041
       },
       {
         "self_test_code": {
@@ -305,7 +312,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 6605
+        "power_on_hours": 15752
       },
       {
         "self_test_code": {
@@ -316,7 +323,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 6072
+        "power_on_hours": 15542
       },
       {
         "self_test_code": {
@@ -327,7 +334,18 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 5769
+        "power_on_hours": 14800
+      },
+      {
+        "self_test_code": {
+          "value": 1,
+          "string": "Short"
+        },
+        "self_test_result": {
+          "value": 2,
+          "string": "Aborted: Controller Reset"
+        },
+        "power_on_hours": 14152
       },
       {
         "self_test_code": {
@@ -338,7 +356,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 5502
+        "power_on_hours": 13690
       },
       {
         "self_test_code": {
@@ -349,7 +367,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 5342
+        "power_on_hours": 12764
       },
       {
         "self_test_code": {
@@ -360,7 +378,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 5161
+        "power_on_hours": 12027
       },
       {
         "self_test_code": {
@@ -371,7 +389,18 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 4930
+        "power_on_hours": 11314
+      },
+      {
+        "self_test_code": {
+          "value": 1,
+          "string": "Short"
+        },
+        "self_test_result": {
+          "value": 2,
+          "string": "Aborted: Controller Reset"
+        },
+        "power_on_hours": 9829
       },
       {
         "self_test_code": {
@@ -382,7 +411,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 4696
+        "power_on_hours": 9073
       },
       {
         "self_test_code": {
@@ -393,7 +422,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 4448
+        "power_on_hours": 8318
       },
       {
         "self_test_code": {
@@ -404,7 +433,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 4184
+        "power_on_hours": 7619
       },
       {
         "self_test_code": {
@@ -415,7 +444,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 3962
+        "power_on_hours": 6857
       },
       {
         "self_test_code": {
@@ -426,7 +455,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 3704
+        "power_on_hours": 6127
       },
       {
         "self_test_code": {
@@ -437,7 +466,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 3436
+        "power_on_hours": 5373
       },
       {
         "self_test_code": {
@@ -448,7 +477,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 3177
+        "power_on_hours": 4667
       },
       {
         "self_test_code": {
@@ -459,7 +488,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 2912
+        "power_on_hours": 3912
       },
       {
         "self_test_code": {
@@ -470,29 +499,7 @@
           "value": 0,
           "string": "Completed without error"
         },
-        "power_on_hours": 2613
-      },
-      {
-        "self_test_code": {
-          "value": 1,
-          "string": "Short"
-        },
-        "self_test_result": {
-          "value": 0,
-          "string": "Completed without error"
-        },
-        "power_on_hours": 2366
-      },
-      {
-        "self_test_code": {
-          "value": 1,
-          "string": "Short"
-        },
-        "self_test_result": {
-          "value": 0,
-          "string": "Completed without error"
-        },
-        "power_on_hours": 2154
+        "power_on_hours": 3158
       }
     ]
   }

@@ -5,13 +5,13 @@ available_spare				: 100%
 available_spare_threshold		: 50%
 percentage_used				: 6%
 endurance group critical warning summary: 0
-Data Units Read				: 89323630 (45.73 TB)
+Data Units Read				: 89323702 (45.73 TB)
 Data Units Written			: 125518427 (64.27 TB)
-host_read_commands			: 1367328131
+host_read_commands			: 1367328677
 host_write_commands			: 2699244746
 controller_busy_time			: 39162
-power_cycles				: 746
-power_on_hours				: 8086
+power_cycles				: 749
+power_on_hours				: 8087
 unsafe_shutdowns			: 25
 media_errors				: 0
 num_err_log_entries			: 0

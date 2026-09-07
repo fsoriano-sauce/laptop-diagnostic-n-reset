@@ -1,34 +1,33 @@
-=== Restorer stage report  2026-09-07 15:41:19 ===
+=== Restorer stage report  2026-09-07 13:35:44 ===
 Service tag : 727MYZ2
 Model       : Vostro 7500
 USB         : D:
 Work dir    : C:\Dell
 
 Driver folders matched for this model:
-  D:\Dell\Drivers\Common  (4 .inf) -> copied 4 .inf to C:\Dell\Drivers\Common in 95s (robocopy rc 1)
-  D:\Dell\Drivers\Vostro 7500  (84 .inf) -> copied 84 .inf to C:\Dell\Drivers\Vostro 7500 in 141s (robocopy rc 1)
+  D:\Dell\Drivers\Vostro 7500  (88 .inf) -> copied 88 .inf to C:\Dell\Drivers\Vostro 7500 in 58s (robocopy rc 1)
 
 Driver install (pnputil, per package; 0 = installed, 259 = added, some INFs had no matching device here (normal for multi-model packages), 3010 = installed + reboot pending):
-  rc    0    4 inf     90s  NVIDIA-GeForce-MXxx0-GTX-16x0-RTX-30x0-Graphics-Driver_N8F67_WIN64_32.0.15.7283_A21
   rc    0    2 inf      1s  Goodix-Fingerprint-Sensor-Driver_GR86V_WIN64_3.20.30.110_A00
-  rc    0    2 inf      9s  Intel-BE200-BE202-AX411-AX211-AX210-AX201-AX200-9560-9462-9260_4GTDX_WIN_23.90.0.2_A58_02
-  rc    0    2 inf      2s  Intel-Dynamic-Tuning-Driver_H5M3J_WIN64_8.7.10802.26924_A16_02
+  rc 3010    2 inf      7s  Intel-BE200-BE202-AX411-AX211-AX210-AX201-AX200-9560-9462-9260_4GTDX_WIN_23.90.0.2_A58_02
+  rc    0    2 inf      1s  Intel-Dynamic-Tuning-Driver_H5M3J_WIN64_8.7.10802.26924_A16_02
   rc    0    1 inf      0s  Intel-HID-Event-Filter-Driver_RKPC4_WIN64_2.2.2.9_A21_01
-  rc    0    3 inf      4s  Intel-Integrated-Sensor-Solution-Driver_8H4MT_WIN_3.10.100.4140_A01_02
+  rc    0    3 inf      2s  Intel-Integrated-Sensor-Solution-Driver_8H4MT_WIN_3.10.100.4140_A01_02
   rc 3010    4 inf      1s  Intel-Serial-IO-Driver_3MK53_WIN_30.100.2020.7_A06_07
   rc  259    5 inf     62s  Intel-Thunderbolt-Controller-Driver_TBTC4_WIN_1.41.1335.0_A14_02
-  rc  259   10 inf     94s  Intel-UHD-Graphics-Driver_098W2_WIN64_31.0.101.2130_A06
+  rc  259   10 inf    100s  Intel-UHD-Graphics-Driver_098W2_WIN64_31.0.101.2130_A06
   rc    0    7 inf      7s  Intel-Wireless-AX200-AX201-9260-9560-9462-8265-8260-7265-3165_C6C99_WIN_21.70.0.3_A17_05
-  rc    0   11 inf     11s  Killer-BE1750-AX1690-AX1675-AX1650-and-Intel-BE202-BE201-BE200-AX411-AX211-AX210-AX201-AX200-9560-9462-9260_P766C_WIN64_23.90.0.8_A51_03
-  rc  259   34 inf     64s  Realtek-High-Definition-Audio-Driver_KKY25_WIN_6.0.9517.1_A84
+  rc    0   11 inf     12s  Killer-BE1750-AX1690-AX1675-AX1650-and-Intel-BE202-BE201-BE200-AX411-AX211-AX210-AX201-AX200-9560-9462-9260_P766C_WIN64_23.90.0.8_A51_03
+  rc    0    4 inf    124s  NVIDIA-GeForce-MXxx0-GTX-16x0-RTX-30x0-Graphics-Driver_N8F67_WIN64_32.0.15.7283_A21
+  rc  259   34 inf     71s  Realtek-High-Definition-Audio-Driver_KKY25_WIN_6.0.9517.1_A84
   rc    0    3 inf      1s  Realtek-Memory-Card-Reader-Driver_NPC2Y_WIN64_10.0.22621.31278_A01_01
 
 Windows     : Microsoft Windows 11 Pro  25H2  build 26200.8037  edition Professional
 OEM key     : present, ends ...Y4G6P  (activates on first internet connection)
-Secure Boot : ON
+Secure Boot : OFF - turn on in BIOS before shipping
 TPM         : present=True spec=2.0, 0, 1.38
 Disks       :
-  Generic Flash Disk  59 GB  bus=USB  media=Unspecified
+  ASolid USB  59 GB  bus=USB  media=Unspecified
   Micron 2200S NVMe 1024GB  954 GB  bus=NVMe  media=SSD
 
 Devices with problems (snapshot before the first restart; chipset/ME/thermal entries here are filled by Windows Update):
@@ -61,4 +60,4 @@ Key devices:
   [OK] HIDClass: Intel(R) HID Event Filter
   [OK] HIDClass: HID PCI Minidriver for ISS
 
-=== end 2026-09-07 15:51:15 ===
+=== end 2026-09-07 13:43:24 ===

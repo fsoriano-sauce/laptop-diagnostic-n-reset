@@ -36,6 +36,7 @@ Rule: while one unit installs, audit the next. Plan ~2 hours for three.
 | Setup asks for a product key | | no OEM key in firmware; the audit's `oem_key_present` says so |
 | No `Dell\Reports\<TAG>.txt` | `Dell\Reports\_stage-cmd.log` | stick not found by letter; try another USB port |
 | Report stops after "Driver folders matched" | stick dropped mid-install (fixed: drivers now copy to C: first) | at the OOBE screen press **Shift+F10**, then `for %d in (D E F G H) do @if exist %d:\Dell\Scripts\stage.cmd %d:\Dell\Scripts\stage.cmd %d:` and wait for it to return |
+| Setup loops on "The computer restarted unexpectedly" at the Dell logo | a blue screen during driver staging; `C:\Windows\Minidump` has the dump | fixed: Intel RST/VMD packages are skipped (they hang the boot controller, bugcheck 0x1D5). Rerun Auditor then Restorer. To pull logs first: Shift+F10 at the dialog and copy `C:\Dell\Reports`, `C:\Windows\Panther`, `C:\Windows\Minidump` to the stick |
 | A device listed under "Devices with problems" | that line | add the matching Dell package to `Dell\Drivers\<Model>\`, rebuild the stick |
 | No speakers / no camera in Windows | Device Manager | same: missing driver |
 | Setup keeps saying "internet connection lost"; Windows Update says certification expired; taskbar date is years off | the unit's real-time clock (the auditor warns `laptop clock reads …`) | set the date/time by hand, Sync now. If it is wrong again after a night powered off, replace the CMOS coin cell before shipping: a buyer would hit the same bounce at setup |

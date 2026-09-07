@@ -31,7 +31,7 @@
 [CmdletBinding()]
 param(
     [string[]]$Models = @("Vostro 7620", "Vostro 15 7510", "Vostro 7500"),
-    [string[]]$Categories = @("Network", "Audio", "Chipset", "Security", "Video", "Mouse", "Input", "Serial ATA", "Storage"),
+    [string[]]$Categories = @("Network", "Audio", "Chipset", "Security", "Video", "Mouse", "Input"),   # no "Serial ATA"/"Storage": RST/VMD drivers hang Setup in AHCI mode
     [switch]$ListOnly,
     [switch]$IncludeBios
 )

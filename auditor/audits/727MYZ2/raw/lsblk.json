@@ -58,62 +58,7 @@
          "model": "Micron 2200S NVMe 1024GB",
          "serial": "201527701FBE",
          "vendor": null,
-         "mountpoints": [],
-         "children": [
-            {
-               "name": "nvme0n1p1",
-               "path": "/dev/nvme0n1p1",
-               "type": "part",
-               "rm": false,
-               "hotplug": false,
-               "size": 104857600,
-               "tran": "nvme",
-               "rota": false,
-               "model": null,
-               "serial": null,
-               "vendor": null,
-               "mountpoints": []
-            },{
-               "name": "nvme0n1p2",
-               "path": "/dev/nvme0n1p2",
-               "type": "part",
-               "rm": false,
-               "hotplug": false,
-               "size": 16777216,
-               "tran": "nvme",
-               "rota": false,
-               "model": null,
-               "serial": null,
-               "vendor": null,
-               "mountpoints": []
-            },{
-               "name": "nvme0n1p3",
-               "path": "/dev/nvme0n1p3",
-               "type": "part",
-               "rm": false,
-               "hotplug": false,
-               "size": 1023378718720,
-               "tran": "nvme",
-               "rota": false,
-               "model": null,
-               "serial": null,
-               "vendor": null,
-               "mountpoints": []
-            },{
-               "name": "nvme0n1p4",
-               "path": "/dev/nvme0n1p4",
-               "type": "part",
-               "rm": false,
-               "hotplug": false,
-               "size": 706740224,
-               "tran": "nvme",
-               "rota": false,
-               "model": null,
-               "serial": null,
-               "vendor": null,
-               "mountpoints": []
-            }
-         ]
+         "mountpoints": []
       }
    ]
 }

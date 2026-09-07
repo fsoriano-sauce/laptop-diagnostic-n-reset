@@ -86,7 +86,7 @@ B: MSC=10
 I: Bus=0010 Vendor=001f Product=0001 Version=0100
 N: Name="PC Speaker"
 P: Phys=isa0061/input0
-S: Sysfs=/devices/platform/pcspkr/input/input12
+S: Sysfs=/devices/platform/pcspkr/input/input13
 U: Uniq=
 H: Handlers=kbd event10 
 B: PROP=0
@@ -96,7 +96,7 @@ B: SND=6
 I: Bus=0011 Vendor=0002 Product=0001 Version=0000
 N: Name="PS/2 Generic Mouse"
 P: Phys=isa0060/serio1/input0
-S: Sysfs=/devices/platform/i8042/serio1/input/input13
+S: Sysfs=/devices/platform/i8042/serio1/input/input12
 U: Uniq=
 H: Handlers=event11 mouse0 
 B: PROP=1

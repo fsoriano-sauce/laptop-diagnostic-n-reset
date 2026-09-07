@@ -773,7 +773,7 @@
 		LnkCtl2: Target Link Speed: 8GT/s, EnterCompliance- SpeedDis-
 			 Transmit Margin: Normal Operating Range, EnterModifiedCompliance- ComplianceSOS-
 			 Compliance Preset/De-emphasis: -6dB de-emphasis, 0dB preshoot
-		LnkSta2: Current De-emphasis Level: -6dB, EqualizationComplete+ EqualizationPhase1+
+		LnkSta2: Current De-emphasis Level: -3.5dB, EqualizationComplete+ EqualizationPhase1+
 			 EqualizationPhase2+ EqualizationPhase3+ LinkEqualizationRequest-
 			 Retimer- 2Retimers- CrosslinkRes: unsupported, FltMode-
 	Capabilities: [50] Capability ID 0x15 [0000]
@@ -1110,7 +1110,7 @@
 	Control: I/O- Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
 	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
 	Latency: 0
-	Interrupts: pin B disabled, MSI(X) routed to IRQ 142-157
+	Interrupts: pin B disabled, MSI(X) routed to IRQ 141-156
 	Region 0: Memory at 9a300000 (32-bit, non-prefetchable) [size=256K]
 	Region 1: Memory at 9a340000 (32-bit, non-prefetchable) [size=4K]
 	Capabilities: [80] Power Management version 3
@@ -1265,7 +1265,7 @@
 	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+
 	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
 	Latency: 0
-	Interrupts: pin B disabled, MSI(X) routed to IRQ 141, 158-169
+	Interrupts: pin B disabled, MSI(X) routed to IRQ 157-169
 	Region 0: Memory at 9c100000 (64-bit, non-prefetchable) [size=16K]
 	Region 4: Memory at 9c104000 (64-bit, non-prefetchable) [size=256]
 	Capabilities: [80] Power Management version 3

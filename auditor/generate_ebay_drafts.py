@@ -89,7 +89,9 @@ def build_title(row: dict) -> str:
     Dell {Model} {Screen}" {CPU} {RAM}GB {Storage} {GPU} Win 11 Pro Laptop
     Buyers search "16GB", "1TB", "Win 11", "Laptop"; keep those tokens.
     """
-    model = row.get("model", "Laptop")
+    # "Vostro 15 7510" -> "Vostro 7510": buyers search the number, and the
+    # three characters are what lets "Win 11 Pro No Charger" fit in 80.
+    model = row.get("model", "Laptop").replace("Vostro 15 ", "Vostro ")
     cpu = clean_cpu_name(row.get("cpu", ""))
     gpu_short = clean_gpu_name(row.get("gpu", ""))
     ram = row.get("ram_gb", "")
@@ -113,7 +115,7 @@ def build_title(row: dict) -> str:
         title = " ".join(p for p in parts if p != gpu_short)
     tails = ("Win 11 Pro Laptop", "Win 11 Pro", "Laptop")
     if row.get("charger", "Y") != "Y":
-        tails = ("Win 11 Pro No Charger", "No Charger")
+        tails = ("Win 11 Pro No Charger", "Win11 Pro No Charger", "Win 11 No Charger", "No Charger")
     for tail in tails:
         if len(title) + 1 + len(tail) <= 80:
             title = f"{title} {tail}"

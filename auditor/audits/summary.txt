@@ -21,3 +21,8 @@
 2026-09-07T17:10:36+00:00  F8ZSFS3  Vostro 7620        batt 93%  ssd 512GB wear 4%  scr/body A/B  erase nvme_format_ses1  warn 0
 2026-09-07T17:10:37+00:00  51WBXL3  Vostro 7620        batt 95%  ssd 512GB wear 11%  scr/body A/B  erase nvme_format_ses1  warn 0
 2026-09-07T16:03:31+00:00  HWR9LS3  Vostro 7620        batt 85%  ssd 512GB wear 5%  scr/body A/B  erase nvme_format_ses1  warn 0
+2026-09-07T18:35:11+00:00  F5R6CL3  Vostro 15 7510     batt 95%  ssd 512GB wear 0%  scr/body A/B  erase nvme_format_ses1  warn 0
+2026-09-07T18:44:42+00:00  D70SVG3  Vostro 15 7510     batt 49%  ssd 512GB wear 15%  scr/body A/B  erase nvme_format_ses1  warn 1
+2026-09-07T18:46:51+00:00  43XFKG3  Vostro 15 7510     batt 90%  ssd 512GB wear 26%  scr/body A/B  erase nvme_format_ses1  warn 0
+2026-09-07T21:37:23+00:00  7LCTF63  Vostro 7500        batt 90%  ssd 512GB wear 12%  scr/body A/B  erase nvme_format_ses1  warn 0
+2026-09-07T17:31:00+00:00  GT3X9S3  Vostro 7620        batt 79%  ssd 512GB wear 27%  scr/body A/B  erase nvme_format_ses1  warn 0

@@ -1,0 +1,84 @@
+Device: /org/freedesktop/UPower/devices/battery_BAT0
+  native-path:          BAT0
+  vendor:               SMP
+  model:                DELL P8P1P95
+  serial:               1646
+  power supply:         yes
+  updated:              Mon 07 Sep 2026 06:47:23 PM UTC (0 seconds ago)
+  has history:          yes
+  has statistics:       yes
+  battery
+    present:             yes
+    rechargeable:        yes
+    state:               charging
+    warning-level:       none
+    energy:              6.3954 Wh
+    energy-empty:        0 Wh
+    energy-full:         49.1682 Wh
+    energy-full-design:  54.891 Wh
+    voltage-min-design:  11.4 V
+    capacity-level:      Normal
+    energy-rate:         22.629 W
+    voltage:             12.181 V
+    charge-cycles:       N/A
+    time to full:        1.9 hours
+    percentage:          13%
+    temperature:         26.7 degrees C
+    capacity:            89.5742%
+    technology:          lithium-polymer
+    charge-start-threshold:        75%
+    charge-end-threshold:          80%
+    charge-threshold-supported:    yes
+    icon-name:          'battery-caution-charging-symbolic'
+  History (charge):
+    1788806843	13.000	charging
+  History (rate):
+    1788806843	22.629	charging
+  History (voltage):
+    1788806843	12.181	charging
+
+Device: /org/freedesktop/UPower/devices/line_power_AC
+  native-path:          AC
+  power supply:         yes
+  updated:              Mon 07 Sep 2026 06:47:23 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  line-power
+    warning-level:       none
+    online:              yes
+    icon-name:          'ac-adapter-symbolic'
+
+Device: /org/freedesktop/UPower/devices/line_power_ucsi_source_psy_USBC000o001
+  native-path:          ucsi-source-psy-USBC000:001
+  power supply:         yes
+  updated:              Mon 07 Sep 2026 06:47:23 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  line-power
+    warning-level:       none
+    online:              no
+    icon-name:          'ac-adapter-symbolic'
+
+Device: /org/freedesktop/UPower/devices/DisplayDevice
+  power supply:         yes
+  updated:              Mon 07 Sep 2026 06:47:23 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  battery
+    present:             yes
+    state:               charging
+    warning-level:       none
+    energy:              6.3954 Wh
+    energy-full:         49.1682 Wh
+    energy-rate:         22.629 W
+    charge-cycles:       N/A
+    time to full:        1.9 hours
+    percentage:          13%
+    icon-name:          'battery-caution-charging-symbolic'
+
+Daemon:
+  daemon-version:  1.91.3
+  on-battery:      no
+  lid-is-closed:   no
+  lid-is-present:  yes
+  critical-action: Sleep

@@ -1,0 +1,84 @@
+Device: /org/freedesktop/UPower/devices/battery_BAT0
+  native-path:          BAT0
+  vendor:               BYD
+  model:                DELL DVG8M1C
+  serial:               1158
+  power supply:         yes
+  updated:              Mon 07 Sep 2026 06:35:49 PM UTC (0 seconds ago)
+  has history:          yes
+  has statistics:       yes
+  battery
+    present:             yes
+    rechargeable:        yes
+    state:               charging
+    warning-level:       none
+    energy:              9.12 Wh
+    energy-empty:        0 Wh
+    energy-full:         52.0296 Wh
+    energy-full-design:  54.891 Wh
+    voltage-min-design:  11.4 V
+    capacity-level:      Normal
+    energy-rate:         22.9482 W
+    voltage:             12.034 V
+    charge-cycles:       N/A
+    time to full:        1.9 hours
+    percentage:          18%
+    temperature:         25.2 degrees C
+    capacity:            94.7871%
+    technology:          lithium-polymer
+    charge-start-threshold:        75%
+    charge-end-threshold:          80%
+    charge-threshold-supported:    yes
+    icon-name:          'battery-caution-charging-symbolic'
+  History (charge):
+    1788806149	18.000	charging
+  History (rate):
+    1788806149	22.948	charging
+  History (voltage):
+    1788806149	12.034	charging
+
+Device: /org/freedesktop/UPower/devices/line_power_AC
+  native-path:          AC
+  power supply:         yes
+  updated:              Mon 07 Sep 2026 06:35:49 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  line-power
+    warning-level:       none
+    online:              yes
+    icon-name:          'ac-adapter-symbolic'
+
+Device: /org/freedesktop/UPower/devices/line_power_ucsi_source_psy_USBC000o001
+  native-path:          ucsi-source-psy-USBC000:001
+  power supply:         yes
+  updated:              Mon 07 Sep 2026 06:35:49 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  line-power
+    warning-level:       none
+    online:              no
+    icon-name:          'ac-adapter-symbolic'
+
+Device: /org/freedesktop/UPower/devices/DisplayDevice
+  power supply:         yes
+  updated:              Mon 07 Sep 2026 06:35:49 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  battery
+    present:             yes
+    state:               charging
+    warning-level:       none
+    energy:              9.12 Wh
+    energy-full:         52.0296 Wh
+    energy-rate:         22.9482 W
+    charge-cycles:       N/A
+    time to full:        1.9 hours
+    percentage:          18%
+    icon-name:          'battery-caution-charging-symbolic'
+
+Daemon:
+  daemon-version:  1.91.3
+  on-battery:      no
+  lid-is-closed:   no
+  lid-is-present:  yes
+  critical-action: Sleep

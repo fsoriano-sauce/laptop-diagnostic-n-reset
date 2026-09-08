@@ -1,0 +1,187 @@
+{
+  "audited_at": "2026-09-07T21:37:23+00:00",
+  "auditor_version": "3.1",
+  "battery": {
+    "charge_pct": 91,
+    "cycles": null,
+    "design_wh": 56.0,
+    "full_wh": 50.2,
+    "health_pct": 90,
+    "manufacturer": "LGC-LGC4.64",
+    "model": "DELL 5D91C07",
+    "present": true,
+    "serial": "1271",
+    "status": "Charging"
+  },
+  "cpu": {
+    "cores": 6,
+    "generation": 10,
+    "model": "Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz",
+    "threads": 12
+  },
+  "display": {
+    "aspect": "16:9",
+    "connector": "card1-eDP-1",
+    "diagonal_in": 15.6,
+    "height_px": 1080,
+    "panel_name": null,
+    "physical_mm": [
+      344,
+      194
+    ],
+    "resolution": "1920x1080",
+    "resolution_class": "Standard",
+    "width_px": 1920
+  },
+  "erase": {
+    "duration_s": 10.3,
+    "error": null,
+    "method": "nvme_format_ses1",
+    "performed": true,
+    "verified_blank": true
+  },
+  "features": {
+    "backlit_keyboard": "yes",
+    "bluetooth": "yes",
+    "fingerprint_reader": "yes",
+    "touchscreen": "no",
+    "webcam": "yes",
+    "wifi_card": "Intel Corporation 400 Series Chipset Family CNVi Wi-Fi [8086:06f0]",
+    "wifi_standard": "Wi-Fi 6 (802.11ax)"
+  },
+  "gpu": {
+    "discrete": "NVIDIA Corporation TU117M [GeForce GTX 1650 Ti Mobile] [10de:1f95] (rev a1)",
+    "integrated": "Intel Corporation CometLake-H GT2 [UHD Graphics] [8086:9bc4] (rev 05)"
+  },
+  "grades": {
+    "charger": "N",
+    "chassis_grade": "B",
+    "chassis_note": "normal",
+    "color": "Gray",
+    "screen_grade": "A",
+    "screen_note": null
+  },
+  "identity": {
+    "bios_date": "07/06/2023",
+    "bios_version": "1.24.0",
+    "chassis_type": "10",
+    "express_service_code": "16528794123",
+    "family": "Vostro",
+    "manufacturer": "Dell Inc.",
+    "model": "Vostro 7500",
+    "service_tag": "7LCTF63",
+    "sku": "09F0"
+  },
+  "license": {
+    "oem_key_present": true,
+    "oem_key_suffix": "2WF9C"
+  },
+  "memory": {
+    "modules": [
+      {
+        "form_factor": "SODIMM",
+        "manufacturer": "80CE000080CE",
+        "part_number": "M471A1G44AB0-CWE",
+        "size_gb": 8,
+        "speed_mts": 2933,
+        "type": "DDR4"
+      },
+      {
+        "form_factor": "SODIMM",
+        "manufacturer": "04CB00000000",
+        "part_number": "AO1P32NC8T1-BZ4SHD",
+        "size_gb": 8,
+        "speed_mts": 2933,
+        "type": "DDR4"
+      }
+    ],
+    "slots_total": 2,
+    "slots_used": 2,
+    "total_gb": 16,
+    "type": "DDR4"
+  },
+  "preflight": {
+    "other_internal_disks": [],
+    "storage_mode": "ahci"
+  },
+  "raw_files": [
+    "amixer.txt",
+    "bluetoothctl.txt",
+    "console.log",
+    "dmesg.txt",
+    "dmidecode-memory.txt",
+    "dmidecode.txt",
+    "edid-card1-eDP-1.bin",
+    "iw-list.txt",
+    "lsblk.json",
+    "lscpu.txt",
+    "lspci-n.txt",
+    "lspci-nn.txt",
+    "lspci-vga.txt",
+    "lspci-vvv.txt",
+    "lsusb.txt",
+    "msdm.txt",
+    "nvme-id-ctrl.json",
+    "nvme-smart-log.txt",
+    "proc_asound_cards.txt",
+    "proc_bus_input_devices.txt",
+    "proc_cpuinfo.txt",
+    "proc_meminfo.txt",
+    "rfkill.txt",
+    "smartctl.json",
+    "sys-class-leds.txt",
+    "sysfs-BAT0.txt",
+    "udev-input.txt",
+    "uname.txt",
+    "upower.txt",
+    "xrandr.txt"
+  ],
+  "schema": 3,
+  "status": "audited",
+  "storage": {
+    "critical_warning": 0,
+    "data_written_tb": 33.46,
+    "device": "/dev/nvme0n1",
+    "firmware": "10410106",
+    "media_errors": 0,
+    "model": "KBG40ZNS512G NVMe KIOXIA 512GB",
+    "percentage_used": 12,
+    "power_cycles": 507,
+    "power_on_hours": 10099,
+    "present": true,
+    "rotational": false,
+    "serial": "Y0LPHB8BQUN1",
+    "size_bytes": 512110190592,
+    "size_gb": 512,
+    "smart_passed": true,
+    "temperature_c": 25,
+    "transport": "nvme",
+    "unsafe_shutdowns": 2
+  },
+  "tests": {
+    "display": {
+      "grade": "A",
+      "note": null,
+      "result": "pass"
+    },
+    "keyboard": {
+      "devices": [
+        "AT Translated Set 2 keyboard",
+        "Intel HID events",
+        "Intel HID 5 button array"
+      ],
+      "finished_by": "esc",
+      "keys_seen": 101,
+      "missing_numpad": [],
+      "missing_optional": [],
+      "missing_required": [],
+      "numpad_present": true,
+      "result": "pass"
+    },
+    "speaker": {
+      "reason": "no playback device",
+      "result": "not_tested"
+    }
+  },
+  "warnings": []
+}

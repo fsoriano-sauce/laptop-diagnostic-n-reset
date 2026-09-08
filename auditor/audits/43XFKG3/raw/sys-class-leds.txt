@@ -1,0 +1,6 @@
+dell::kbd_backlight
+input3::capslock
+input3::numlock
+input3::scrolllock
+phy0-led
+platform::micmute

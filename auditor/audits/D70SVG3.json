@@ -1,0 +1,189 @@
+{
+  "audited_at": "2026-09-07T18:44:42+00:00",
+  "auditor_version": "3.1",
+  "battery": {
+    "charge_pct": 100,
+    "cycles": null,
+    "design_wh": 54.9,
+    "full_wh": 26.8,
+    "health_pct": 49,
+    "manufacturer": "BYD",
+    "model": "DELL DVG8M1A",
+    "present": true,
+    "serial": "1169",
+    "status": "Full"
+  },
+  "cpu": {
+    "cores": 8,
+    "generation": 11,
+    "model": "11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz",
+    "threads": 16
+  },
+  "display": {
+    "aspect": "16:9",
+    "connector": "card1-eDP-1",
+    "diagonal_in": 15.6,
+    "height_px": 1080,
+    "panel_name": null,
+    "physical_mm": [
+      344,
+      194
+    ],
+    "resolution": "1920x1080",
+    "resolution_class": "Standard",
+    "width_px": 1920
+  },
+  "erase": {
+    "duration_s": 10.2,
+    "error": null,
+    "method": "nvme_format_ses1",
+    "performed": true,
+    "verified_blank": true
+  },
+  "features": {
+    "backlit_keyboard": "yes",
+    "bluetooth": "yes",
+    "fingerprint_reader": "yes",
+    "touchscreen": "no",
+    "webcam": "yes",
+    "wifi_card": "Intel Corporation 500 Series Chipset Family CNVi Wi-Fi [8086:43f0] (rev 11)",
+    "wifi_standard": "Wi-Fi 6 (802.11ax)"
+  },
+  "gpu": {
+    "discrete": "NVIDIA Corporation GA107M [GeForce RTX 3050 Mobile] [10de:25a2] (rev a1)",
+    "integrated": "Intel Corporation TigerLake-H GT1 [UHD Graphics] [8086:9a60] (rev 01)"
+  },
+  "grades": {
+    "charger": "N",
+    "chassis_grade": "B",
+    "chassis_note": "normal",
+    "color": "Gray",
+    "screen_grade": "A",
+    "screen_note": null
+  },
+  "identity": {
+    "bios_date": "05/09/2022",
+    "bios_version": "1.8.0",
+    "chassis_type": "10",
+    "express_service_code": "28722780723",
+    "family": "Vostro",
+    "manufacturer": "Dell Inc.",
+    "model": "Vostro 15 7510",
+    "service_tag": "D70SVG3",
+    "sku": "0A82"
+  },
+  "license": {
+    "oem_key_present": true,
+    "oem_key_suffix": "94TPT"
+  },
+  "memory": {
+    "modules": [
+      {
+        "form_factor": "SODIMM",
+        "manufacturer": "80AD000080AD",
+        "part_number": "HMAA1GS6CJR6N-XN",
+        "size_gb": 8,
+        "speed_mts": 3200,
+        "type": "DDR4"
+      },
+      {
+        "form_factor": "SODIMM",
+        "manufacturer": "80AD000080AD",
+        "part_number": "HMAA1GS6CJR6N-XN",
+        "size_gb": 8,
+        "speed_mts": 3200,
+        "type": "DDR4"
+      }
+    ],
+    "slots_total": 2,
+    "slots_used": 2,
+    "total_gb": 16,
+    "type": "DDR4"
+  },
+  "preflight": {
+    "other_internal_disks": [],
+    "storage_mode": "ahci"
+  },
+  "raw_files": [
+    "bluetoothctl.txt",
+    "console.log",
+    "dmesg.txt",
+    "dmidecode-memory.txt",
+    "dmidecode.txt",
+    "edid-card1-eDP-1.bin",
+    "iw-list.txt",
+    "lsblk.json",
+    "lscpu.txt",
+    "lspci-n.txt",
+    "lspci-nn.txt",
+    "lspci-vga.txt",
+    "lspci-vvv.txt",
+    "lsusb.txt",
+    "msdm.txt",
+    "nvme-id-ctrl.json",
+    "nvme-smart-log.txt",
+    "proc_asound_cards.txt",
+    "proc_bus_input_devices.txt",
+    "proc_cpuinfo.txt",
+    "proc_meminfo.txt",
+    "rfkill.txt",
+    "smartctl.json",
+    "sys-class-leds.txt",
+    "sysfs-BAT0.txt",
+    "udev-input.txt",
+    "uname.txt",
+    "upower.txt",
+    "xrandr.txt"
+  ],
+  "schema": 3,
+  "status": "audited",
+  "storage": {
+    "critical_warning": 0,
+    "data_written_tb": 46.15,
+    "device": "/dev/nvme0n1",
+    "firmware": "10410106",
+    "media_errors": 0,
+    "model": "KBG40ZNS512G NVMe KIOXIA 512GB",
+    "percentage_used": 15,
+    "power_cycles": 1256,
+    "power_on_hours": 6576,
+    "present": true,
+    "rotational": false,
+    "serial": "911PG1WYQXD3",
+    "size_bytes": 512110190592,
+    "size_gb": 512,
+    "smart_passed": true,
+    "temperature_c": 29,
+    "transport": "nvme",
+    "unsafe_shutdowns": 63
+  },
+  "tests": {
+    "display": {
+      "grade": "A",
+      "note": null,
+      "result": "pass"
+    },
+    "keyboard": {
+      "devices": [
+        "AT Translated Set 2 keyboard",
+        "Intel HID events",
+        "Intel HID 5 button array",
+        "Dell Privacy Driver"
+      ],
+      "finished_by": "esc",
+      "keys_seen": 101,
+      "missing_numpad": [],
+      "missing_optional": [],
+      "missing_required": [],
+      "numpad_present": true,
+      "result": "pass"
+    },
+    "speaker": {
+      "reason": "no sound card exposed in live environment",
+      "result": "not_tested"
+    }
+  },
+  "warnings": [
+    "battery health 49%"
+  ]
+}

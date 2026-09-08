@@ -1,0 +1,62 @@
+=== Restorer stage report  2026-09-07 18:59:26 ===
+Service tag : D70SVG3
+Model       : Vostro 15 7510
+USB         : D:
+Work dir    : C:\Dell
+
+Driver folders matched for this model:
+  D:\Dell\Drivers\Common  (4 .inf) -> copied 4 .inf to C:\Dell\Drivers\Common in 82s (robocopy rc 1)
+  D:\Dell\Drivers\Vostro 15 7510  (123 .inf) -> copied 123 .inf to C:\Dell\Drivers\Vostro 15 7510 in 227s (robocopy rc 1)
+
+Driver install (pnputil, per package; 0 = installed, 259 = added, some INFs had no matching device here (normal for multi-model packages), 3010 = installed + reboot pending):
+  rc    0    4 inf     77s  NVIDIA-GeForce-MXxx0-GTX-16x0-RTX-30x0-Graphics-Driver_N8F67_WIN64_32.0.15.7283_A21
+  rc    0    1 inf      0s  Genesys-Memory-Card-Reader-Driver_TKF77_WIN_4.5.4.8_A01_06
+  rc    0    3 inf      1s  Goodix-Fingerprint-Sensor-Driver_J36P3_WIN64_20.8.0.12_A08_03
+  rc    0   11 inf      7s  Intel-BE2xx-AX4xx-AX2xx-9xxx-and-Killer-BE17xx-AX16xx_KD8VG_WIN64_23.160.0.9_A58_02
+  rc 3010    2 inf      5s  Intel-BE2xx-AX4xx-AX2xx-9xxx-Wi-Fi-Driver_72RCT_WIN64_23.160.0.4_A65_03
+  rc    0    2 inf      1s  Intel-Dynamic-Tuning-Driver_J9FDY_WIN64_8.7.10600.20853_A13_02
+  rc    0    1 inf      0s  Intel-HID-Event-Filter-Driver_RKPC4_WIN64_2.2.2.9_A21_01
+  rc    0    9 inf      2s  Intel-Integrated-Sensor-Solution-Driver_XR1RR_WIN_3.10.100.4478_A02
+  rc    0    3 inf      1s  Intel-Management-Engine-Interface-Driver_84XDF_WIN64_2613.9.28.0_A07_01
+  rc    0    4 inf      1s  Intel-Serial-IO-Driver_55PHH_WIN_30.100.2104.1_A01_05
+  rc    0    5 inf      1s  Intel-Thunderbolt-Controller-Driver_TBTC0_WIN_1.41.1193.0_A11_01
+  rc  259   24 inf    108s  Intel-UHD-Iris-Xe-Graphics-Driver_JT95W_WIN64_32.0.101.6881_A19_01
+  rc  259   11 inf      5s  Killer-BE1750-AX1690-AX1675-AX1650-and-Intel-BE202-BE201-BE200-AX411-AX211-AX210-AX201-AX200-9560-9462-9260_P766C_WIN64_23.90.0.8_A51_03
+  rc  259   44 inf     44s  Realtek-High-Definition-Audio-Driver_G9CP2_WIN_6.0.9597.1_A80_01
+  rc    0    3 inf      0s  Realtek-Memory-Card-Reader-Driver_NPC2Y_WIN64_10.0.22621.31278_A01_01
+
+Windows     : Microsoft Windows 11 Pro  25H2  build 26200.8037  edition Professional
+OEM key     : present, ends ...94TPT  (activates on first internet connection)
+Secure Boot : ON
+TPM         : present=True spec=2.0, 0, 1.38
+Disks       :
+  Generic Flash Disk  59 GB  bus=USB  media=Unspecified
+  KBG40ZNS512G NVMe KIOXIA 512GB  477 GB  bus=NVMe  media=SSD
+
+Devices with problems (snapshot before the first restart; chipset/ME/thermal entries here are filled by Windows Update):
+  [Error] : SM Bus Controller  (PCI\VEN_8086&DEV_43A3&SUBSYS_0A821028&REV_11\3&11583659&0&FC)
+  [Error] : PCI Device  (PCI\VEN_8086&DEV_43A4&SUBSYS_0A821028&REV_11\3&11583659&0&FD)
+
+Key devices:
+  [OK] Net: Bluetooth Device (Personal Area Network)
+  [OK] Net: Intel(R) Wi-Fi 6 AX201 160MHz
+  [OK] Bluetooth: Bluetooth Device (RFCOMM Protocol TDI)
+  [OK] Bluetooth: Intel(R) Wireless Bluetooth(R)
+  [OK] Biometric: Goodix MOC Fingerprint
+  [OK] Camera: Integrated Webcam
+  [OK] MEDIA: Intel® Smart Sound Technology for USB Audio
+  [OK] MEDIA: Intel® Smart Sound Technology for Digital Microphones
+  [OK] MEDIA: Realtek(R) Audio
+  [OK] Display: Intel(R) UHD Graphics
+  [OK] Display: NVIDIA GeForce RTX 3050 Laptop GPU
+  [OK] HIDClass: HID-compliant consumer control device
+  [OK] HIDClass: HID PCI Minidriver for ISS
+  [OK] HIDClass: Portable Device Control device
+  [OK] HIDClass: HID-compliant system controller
+  [OK] HIDClass: HID-compliant touch pad
+  [OK] HIDClass: I2C HID Device
+  [OK] HIDClass: Converted Portable Device Control device
+  [OK] HIDClass: Intel(R) HID Event Filter
+  [OK] HIDClass: HID-compliant vendor-defined device
+
+=== end 2026-09-07 19:08:59 ===

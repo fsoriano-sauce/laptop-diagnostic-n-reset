@@ -21,8 +21,7 @@ it needs a human at the keyboard or can be done by a Claude Code session.
 ```powershell
 cd $HOME\Documents
 git clone https://github.com/fsoriano-sauce/laptop-diagnostic-n-reset.git
-cd laptop-diagnostic-n-reset
-git checkout v3-line-toolkit      # until it is merged to master
+cd laptop-diagnostic-n-reset      # master is the working branch; pull before each session
 ```
 
 Open an **elevated** PowerShell (Run as Administrator) for everything below,

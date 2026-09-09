@@ -6,7 +6,7 @@ self-contained; the agent reads the repo docs for detail.
 
 ---
 
-You are administering the Windows side of a laptop refurbishing line. Read `CLAUDE.md` and `restorer/BUILD_ON_WINDOWS.md` in this repo before doing anything, then follow BUILD_ON_WINDOWS.md section by section. Work on branch `v3-line-toolkit` (run `git fetch && git checkout v3-line-toolkit` if you are not on it).
+You are administering the Windows side of a laptop refurbishing line. Read `CLAUDE.md` and `restorer/BUILD_ON_WINDOWS.md` in this repo before doing anything, then follow BUILD_ON_WINDOWS.md section by section. Work on branch `master` (run `git fetch && git checkout master && git pull` first).
 
 Context: I resell batches of used Dell laptops (Vostro 7620, Vostro 15 7510, Vostro 7500). A Linux "Auditor" USB tests and erases each laptop. The "Restorer" USB you are building does a clean, unattended Windows 11 install with a retail out-of-box experience, stages Dell drivers during setup, and writes a per-unit report back to the stick. The PowerShell and batch files under `restorer/` were written on a Mac; the Windows side has run one production batch, so expect small issues rather than big ones, and the Mac session may push to the same branch while you work (fetch and rebase before every push). Your job is to make them work here, build the sticks, and verify everything that can be verified without a laptop.
 
@@ -19,7 +19,7 @@ Safety rules, non-negotiable:
 
 Do these in order and tell me the result of each before moving on:
 
-1. Confirm you are on Windows, on branch `v3-line-toolkit`, with `C:\Temp\Win11.iso` present (tell me if it is missing; I download it, or you fetch it from Microsoft's page and verify the SHA256). Report free disk space and whether the session is elevated; a Claude desktop session is not, so run the elevated steps through UAC-approved runner scripts as BUILD_ON_WINDOWS.md section 1 describes, and tell me when a UAC prompt needs my click.
+1. Confirm you are on Windows, on branch `master` and up to date with origin, with `C:\Temp\Win11.iso` present (tell me if it is missing; I download it, or you fetch it from Microsoft's page and verify the SHA256). Report free disk space and whether the session is elevated; a Claude desktop session is not, so run the elevated steps through UAC-approved runner scripts as BUILD_ON_WINDOWS.md section 1 describes, and tell me when a UAC prompt needs my click.
 2. Run the static checks in BUILD_ON_WINDOWS.md section 2 on `build_restorer.ps1`, `get_dell_drivers.ps1`, `Dell\Scripts\stage.ps1`, `Dell\Scripts\stage.cmd`, and `autounattend.xml`. Fix, commit, push anything that fails.
 3. Run `.\get_dell_drivers.ps1 -ListOnly` and show me the package list per model with sizes. If a model matches nothing, find its exact display name in `Dell\Catalog\CatalogIndexPC.xml` and retry. Then run the real download with `-IncludeBios`, then `.\build_restorer.ps1 -ExtractDups -ExtractOnly`, then `.\build_restorer.ps1 -ValidateDrivers -ExtractOnly` and show me its ok/FAIL table. Tell me which packages did not extract and how many `.inf` files each model folder has. Wi-Fi and Bluetooth must be present for every model; the rest is nice to have. Never stage Intel Rapid Storage packages, and use the one NVIDIA package in `Dell\Drivers\Common\` as `Dell\Drivers\README.md` describes.
 4. Tell me it is time to flash a stick with Rufus and give me the exact field values from BUILD_ON_WINDOWS.md section 4. Wait for me to say the stick is flashed and plugged in.

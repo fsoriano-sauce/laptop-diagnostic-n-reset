@@ -33,3 +33,6 @@ restorer/Dell/Reports/
 auditor/audits/_pending/
 restorer/Dell/Catalog/
 restorer/Dell/BIOS/
+
+# per-machine Claude Code permission allowlist
+.claude/settings.local.json

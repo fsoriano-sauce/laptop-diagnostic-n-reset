@@ -311,8 +311,8 @@ def condition_id_for(row: dict) -> str:
 # 85%, so lowball offers never wait for a reply. Returns stay off.
 SHIPPING_SERVICE_1 = ("USPSParcel", "0.00")
 SHIPPING_SERVICE_2 = ("UPSGround", "0.00")
-BEST_OFFER_AUTO_ACCEPT = 0.92
-BEST_OFFER_MINIMUM = 0.85
+BEST_OFFER_AUTO_ACCEPT = 0.90   # ladder v2 (2026-09-09): accept at 90%
+BEST_OFFER_MINIMUM = 0.75       # ladder v2: let $400-class offers through for a manual counter
 DISPATCH_DAYS = "3"
 RETURNS = "ReturnsNotAccepted"
 

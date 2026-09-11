@@ -36,3 +36,6 @@ restorer/Dell/BIOS/
 
 # per-machine Claude Code permission allowlist
 .claude/settings.local.json
+
+# local log written by the hourly headless eBay sweep
+auditor/ebay_runs.log

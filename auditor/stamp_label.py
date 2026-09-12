@@ -21,14 +21,14 @@ from reportlab.pdfgen import canvas
 PRINTER = "HP_OfficeJet_5200_series__FB2995_"
 
 
-def build_overlay(width, height, tag, order, tracking, dest):
+def build_overlay(width, height, tag, order, tracking, dest, charger=None):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=(width, height))
     # eBay's letter-size label sits in the upper-left; the lower half of the page is blank.
     x = 54
     y = height * 0.42
     c.setLineWidth(1.5)
-    c.rect(x - 12, y - 118, width - 2 * (x - 12), 168)
+    c.rect(x - 12, y - 150, width - 2 * (x - 12), 200)
     c.setFont("Helvetica-Bold", 14)
     c.drawString(x, y + 30, "BOX TAG  -  MATCH THIS LABEL TO THE BOX")
     c.setFont("Helvetica-Bold", 40)
@@ -40,6 +40,9 @@ def build_overlay(width, height, tag, order, tracking, dest):
         if value:
             c.drawString(x, line, f"{label}: {value}")
             line -= 18
+    if charger:
+        c.setFont("Helvetica-Bold", 22)
+        c.drawString(x, line - 10, "CHARGER: " + ("INCLUDE the Dell 130 W adapter" if charger == "yes" else "DO NOT include (buyer declined)"))
     c.save()
     buf.seek(0)
     return PdfReader(buf).pages[0]
@@ -53,6 +56,7 @@ def main():
     ap.add_argument("--dest", default="", help="destination city/state/ZIP for the sheet")
     ap.add_argument("--pdf", help="label PDF (default: ~/Downloads/eBay label <order>.pdf)")
     ap.add_argument("--out", help="output PDF (default: <pdf dir>/<tag>-label.pdf)")
+    ap.add_argument("--charger", choices=["yes", "no"], help="print a CHARGER line: yes = include the adapter, no = ship without")
     ap.add_argument("--print", dest="do_print", action="store_true", help="send the stamped PDF to the printer")
     a = ap.parse_args()
 
@@ -65,7 +69,7 @@ def main():
     writer = PdfWriter()
     for page in reader.pages:
         w, h = float(page.mediabox.width), float(page.mediabox.height)
-        page.merge_page(build_overlay(w, h, a.tag, a.order, a.tracking, a.dest))
+        page.merge_page(build_overlay(w, h, a.tag, a.order, a.tracking, a.dest, a.charger))
         writer.add_page(page)
     with open(out, "wb") as f:
         writer.write(f)

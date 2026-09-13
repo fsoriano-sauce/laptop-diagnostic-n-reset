@@ -181,6 +181,10 @@ end tell''', timeout=1800)
 def cmd_export(only):
     have = existing_albums()
     units = audited_units()
+    # A tag named explicitly may have no audit (a parts unit): export its album anyway.
+    for tag in only or ():
+        if tag not in units and any(n.startswith(tag) for n in have):
+            units[tag] = ""
     total = 0
     for tag, model in units.items():
         if only and tag not in only:

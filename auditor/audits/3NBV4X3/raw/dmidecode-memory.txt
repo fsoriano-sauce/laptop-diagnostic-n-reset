@@ -1,0 +1,284 @@
+# dmidecode 3.7
+Getting SMBIOS data from sysfs.
+SMBIOS 3.4 present.
+
+Handle 0x1100, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x1000
+	Error Information Handle: Not Provided
+	Total Width: 64 bits
+	Data Width: 64 bits
+	Size: 4 GiB
+	Form Factor: Row Of Chips
+	Set: None
+	Locator: Motherboard
+	Bank Locator: BANK 0
+	Type: LPDDR5
+	Type Detail: Synchronous
+	Speed: 6400 MT/s
+	Manufacturer:  
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Rank: 2
+	Configured Memory Speed: 5200 MT/s
+	Minimum Voltage: Unknown
+	Maximum Voltage: Unknown
+	Configured Voltage: 0.5 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 4 GiB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x1101, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x1000
+	Error Information Handle: Not Provided
+	Total Width: 64 bits
+	Data Width: 64 bits
+	Size: 4 GiB
+	Form Factor: Row Of Chips
+	Set: None
+	Locator: Motherboard
+	Bank Locator: BANK 1
+	Type: LPDDR5
+	Type Detail: Synchronous
+	Speed: 6400 MT/s
+	Manufacturer:  
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Rank: 2
+	Configured Memory Speed: 5200 MT/s
+	Minimum Voltage: Unknown
+	Maximum Voltage: Unknown
+	Configured Voltage: 0.5 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 4 GiB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x1102, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x1000
+	Error Information Handle: Not Provided
+	Total Width: 64 bits
+	Data Width: 64 bits
+	Size: 4 GiB
+	Form Factor: Row Of Chips
+	Set: None
+	Locator: Motherboard
+	Bank Locator: BANK 2
+	Type: LPDDR5
+	Type Detail: Synchronous
+	Speed: 6400 MT/s
+	Manufacturer:  
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Rank: 2
+	Configured Memory Speed: 5200 MT/s
+	Minimum Voltage: Unknown
+	Maximum Voltage: Unknown
+	Configured Voltage: 0.5 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 4 GiB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x1103, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x1000
+	Error Information Handle: Not Provided
+	Total Width: 64 bits
+	Data Width: 64 bits
+	Size: 4 GiB
+	Form Factor: Row Of Chips
+	Set: None
+	Locator: Motherboard
+	Bank Locator: BANK 3
+	Type: LPDDR5
+	Type Detail: Synchronous
+	Speed: 6400 MT/s
+	Manufacturer:  
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Rank: 2
+	Configured Memory Speed: 5200 MT/s
+	Minimum Voltage: Unknown
+	Maximum Voltage: Unknown
+	Configured Voltage: 0.5 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 4 GiB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x1104, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x1000
+	Error Information Handle: Not Provided
+	Total Width: 64 bits
+	Data Width: 64 bits
+	Size: 4 GiB
+	Form Factor: Row Of Chips
+	Set: None
+	Locator: Motherboard
+	Bank Locator: BANK 0
+	Type: LPDDR5
+	Type Detail: Synchronous
+	Speed: 6400 MT/s
+	Manufacturer:  
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Rank: 2
+	Configured Memory Speed: 5200 MT/s
+	Minimum Voltage: Unknown
+	Maximum Voltage: Unknown
+	Configured Voltage: 0.5 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 4 GiB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x1105, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x1000
+	Error Information Handle: Not Provided
+	Total Width: 64 bits
+	Data Width: 64 bits
+	Size: 4 GiB
+	Form Factor: Row Of Chips
+	Set: None
+	Locator: Motherboard
+	Bank Locator: BANK 1
+	Type: LPDDR5
+	Type Detail: Synchronous
+	Speed: 6400 MT/s
+	Manufacturer:  
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Rank: 2
+	Configured Memory Speed: 5200 MT/s
+	Minimum Voltage: Unknown
+	Maximum Voltage: Unknown
+	Configured Voltage: 0.5 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 4 GiB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x1106, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x1000
+	Error Information Handle: Not Provided
+	Total Width: 64 bits
+	Data Width: 64 bits
+	Size: 4 GiB
+	Form Factor: Row Of Chips
+	Set: None
+	Locator: Motherboard
+	Bank Locator: BANK 2
+	Type: LPDDR5
+	Type Detail: Synchronous
+	Speed: 6400 MT/s
+	Manufacturer:  
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Rank: 2
+	Configured Memory Speed: 5200 MT/s
+	Minimum Voltage: Unknown
+	Maximum Voltage: Unknown
+	Configured Voltage: 0.5 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 4 GiB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x1107, DMI type 17, 92 bytes
+Memory Device
+	Array Handle: 0x1000
+	Error Information Handle: Not Provided
+	Total Width: 64 bits
+	Data Width: 64 bits
+	Size: 4 GiB
+	Form Factor: Row Of Chips
+	Set: None
+	Locator: Motherboard
+	Bank Locator: BANK 3
+	Type: LPDDR5
+	Type Detail: Synchronous
+	Speed: 6400 MT/s
+	Manufacturer:  
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Rank: 2
+	Configured Memory Speed: 5200 MT/s
+	Minimum Voltage: Unknown
+	Maximum Voltage: Unknown
+	Configured Voltage: 0.5 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: Not Specified
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 4 GiB
+	Cache Size: None
+	Logical Size: None
+

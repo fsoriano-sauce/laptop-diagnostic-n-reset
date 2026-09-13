@@ -1,0 +1,243 @@
+{
+  "audited_at": "2026-09-13T16:53:18+00:00",
+  "auditor_version": "3.1",
+  "battery": {
+    "charge_pct": 51,
+    "cycles": null,
+    "design_wh": 70.6,
+    "full_wh": 43.5,
+    "health_pct": 62,
+    "manufacturer": "BYD",
+    "model": "DELL CDTT225",
+    "present": true,
+    "serial": "3094",
+    "status": "Charging"
+  },
+  "cpu": {
+    "cores": 14,
+    "generation": 12,
+    "model": "12th Gen Intel(R) Core(TM) i9-12900H",
+    "threads": 20
+  },
+  "display": {
+    "aspect": "16:10",
+    "connector": "card1-eDP-1",
+    "diagonal_in": 14.0,
+    "height_px": 1600,
+    "panel_name": null,
+    "physical_mm": [
+      301,
+      188
+    ],
+    "resolution": "2560x1600",
+    "resolution_class": "4K/Retina Class",
+    "width_px": 2560
+  },
+  "erase": {
+    "duration_s": 2.2,
+    "error": null,
+    "method": "nvme_format_ses1",
+    "performed": true,
+    "verified_blank": true
+  },
+  "features": {
+    "backlit_keyboard": "yes",
+    "bluetooth": "yes",
+    "fingerprint_reader": "yes",
+    "touchscreen": "yes",
+    "webcam": "yes",
+    "wifi_card": "Intel Corporation Alder Lake-P PCH CNVi WiFi [8086:51f0] (rev 01)",
+    "wifi_standard": "Wi-Fi 6 (802.11ax)"
+  },
+  "gpu": {
+    "discrete": "NVIDIA Corporation GA107GLM [RTX A1000 Laptop GPU] [10de:25b9] (rev a1)",
+    "integrated": "Intel Corporation Alder Lake-P GT2 [Iris Xe Graphics] [8086:46a6] (rev 0c)"
+  },
+  "grades": {
+    "charger": "Y",
+    "chassis_grade": "C",
+    "chassis_note": "see photos",
+    "color": "Gray",
+    "screen_grade": "C",
+    "screen_note": "screen and screen plate broken"
+  },
+  "identity": {
+    "bios_date": "12/23/2025",
+    "bios_version": "1.37.0",
+    "chassis_type": "10",
+    "express_service_code": "7940997543",
+    "family": "Precision",
+    "manufacturer": "Dell Inc.",
+    "model": "Precision 5470",
+    "service_tag": "3NBV4X3",
+    "sku": "0B29"
+  },
+  "license": {
+    "oem_key_present": true,
+    "oem_key_suffix": "3RTPT"
+  },
+  "memory": {
+    "modules": [
+      {
+        "form_factor": "Row Of Chips",
+        "manufacturer": "Serial Number: Not Specified",
+        "part_number": null,
+        "size_gb": 4,
+        "speed_mts": 5200,
+        "type": "LPDDR5"
+      },
+      {
+        "form_factor": "Row Of Chips",
+        "manufacturer": "Serial Number: Not Specified",
+        "part_number": null,
+        "size_gb": 4,
+        "speed_mts": 5200,
+        "type": "LPDDR5"
+      },
+      {
+        "form_factor": "Row Of Chips",
+        "manufacturer": "Serial Number: Not Specified",
+        "part_number": null,
+        "size_gb": 4,
+        "speed_mts": 5200,
+        "type": "LPDDR5"
+      },
+      {
+        "form_factor": "Row Of Chips",
+        "manufacturer": "Serial Number: Not Specified",
+        "part_number": null,
+        "size_gb": 4,
+        "speed_mts": 5200,
+        "type": "LPDDR5"
+      },
+      {
+        "form_factor": "Row Of Chips",
+        "manufacturer": "Serial Number: Not Specified",
+        "part_number": null,
+        "size_gb": 4,
+        "speed_mts": 5200,
+        "type": "LPDDR5"
+      },
+      {
+        "form_factor": "Row Of Chips",
+        "manufacturer": "Serial Number: Not Specified",
+        "part_number": null,
+        "size_gb": 4,
+        "speed_mts": 5200,
+        "type": "LPDDR5"
+      },
+      {
+        "form_factor": "Row Of Chips",
+        "manufacturer": "Serial Number: Not Specified",
+        "part_number": null,
+        "size_gb": 4,
+        "speed_mts": 5200,
+        "type": "LPDDR5"
+      },
+      {
+        "form_factor": "Row Of Chips",
+        "manufacturer": "Serial Number: Not Specified",
+        "part_number": null,
+        "size_gb": 4,
+        "speed_mts": 5200,
+        "type": "LPDDR5"
+      }
+    ],
+    "slots_total": 8,
+    "slots_used": 8,
+    "total_gb": 32,
+    "type": "LPDDR5"
+  },
+  "preflight": {
+    "other_internal_disks": [],
+    "storage_mode": "ahci"
+  },
+  "raw_files": [
+    "bluetoothctl.txt",
+    "console.log",
+    "dmesg.txt",
+    "dmidecode-memory.txt",
+    "dmidecode.txt",
+    "edid-card1-eDP-1.bin",
+    "iw-list.txt",
+    "lsblk.json",
+    "lscpu.txt",
+    "lspci-n.txt",
+    "lspci-nn.txt",
+    "lspci-vga.txt",
+    "lspci-vvv.txt",
+    "lsusb.txt",
+    "msdm.txt",
+    "nvme-id-ctrl.json",
+    "nvme-smart-log.txt",
+    "proc_asound_cards.txt",
+    "proc_bus_input_devices.txt",
+    "proc_cpuinfo.txt",
+    "proc_meminfo.txt",
+    "rfkill.txt",
+    "smartctl.json",
+    "sys-class-leds.txt",
+    "sysfs-BAT0.txt",
+    "udev-input.txt",
+    "uname.txt",
+    "upower.txt",
+    "xrandr.txt"
+  ],
+  "schema": 3,
+  "status": "audited",
+  "storage": {
+    "critical_warning": 0,
+    "data_written_tb": 58.17,
+    "device": "/dev/nvme0n1",
+    "firmware": "51003141",
+    "media_errors": 0,
+    "model": "PC801 NVMe SK hynix 512GB",
+    "percentage_used": 5,
+    "power_cycles": 1081,
+    "power_on_hours": 11863,
+    "present": true,
+    "rotational": false,
+    "serial": "SYBAN00981370AD59",
+    "size_bytes": 512110190592,
+    "size_gb": 512,
+    "smart_passed": true,
+    "temperature_c": 41,
+    "transport": "nvme",
+    "unsafe_shutdowns": 65
+  },
+  "tests": {
+    "display": {
+      "grade": "C",
+      "note": "screen and screen plate broken",
+      "result": "fail"
+    },
+    "keyboard": {
+      "devices": [
+        "AT Translated Set 2 keyboard",
+        "Intel HID events",
+        "Intel HID 5 button array",
+        "Dell Privacy Driver"
+      ],
+      "finished_by": "esc",
+      "keys_seen": 81,
+      "missing_numpad": [],
+      "missing_optional": [
+        "MENU",
+        "PGDN",
+        "PGUP"
+      ],
+      "missing_required": [],
+      "numpad_present": false,
+      "result": "pass"
+    },
+    "speaker": {
+      "reason": "no sound card exposed in live environment",
+      "result": "not_tested"
+    }
+  },
+  "warnings": [
+    "screen grade C (cracked/scratched/bleed)",
+    "body grade C (dents/cracks)",
+    "display test failed"
+  ]
+}

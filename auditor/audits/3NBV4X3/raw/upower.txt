@@ -1,0 +1,117 @@
+Device: /org/freedesktop/UPower/devices/battery_BAT0
+  native-path:          BAT0
+  vendor:               BYD
+  model:                DELL CDTT225
+  serial:               3094
+  power supply:         yes
+  updated:              Sun 13 Sep 2026 04:55:26 PM UTC (0 seconds ago)
+  has history:          yes
+  has statistics:       yes
+  battery
+    present:             yes
+    rechargeable:        yes
+    state:               charging
+    warning-level:       none
+    energy:              22.2838 Wh
+    energy-empty:        0 Wh
+    energy-full:         43.4896 Wh
+    energy-full-design:  70.6244 Wh
+    voltage-min-design:  15.4 V
+    capacity-level:      Normal
+    energy-rate:         24.8556 W
+    voltage:             15.924 V
+    charge-cycles:       N/A
+    time to full:        51.2 minutes
+    percentage:          51%
+    temperature:         32.2 degrees C
+    capacity:            61.5787%
+    technology:          lithium-polymer
+    charge-start-threshold:        75%
+    charge-end-threshold:          80%
+    charge-threshold-supported:    yes
+    icon-name:          'battery-good-charging-symbolic'
+  History (charge):
+    1789318526	51.000	charging
+  History (rate):
+    1789318526	24.856	charging
+  History (voltage):
+    1789318526	15.924	charging
+
+Device: /org/freedesktop/UPower/devices/line_power_AC
+  native-path:          AC
+  power supply:         yes
+  updated:              Sun 13 Sep 2026 04:55:26 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  line-power
+    warning-level:       none
+    online:              yes
+    icon-name:          'ac-adapter-symbolic'
+
+Device: /org/freedesktop/UPower/devices/line_power_ucsi_source_psy_USBC000o001
+  native-path:          ucsi-source-psy-USBC000:001
+  power supply:         yes
+  updated:              Sun 13 Sep 2026 04:55:26 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  line-power
+    warning-level:       none
+    online:              no
+    icon-name:          'ac-adapter-symbolic'
+
+Device: /org/freedesktop/UPower/devices/line_power_ucsi_source_psy_USBC000o002
+  native-path:          ucsi-source-psy-USBC000:002
+  power supply:         yes
+  updated:              Sun 13 Sep 2026 04:55:26 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  line-power
+    warning-level:       none
+    online:              no
+    icon-name:          'ac-adapter-symbolic'
+
+Device: /org/freedesktop/UPower/devices/line_power_ucsi_source_psy_USBC000o003
+  native-path:          ucsi-source-psy-USBC000:003
+  power supply:         yes
+  updated:              Sun 13 Sep 2026 04:55:26 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  line-power
+    warning-level:       none
+    online:              yes
+    icon-name:          'ac-adapter-symbolic'
+
+Device: /org/freedesktop/UPower/devices/line_power_ucsi_source_psy_USBC000o004
+  native-path:          ucsi-source-psy-USBC000:004
+  power supply:         yes
+  updated:              Sun 13 Sep 2026 04:55:26 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  line-power
+    warning-level:       none
+    online:              no
+    icon-name:          'ac-adapter-symbolic'
+
+Device: /org/freedesktop/UPower/devices/DisplayDevice
+  power supply:         yes
+  updated:              Sun 13 Sep 2026 04:55:26 PM UTC (0 seconds ago)
+  has history:          no
+  has statistics:       no
+  battery
+    present:             yes
+    state:               charging
+    warning-level:       none
+    energy:              22.2838 Wh
+    energy-full:         43.4896 Wh
+    energy-rate:         24.8556 W
+    charge-cycles:       N/A
+    time to full:        51.2 minutes
+    percentage:          51%
+    icon-name:          'battery-good-charging-symbolic'
+
+Daemon:
+  daemon-version:  1.91.3
+  on-battery:      no
+  lid-is-closed:   no
+  lid-is-present:  yes
+  critical-action: Sleep

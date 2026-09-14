@@ -1,0 +1,15 @@
+#!/bin/sh
+# Strip EXIF/GPS from staged photos before they reach the public repo.
+# Enable once per clone: git config core.hooksPath .githooks
+photos=$(git diff --cached --name-only --diff-filter=ACMR | grep -iE '\.(jpe?g|png|heic|heif|tiff?|webp|dng|avif)$')
+[ -z "$photos" ] && exit 0
+py=$(command -v python3 || command -v python)
+if [ -z "$py" ]; then
+    echo "pre-commit: python3 is needed to strip photo metadata" >&2
+    exit 1
+fi
+echo "$photos" | tr '\n' '\0' | xargs -0 "$py" auditor/strip_photo_metadata.py || {
+    echo "pre-commit: commit stopped, fix the photos above" >&2
+    exit 1
+}
+echo "$photos" | tr '\n' '\0' | xargs -0 git add --

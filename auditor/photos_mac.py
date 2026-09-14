@@ -13,7 +13,8 @@ Photos on this Mac and the iPhone share one iCloud Photos library, so:
 
   export   For each album that has photos, export them into
            listing-photos/<TAG>/ as 01.jpg, 02.jpg, ... in the order they
-           were taken, resized to 2000 px on the long edge for eBay. The
+           were taken, resized to 2000 px on the long edge for eBay, rotated
+           upright and stripped of EXIF/GPS (the repo is public). The
            first shot becomes the listing's gallery image, so take the
            hero shot first. Re-running only exports albums whose photo
            count changed.
@@ -132,7 +133,25 @@ def dropped(tag):
     return {os.path.splitext(l.strip())[0] for l in open(path) if l.strip()}
 
 
+def save_clean(src, out):
+    """src -> out as JPEG_QUALITY jpg, at most MAX_EDGE px, rotated upright and with no EXIF
+    or XMP. The repo is public and iPhone shots carry GPS; only the ICC colour profile is kept."""
+    from PIL import Image, ImageOps
+    with Image.open(src) as im:
+        im = ImageOps.exif_transpose(im)
+        icc = im.info.get("icc_profile")
+        im.thumbnail((MAX_EDGE, MAX_EDGE))
+        if im.mode != "RGB":
+            im = im.convert("RGB")
+        im.info = {}
+        im.save(out, "JPEG", quality=JPEG_QUALITY, icc_profile=icc)
+
+
 def export_album(tag, name, count):
+    try:
+        import PIL  # noqa: F401  (checked before the old export is deleted)
+    except ImportError:
+        sys.exit("export needs Pillow to strip photo metadata: python3 -m pip install --user Pillow")
     dest = os.path.join(PHOTOS_DIR, tag)
     skip = dropped(tag)
     tmp = tempfile.mkdtemp(prefix=f"photos-{tag}-")
@@ -167,11 +186,12 @@ end tell''', timeout=1800)
             continue
         n += 1
         out = os.path.join(dest, f"{n:02d}.jpg")
-        subprocess.run(["sips", "-s", "format", "jpeg", "-s", "formatOptions", str(JPEG_QUALITY),
-                        "-Z", str(MAX_EDGE), os.path.join(tmp, src), "--out", out],
+        # sips decodes HEIC and resizes at full quality; save_clean does the one lossy encode
+        mid = os.path.join(tmp, f"sips-{n:02d}.jpg")
+        subprocess.run(["sips", "-s", "format", "jpeg", "-s", "formatOptions", "best",
+                        "-Z", str(MAX_EDGE), os.path.join(tmp, src), "--out", mid],
                        capture_output=True, check=False)
-        if not os.path.exists(out):
-            shutil.copy(os.path.join(tmp, src), out)
+        save_clean(mid if os.path.exists(mid) else os.path.join(tmp, src), out)
     shutil.rmtree(tmp, ignore_errors=True)
     sizes = sum(os.path.getsize(os.path.join(dest, f)) for f in os.listdir(dest)) / 1e6
     print(f"  {tag}: {n} photos -> listing-photos/{tag}/ ({sizes:.1f} MB)")

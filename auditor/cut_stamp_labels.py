@@ -11,8 +11,7 @@ import fitz
 from PIL import Image, ImageDraw, ImageFont
 pdf, skip = sys.argv[1], set(sys.argv[2:])
 orders = {
- "9434608106245569348478": ("51WBXL3", "10-15158-97304", "San Diego, CA 92105 (susanc96)", "yes"),
- "9434608106244547876613": ("4ZJ6JS3", "17-15145-22581", "Muenster, TX 76252 (aslugajax)", "yes"),
+ "9434608106244551244644": ("FXQVFPC97R", "24-15153-87948", "Jersey City, NJ 07302 (jef_668733)", "INCLUDE the Apple 67 W adapter + cable, Apple box inside padded box"),
 }
 DPI = 200
 font_b = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 78)
@@ -47,7 +46,7 @@ for pno, page in enumerate(doc):
         d.text((x, y+215), f"Tracking: {trk}", font=font_m, fill="black")
         d.text((x, y+260), f"Ship to: {dest}", font=font_m, fill="black")
         d.text((x, y+305), f"Stamped: {datetime.date.today().isoformat()}", font=font_m, fill="black")
-        d.text((x, y+360), "CHARGER: " + ("INCLUDE the Dell 130 W adapter" if charger == "yes" else "DO NOT include (buyer declined)"), font=font_c, fill="black")
+        d.text((x, y+360), "CHARGER: " + ("INCLUDE the Dell 130 W adapter" if charger == "yes" else "DO NOT include (buyer declined)" if charger == "no" else charger), font=font_c, fill="black")
         out = os.path.expanduser(f"~/Downloads/{tag}-label.pdf"); sheet.save(out, "PDF", resolution=DPI)
         res = subprocess.run(["lp", "-d", "HP_OfficeJet_5200_series__FB2995_", "-o", "media=Letter", "-o", "fit-to-page", out], capture_output=True, text=True)
         print(f"page {pno+1} band {k+1}/{n}: {tag} {order} -> {out} | {res.stdout.strip() or res.stderr.strip()}")

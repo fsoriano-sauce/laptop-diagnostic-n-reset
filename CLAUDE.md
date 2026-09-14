@@ -12,6 +12,7 @@ describes the per-unit flow and the design rules.
 - **Never commit driver payloads.** `restorer/Dell/Drivers/`, `Downloads/`, `BIOS/`, `Catalog/`, `Reports/` are git-ignored on purpose (multi-GB, redistributable only from Dell).
 - **Never store the full OEM Windows key.** The auditor keeps only presence and the last five characters. Keep it so.
 - The repo is public. Service tags are already public via listings; do not add anything more sensitive.
+- **Never commit a photo that carries EXIF/GPS.** iPhone shots record where they were taken, and eBay serves `listing-photos/` straight from GitHub. `photos_mac.py export` strips it; photos added any other way go through `auditor/strip_photo_metadata.py` (`--check` to verify). The `.githooks/pre-commit` hook does that for staged photos once a clone has run `git config core.hooksPath .githooks`; set it on any clone that commits photos.
 
 ## Where things live
 
@@ -22,6 +23,7 @@ describes the per-unit flow and the design rules.
 | Business state (status, price, notes; grade overrides) | `auditor/inventory.csv` | any |
 | Listing CSV build | `auditor/build_master_csv.py` → `audit_master_local.csv` | any (Python 3) |
 | eBay generator | `auditor/generate_ebay_drafts_v2.py`, `verify_listings.py` | any (Python 3) |
+| Listing photos (public, no EXIF) | `auditor/photos_mac.py` → `listing-photos/<TAG>/`; `auditor/strip_photo_metadata.py`, `.githooks/pre-commit` | macOS (export); any (strip) |
 | Restorer answer file | `restorer/autounattend.xml` | Windows Setup |
 | Restorer specialize scripts | `restorer/Dell/Scripts/stage.cmd`, `stage.ps1` | Windows Setup (SYSTEM) |
 | Restorer stick build | `restorer/build_restorer.ps1` | Windows, admin |

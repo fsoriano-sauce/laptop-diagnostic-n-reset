@@ -257,6 +257,11 @@ Shooting into an album on the iPhone, two ways:
 After a unit's photos are in its album: `export`, then commit and push
 `listing-photos/` and regenerate the listings.
 
+The repo is public, so listing photos must not carry EXIF/GPS. `export`
+strips it. For photos added any other way, run
+`python3 auditor/strip_photo_metadata.py`, or let the pre-commit hook do it:
+enable it once per clone with `git config core.hooksPath .githooks`.
+
 ---
 
 ## License

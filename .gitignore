@@ -39,3 +39,6 @@ restorer/Dell/BIOS/
 
 # local log written by the hourly headless eBay sweep
 auditor/ebay_runs.log
+
+# Private Mac spec reports (serials, hardware UUIDs); publish only a summary
+mac-audit-*

@@ -7,3 +7,5 @@ auditor/*.py eol=lf
 restorer/Dell/Scripts/*.cmd eol=crlf
 restorer/*.ps1 eol=crlf
 restorer/Dell/Scripts/*.ps1 eol=crlf
+# Hand- and bot-edited business state: keep LF so a one-row edit never rewrites the whole file
+auditor/inventory.csv eol=lf

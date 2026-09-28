@@ -6,6 +6,7 @@ service tag, order, tracking, destination and a CHARGER include/exclude line, an
 Edit the `orders` map (tracking -> tag, order, destination, pack line: "yes"/"no" for the Dell
 charger, or any short text) before running, and keep only the current run's labels in it.
 Needs pymupdf and Pillow (pip install --user pymupdf pillow). The single-label sibling is stamp_label.py.
+Prints to the home OfficeJet 5200 unless LABEL_PRINTER names another CUPS queue (see `lpstat -p`).
 """
 import os, re, subprocess, sys, datetime
 import fitz
@@ -18,6 +19,7 @@ orders = {
  # "9434608106245575475168": ("TAG", "ORDER", "City, ST (username)", "pack line"),
 }
 DPI = 200
+PRINTER = os.environ.get("LABEL_PRINTER", "HP_OfficeJet_5200_series__FB2995_")
 font_b = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 78)
 font_m = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 34)
 font_c = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 46)
@@ -57,5 +59,5 @@ for pno, page in enumerate(doc):
         d.text((x, y+305), f"Stamped: {datetime.date.today().isoformat()}", font=font_m, fill="black")
         d.text((x, y+360), "PACK: " + ("INCLUDE the Dell 130 W adapter" if charger == "yes" else "DO NOT include a charger (buyer declined)" if charger == "no" else charger), font=font_c, fill="black")
         out = os.path.expanduser(f"~/Downloads/{tag}-label.pdf"); sheet.save(out, "PDF", resolution=DPI)
-        res = subprocess.run(["lp", "-d", "HP_OfficeJet_5200_series__FB2995_", "-o", "media=Letter", "-o", "fit-to-page", out], capture_output=True, text=True)
+        res = subprocess.run(["lp", "-d", PRINTER, "-o", "media=Letter", "-o", "fit-to-page", out], capture_output=True, text=True)
         print(f"page {pno+1} half {half+1} ({k+1}/{n}): {tag} {order} -> {out} | lp rc={res.returncode} {res.stdout.strip() or res.stderr.strip()}")

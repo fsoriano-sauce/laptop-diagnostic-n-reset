@@ -2,8 +2,8 @@
 """Stamp the service tag (and order / tracking / destination) onto an eBay shipping-label PDF
 so the shipper can match the label to the box, then optionally print it.
 
-    python3 auditor/stamp_label.py --tag GT3X9S3 --order 07-15145-77219 \
-        --tracking 9434608106245556825166 --dest "City, ST 00000" [--pdf path] [--out path] [--print]
+    python3 auditor/stamp_label.py --tag TAG --order 00-00000-00000 \
+        --tracking 9400000000000000000000 --dest "City, ST 00000" [--pdf path] [--out path] [--print]
 
 --pdf defaults to ~/Downloads/eBay label <order>.pdf (eBay's "Download label" file name).
 Needs pypdf and reportlab (pip install --user pypdf reportlab).

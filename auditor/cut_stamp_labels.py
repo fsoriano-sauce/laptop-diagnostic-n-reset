@@ -11,8 +11,7 @@ import fitz
 from PIL import Image, ImageDraw, ImageFont
 pdf, skip = sys.argv[1], set(sys.argv[2:])
 orders = {
- "9434608106245569348478": ("51WBXL3", "10-15158-97304", "City, ST (susanc96)", "yes"),
- "9434608106244547876613": ("4ZJ6JS3", "17-15145-22581", "City, ST (aslugajax)", "yes"),
+ # "9434608106245575475168": ("TAG", "ORDER", "City, ST (username)", "pack line"),
 }
 DPI = 200
 font_b = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 78)

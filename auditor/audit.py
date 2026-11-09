@@ -1182,7 +1182,7 @@ def print_summary(rec):
         ("License", "OEM key present" if (rec.get('license') or {}).get('oem_key_present') else "NO OEM KEY"),
         ("Condition", f"screen {(rec.get('grades') or {}).get('screen_grade')}  body {(rec.get('grades') or {}).get('chassis_grade')}  "
                       f"{(rec.get('grades') or {}).get('color')}  charger {(rec.get('grades') or {}).get('charger')}"),
-        ("Tests", "  ".join(f"{k}:{(v or {}).get('result')}" for k, v in (rec.get('tests') or {}).items())),
+        ("Tests", "  ".join(f"{k}:{v.get('result')}" for k, v in (rec.get('tests') or {}).items() if isinstance(v, dict))),
         ("Erase", f"{(rec.get('erase') or {}).get('method') or 'none'}  blank:{(rec.get('erase') or {}).get('verified_blank')}"),
     ]
     for k, v in rows:

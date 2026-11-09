@@ -1,0 +1,8 @@
+dell::kbd_backlight
+enp60s0-0::lan
+enp60s0-1::lan
+enp60s0-2::lan
+input3::capslock
+input3::numlock
+input3::scrolllock
+phy0-led

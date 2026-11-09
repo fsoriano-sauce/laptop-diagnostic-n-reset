@@ -1,0 +1,1 @@
+timeout: failed to run command ‘bluetoothctl’: No such file or directory

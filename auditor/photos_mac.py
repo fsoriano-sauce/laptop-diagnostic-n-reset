@@ -30,6 +30,7 @@ Photos on this Mac and the iPhone share one iCloud Photos library, so:
 macOS only. First run pops a permission dialog to let this control Photos.
 """
 
+import csv
 import glob
 import json
 import os
@@ -55,15 +56,25 @@ def osa(script, timeout=600):
     return p.stdout.rstrip("\n")
 
 
+def sold_tags():
+    """Service tags marked sold in inventory.csv; they need no album."""
+    try:
+        with open(os.path.join(HERE, "inventory.csv"), newline="") as f:
+            return {r["service_tag"] for r in csv.DictReader(f) if r.get("status") == "sold"}
+    except (OSError, KeyError):
+        return set()
+
+
 def audited_units():
     units = {}
+    sold = sold_tags()
     for path in sorted(glob.glob(os.path.join(AUDITS, "*.json"))):
         try:
             d = json.load(open(path))
         except (OSError, ValueError):
             continue
         tag = (d.get("identity") or {}).get("service_tag")
-        if d.get("status") == "audited" and tag:
+        if d.get("status") == "audited" and tag and tag not in sold:
             units[tag] = (d.get("identity") or {}).get("model") or ""
     return units
 

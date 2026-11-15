@@ -140,7 +140,7 @@ def build_condition_notes(row: dict) -> str:
         parts.append(screen_map[sg])
 
     # Chassis
-    chassis_map = {"A": "Chassis is in mint condition.",
+    chassis_map = {"A": "Chassis in excellent used condition, with light signs of normal use.",
                    "B": "Minor scuffs on chassis — normal use.",
                    "C": "Chassis has dents or cracks."}
     cg = row.get("chassis_grade", "")
@@ -219,6 +219,14 @@ def build_html_description(row: dict) -> str:
     features_str = " &bull; ".join(features) if features else "N/A"
 
     grade_map = {"A": "Excellent", "B": "Good — minor wear", "C": "Fair — visible wear"}
+    # A used body is never "mint" or "like new": an A still says it has been used.
+    chassis_map = dict(grade_map, A="Excellent used condition — light signs of normal use")
+    battery_cell = f"{battery}%"
+    full_wh, design_wh = row.get("battery_full_wh", ""), row.get("battery_design_wh", "")
+    if battery not in ("", "N/A") and int(float(battery)) < 60:
+        holds = f" (holds {full_wh} of {design_wh} Wh)" if full_wh not in ("", "N/A") and design_wh not in ("", "N/A") else ""
+        battery_cell = (f"{battery}%{holds}: expect noticeably shorter runtime than new; "
+                        f"runs normally on the charger")
 
     return f"""<div style="max-width:800px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#333;">
 <div style="background:#1a1a2e;color:white;padding:20px;border-radius:8px 8px 0 0;text-align:center;">
@@ -238,8 +246,8 @@ def build_html_description(row: dict) -> str:
 <h2 style="margin:0 0 10px;font-size:16px;color:#16a34a;">&check; Condition Report</h2>
 <table style="width:100%;font-size:14px;">
 <tr><td style="padding:4px 0;"><strong>Screen:</strong></td><td>{grade_map.get(screen_grade, screen_grade)}</td></tr>
-<tr><td style="padding:4px 0;"><strong>Chassis:</strong></td><td>{grade_map.get(chassis_grade, chassis_grade)}</td></tr>
-{photo_row}<tr><td style="padding:4px 0;"><strong>Battery Health:</strong></td><td>{battery}%</td></tr>
+<tr><td style="padding:4px 0;"><strong>Chassis:</strong></td><td>{chassis_map.get(chassis_grade, chassis_grade)}</td></tr>
+{photo_row}<tr><td style="padding:4px 0;"><strong>Battery Health:</strong></td><td>{battery_cell}</td></tr>
 <tr><td style="padding:4px 0;"><strong>SMART Status:</strong></td><td>{smart}</td></tr>
 {drive_health}{erased}</table>
 </div>
